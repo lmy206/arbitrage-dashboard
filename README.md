@@ -8,7 +8,7 @@
 2. 原始合约缓存写入 `E_SHARED_DATA_ROOT`，未设置时使用 `E:\data`。
 3. 脚本更新 `catalog.sqlite`、`manifest.jsonl` 与完整性报告。
 4. 15 组指标写入 `app/data/arbitrage.json`，网站从该文件渲染。
-5. Codex 自动任务在每天 20:00 验证新交易日数据；仅在数据通过检查且日期更新时重新发布网站。
+5. Codex 自动任务在每天 20:00 验证新交易日数据；仅更新本地数据与构建，不发布网站。
 
 本机执行：
 
