@@ -1,100 +1,35 @@
-# vinext-starter
+# 套利监测看板
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+基于 `xtdata` 日线主力连续合约生成的跨品种比价与价差看板，每日 20:00（Asia/Shanghai）更新。
 
-## Prerequisites
+## 数据流程
 
-- Node.js `>=22.13.0`
+1. `scripts/update_xtdata.py` 连接 `xtdata` 并下载全部可得日线历史。
+2. 原始合约缓存写入 `E_SHARED_DATA_ROOT`，未设置时使用 `E:\data`。
+3. 脚本更新 `catalog.sqlite`、`manifest.jsonl` 与完整性报告。
+4. 15 组指标写入 `app/data/arbitrage.json`，网站从该文件渲染。
+5. Codex 自动任务在每天 20:00 验证新交易日数据；仅在数据通过检查且日期更新时重新发布网站。
 
-## Quick Start
+本机执行：
 
-```bash
-npm install
-npm run dev
+```powershell
+D:\anaconda\python.exe scripts\update_xtdata.py
 npm run build
+node --test tests\rendered-html.test.mjs
 ```
 
-This starter does not use `wrangler.jsonc`.
+## 口径
 
-## Included Shape
+- 行情源：仅使用 `xtdata`。
+- 合约：各品种 `00` 主力连续合约。
+- 当前值与前日值：最近两个共同交易日的收盘价计算结果。
+- 全历史分位：`xtdata` 返回的全部可得日线历史。
+- 近 3 年分位：最新数据日前滚动三年的日线历史。
+- 判断：近 3 年分位不低于 75% 为“偏高”，不高于 10% 为“极度偏低”，其余为“中性”。
+- 平衡手数：按合约乘数和最新收盘价，在单边不超过 30 手的范围内逼近两腿等名义敞口。
+- 保证金：使用脚本内配置的保证金比例估算，不代表账户实际占用。
+- 螺卷差：热卷减螺纹钢；豆粕价差：豆粕减豆一；金银比：黄金价格乘 1000 后除以白银价格。
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+## 安全与失败处理
 
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+`xtdata` 凭证只从 `XTQUANT_TOKEN` 环境变量或本机 `E:\IM\config.py` 读取，不写入项目。若行情不可用、15 组数据不齐、交易日不一致或检测到未来数据，脚本保留上次有效网页数据并记录 `xtdata_unavailable` 或校验错误，不发布异常结果。
