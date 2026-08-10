@@ -283,10 +283,12 @@ def balance_metrics(
     average = (left_notional + right_notional) / 2
     deviation = abs(left_notional - right_notional) / average * 100 if average else 0
     total_notional = left_notional + right_notional
-    margin = (
-        left_notional * left_contract["margin_rate"]
-        + right_notional * right_contract["margin_rate"]
-    )
+    left_margin = left_notional * left_contract["margin_rate"]
+    right_margin = right_notional * right_contract["margin_rate"]
+    if left.endswith(".IF") and right.endswith(".IF"):
+        margin = max(left_margin, right_margin)
+    else:
+        margin = left_margin + right_margin
     return (
         f"{left_lots}:{right_lots}",
         f"{deviation:.2f}%",

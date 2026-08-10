@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-10",
-  "updatedAt": "2026-08-10T22:12:02+08:00",
+  "updatedAt": "2026-08-10T22:13:52+08:00",
   "source": "xtdata",
   "period": "1d",
   "contractMode": "主力连续(00)",
@@ -82,7 +82,7 @@
       "lots": "15:17",
       "deviation": "0.18%",
       "notional": "4733万",
-      "margin": "615.3万",
+      "margin": "331.0万",
       "leftSymbol": "IC00.IF",
       "rightSymbol": "IF00.IF"
     },
@@ -98,7 +98,7 @@
       "lots": "11:12",
       "deviation": "0.09%",
       "notional": "3346万",
-      "margin": "434.9万",
+      "margin": "234.3万",
       "leftSymbol": "IM00.IF",
       "rightSymbol": "IF00.IF"
     },
@@ -242,7 +242,7 @@
       "lots": "1:1",
       "deviation": "3.54%",
       "notional": "310万",
-      "margin": "43.4万",
+      "margin": "22.1万",
       "leftSymbol": "IM00.IF",
       "rightSymbol": "IC00.IF"
     }

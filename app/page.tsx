@@ -160,7 +160,7 @@ export default function Home() {
         </div>
 
         <footer className="dashboard-footer">
-          <span>行情：xtdata 日线主力连续；保证金按配置比例估算。</span>
+          <span>保证金：中金所组合取较大单边；其他组合两腿相加。</span>
           <span>数据日：{dashboardData.dataDate} · 更新时间：每日 20:00</span>
         </footer>
       </section>
