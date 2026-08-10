@@ -250,15 +250,24 @@ def signal_for(value: float) -> str:
     return "中性"
 
 
-def balance_metrics(left: str, right: str, left_price: float, right_price: float) -> tuple[str, str, str, str]:
+def balance_metrics(
+    left: str,
+    right: str,
+    left_price: float,
+    right_price: float,
+    force_one_to_one: bool = False,
+) -> tuple[str, str, str, str]:
     left_contract = CONTRACTS[left]
     right_contract = CONTRACTS[right]
     exposure_ratio = (
         right_price * right_contract["multiplier"]
         / (left_price * left_contract["multiplier"])
     )
-    fraction = Fraction(float(exposure_ratio)).limit_denominator(30)
-    left_lots, right_lots = fraction.numerator, fraction.denominator
+    if force_one_to_one:
+        left_lots, right_lots = 1, 1
+    else:
+        fraction = Fraction(float(exposure_ratio)).limit_denominator(30)
+        left_lots, right_lots = fraction.numerator, fraction.denominator
     left_notional = left_price * left_contract["multiplier"] * left_lots
     right_notional = right_price * right_contract["multiplier"] * right_lots
     average = (left_notional + right_notional) / 2
@@ -279,11 +288,13 @@ def balance_metrics(left: str, right: str, left_price: float, right_price: float
 def build_rows(histories: dict[str, pd.Series]) -> tuple[list[dict[str, Any]], str]:
     rows: list[dict[str, Any]] = []
     latest_dates: list[pd.Timestamp] = []
+    common_latest_date = min(series.index.max() for series in histories.values())
 
     for definition in PAIRS:
         left = definition["left"]
         right = definition["right"]
         aligned = pd.concat([histories[left], histories[right]], axis=1, join="inner").dropna()
+        aligned = aligned[aligned.index <= common_latest_date]
         formula: Callable[[pd.Series, pd.Series], pd.Series] = definition["formula"]
         values = formula(aligned[left], aligned[right]).replace([math.inf, -math.inf], pd.NA).dropna()
         if len(values) < 2:
@@ -300,7 +311,13 @@ def build_rows(histories: dict[str, pd.Series]) -> tuple[list[dict[str, Any]], s
         three_year_percentile = percentile(three_year)
         left_price = float(aligned.loc[latest_date, left])
         right_price = float(aligned.loc[latest_date, right])
-        lots, deviation, notional, margin = balance_metrics(left, right, left_price, right_price)
+        lots, deviation, notional, margin = balance_metrics(
+            left,
+            right,
+            left_price,
+            right_price,
+            force_one_to_one=definition["kind"] == "spread",
+        )
 
         rows.append(
             {
