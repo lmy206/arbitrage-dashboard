@@ -6,9 +6,10 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
@@ -25,6 +26,16 @@ MANIFEST_PATH = SHARED_ROOT / "manifest.jsonl"
 OUTPUT_PATH = PROJECT_ROOT / "app" / "data" / "arbitrage.json"
 HISTORY_START = ""
 SHANGHAI = ZoneInfo("Asia/Shanghai")
+MONTHLY_LOOKBACK_DAYS = 90
+
+
+SECTOR_BY_SUFFIX = {
+    ".IF": "中金所期货",
+    ".SF": "上期所期货",
+    ".DF": "大商所期货",
+    ".ZF": "郑商所期货",
+    ".GF": "广期所期货",
+}
 
 
 CONTRACTS: dict[str, dict[str, float]] = {
@@ -113,11 +124,14 @@ def connect_xtdata():
     return xtdata, port
 
 
-def normalize_market_frame(frame: pd.DataFrame) -> pd.DataFrame:
+def normalize_market_frame(frame: pd.DataFrame, include_volume: bool = False) -> pd.DataFrame:
     if frame.empty or "close" not in frame.columns:
-        return pd.DataFrame(columns=["close"])
+        return pd.DataFrame(columns=["close", "volume"] if include_volume else ["close"])
 
-    result = frame[["close"]].copy().reset_index()
+    fields = ["close"]
+    if include_volume and "volume" in frame.columns:
+        fields.append("volume")
+    result = frame[fields].copy().reset_index()
     time_col = result.columns[0]
     raw_time = result[time_col]
     if pd.api.types.is_numeric_dtype(raw_time):
@@ -125,11 +139,15 @@ def normalize_market_frame(frame: pd.DataFrame) -> pd.DataFrame:
     else:
         result["date"] = pd.to_datetime(raw_time, errors="coerce")
     result["close"] = pd.to_numeric(result["close"], errors="coerce")
+    if include_volume:
+        if "volume" not in result.columns:
+            result["volume"] = 0
+        result["volume"] = pd.to_numeric(result["volume"], errors="coerce").fillna(0)
     result = result.dropna(subset=["date", "close"])
     result = result[result["close"] > 0]
     result["date"] = result["date"].dt.normalize()
     result = result.drop_duplicates(subset=["date"], keep="last").set_index("date").sort_index()
-    return result[["close"]]
+    return result[["close", "volume"]] if include_volume else result[["close"]]
 
 
 def update_catalog(symbol: str, frame: pd.DataFrame, csv_path: Path, updated_at: str) -> None:
@@ -182,7 +200,49 @@ def write_manifest(entry: dict[str, Any]) -> None:
         handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
-def fetch_history() -> tuple[dict[str, pd.Series], int]:
+def normalize_expiry(code: str, asof: pd.Timestamp) -> str | None:
+    if len(code) == 4:
+        year = 2000 + int(code[:2])
+        month = int(code[2:])
+    elif len(code) == 3:
+        year = (asof.year // 10) * 10 + int(code[0])
+        if year < asof.year - 1:
+            year += 10
+        month = int(code[1:])
+    else:
+        return None
+    if not 1 <= month <= 12:
+        return None
+    return f"{year % 100:02d}{month:02d}"
+
+
+def discover_monthly_contracts(xtdata, asof: pd.Timestamp) -> dict[str, dict[str, str]]:
+    contracts: dict[str, dict[str, str]] = {}
+    sector_cache: dict[str, list[str]] = {}
+    current_expiry = asof.strftime("%y%m")
+
+    for continuous_symbol in CONTRACTS:
+        stem, suffix_code = continuous_symbol.split(".", maxsplit=1)
+        suffix = f".{suffix_code}"
+        root = stem[:-2]
+        sector = SECTOR_BY_SUFFIX[suffix]
+        if sector not in sector_cache:
+            sector_cache[sector] = xtdata.get_stock_list_in_sector(sector) or []
+
+        pattern = re.compile(rf"^{re.escape(root)}(\d{{3,4}}){re.escape(suffix)}$", re.IGNORECASE)
+        by_expiry: dict[str, str] = {}
+        for symbol in sector_cache[sector]:
+            match = pattern.match(symbol)
+            if not match:
+                continue
+            expiry = normalize_expiry(match.group(1), asof)
+            if expiry and expiry >= current_expiry:
+                by_expiry[expiry] = symbol
+        contracts[continuous_symbol] = by_expiry
+    return contracts
+
+
+def fetch_history() -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame], dict[str, dict[str, str]], int]:
     xtdata, port = connect_xtdata()
     symbols = list(CONTRACTS)
     MARKET_DIR.mkdir(parents=True, exist_ok=True)
@@ -220,7 +280,52 @@ def fetch_history() -> tuple[dict[str, pd.Series], int]:
 
     if missing:
         raise RuntimeError(f"xtdata 未返回以下合约数据: {', '.join(missing)}")
-    return histories, port
+
+    common_latest_date = min(series.index.max() for series in histories.values())
+    monthly_contracts = discover_monthly_contracts(xtdata, common_latest_date)
+    monthly_symbols = sorted(
+        {
+            symbol
+            for definition in PAIRS
+            for continuous_symbol in (definition["left"], definition["right"])
+            for symbol in monthly_contracts[continuous_symbol].values()
+        }
+    )
+    monthly_start = (common_latest_date - timedelta(days=MONTHLY_LOOKBACK_DAYS)).strftime("%Y%m%d")
+    monthly_raw: dict[str, pd.DataFrame] = {}
+    for offset in range(0, len(monthly_symbols), 50):
+        batch = monthly_symbols[offset : offset + 50]
+        xtdata.download_history_data2(
+            batch,
+            period="1d",
+            start_time=monthly_start,
+            end_time="",
+            callback=None,
+            incrementally=False,
+        )
+        monthly_raw.update(
+            xtdata.get_market_data_ex(
+                field_list=["close", "volume"],
+                stock_list=batch,
+                period="1d",
+                start_time=monthly_start,
+                end_time="",
+                count=-1,
+                fill_data=False,
+            )
+        )
+
+    monthly_histories: dict[str, pd.DataFrame] = {}
+    for symbol in monthly_symbols:
+        frame = normalize_market_frame(monthly_raw.get(symbol, pd.DataFrame()), include_volume=True)
+        if frame.empty:
+            continue
+        csv_path = MARKET_DIR / f"{symbol.replace('.', '_')}.csv"
+        frame.reset_index().to_csv(csv_path, index=False, encoding="utf-8-sig")
+        update_catalog(symbol, frame, csv_path, now)
+        monthly_histories[symbol] = frame
+
+    return histories, monthly_histories, monthly_contracts, port
 
 
 def percentile(series: pd.Series) -> float:
@@ -297,7 +402,73 @@ def balance_metrics(
     )
 
 
-def build_rows(histories: dict[str, pd.Series]) -> tuple[list[dict[str, Any]], str]:
+def build_contract_rows(
+    definition: dict[str, Any],
+    monthly_histories: dict[str, pd.DataFrame],
+    monthly_contracts: dict[str, dict[str, str]],
+    common_latest_date: pd.Timestamp,
+) -> list[dict[str, Any]]:
+    left_months = monthly_contracts[definition["left"]]
+    right_months = monthly_contracts[definition["right"]]
+    formula: Callable[[pd.Series, pd.Series], pd.Series] = definition["formula"]
+    results: list[dict[str, Any]] = []
+
+    for expiry in sorted(set(left_months) & set(right_months)):
+        left_symbol = left_months[expiry]
+        right_symbol = right_months[expiry]
+        if left_symbol not in monthly_histories or right_symbol not in monthly_histories:
+            continue
+
+        left_frame = monthly_histories[left_symbol].rename(
+            columns={"close": "leftClose", "volume": "leftVolume"}
+        )
+        right_frame = monthly_histories[right_symbol].rename(
+            columns={"close": "rightClose", "volume": "rightVolume"}
+        )
+        aligned = pd.concat([left_frame, right_frame], axis=1, join="inner").dropna()
+        aligned = aligned[aligned.index <= common_latest_date]
+        if aligned.empty or aligned.index[-1] != common_latest_date:
+            continue
+
+        latest = aligned.iloc[-1]
+        left_volume = max(0, int(round(float(latest["leftVolume"]))))
+        right_volume = max(0, int(round(float(latest["rightVolume"]))))
+        paired_volume = min(left_volume, right_volume)
+        if paired_volume <= 0:
+            continue
+        current_series = formula(aligned["leftClose"], aligned["rightClose"]).replace(
+            [math.inf, -math.inf], pd.NA
+        ).dropna()
+        if current_series.empty:
+            continue
+
+        results.append(
+            {
+                "expiry": expiry,
+                "current": display_number(float(current_series.iloc[-1]), definition["kind"]),
+                "leftSymbol": left_symbol,
+                "rightSymbol": right_symbol,
+                "leftVolume": left_volume,
+                "rightVolume": right_volume,
+                "pairedVolume": paired_volume,
+            }
+        )
+
+    results.sort(
+        key=lambda item: (
+            -item["pairedVolume"],
+            -(item["leftVolume"] + item["rightVolume"]),
+            item["expiry"],
+        )
+    )
+    return results[:4]
+
+
+def build_rows(
+    histories: dict[str, pd.Series],
+    monthly_histories: dict[str, pd.DataFrame],
+    monthly_contracts: dict[str, dict[str, str]],
+) -> tuple[list[dict[str, Any]], str]:
     rows: list[dict[str, Any]] = []
     latest_dates: list[pd.Timestamp] = []
     common_latest_date = min(series.index.max() for series in histories.values())
@@ -347,6 +518,12 @@ def build_rows(histories: dict[str, pd.Series]) -> tuple[list[dict[str, Any]], s
                 "margin": margin,
                 "leftSymbol": left,
                 "rightSymbol": right,
+                "contracts": build_contract_rows(
+                    definition,
+                    monthly_histories,
+                    monthly_contracts,
+                    common_latest_date,
+                ),
             }
         )
 
@@ -375,14 +552,18 @@ def write_outputs(rows: list[dict[str, Any]], data_date: str, port: int) -> dict
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     latest = pd.Timestamp(data_date).date()
     lag_days = (now.date() - latest).days
+    contract_rows_complete = all(len(row["contracts"]) == 4 for row in rows)
     report = {
-        "status": "ok" if lag_days <= 4 and len(rows) == len(PAIRS) else "warning",
+        "status": "ok" if lag_days <= 4 and len(rows) == len(PAIRS) and contract_rows_complete else "warning",
         "checkedAt": now.isoformat(timespec="seconds"),
         "dataDate": data_date,
         "calendarLagDays": lag_days,
         "pairCount": len(rows),
         "expectedPairCount": len(PAIRS),
         "percentilesInRange": all(0 <= row["percentile"] <= 100 for row in rows),
+        "contractRowsAvailable": all(len(row["contracts"]) > 0 for row in rows),
+        "contractRowsComplete": contract_rows_complete,
+        "contractRowCounts": {row["pair"]: len(row["contracts"]) for row in rows},
         "futureDataDetected": latest > now.date(),
         "xtdataPort": port,
         "output": str(OUTPUT_PATH),
@@ -431,8 +612,8 @@ def record_failure(error: Exception) -> None:
 
 def main() -> int:
     try:
-        histories, port = fetch_history()
-        rows, data_date = build_rows(histories)
+        histories, monthly_histories, monthly_contracts, port = fetch_history()
+        rows, data_date = build_rows(histories, monthly_histories, monthly_contracts)
         report = write_outputs(rows, data_date, port)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 0 if report["status"] == "ok" else 2

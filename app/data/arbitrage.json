@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-10",
-  "updatedAt": "2026-08-10T22:13:52+08:00",
+  "updatedAt": "2026-08-10T22:36:45+08:00",
   "source": "xtdata",
   "period": "1d",
   "contractMode": "主力连续(00)",
@@ -20,7 +20,45 @@
       "notional": "60万",
       "margin": "5.4万",
       "leftSymbol": "OI00.ZF",
-      "rightSymbol": "RM00.ZF"
+      "rightSymbol": "RM00.ZF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "4.3898",
+          "leftSymbol": "OI609.ZF",
+          "rightSymbol": "RM609.ZF",
+          "leftVolume": 165617,
+          "rightVolume": 482800,
+          "pairedVolume": 165617
+        },
+        {
+          "expiry": "2701",
+          "current": "4.4374",
+          "leftSymbol": "OI701.ZF",
+          "rightSymbol": "RM701.ZF",
+          "leftVolume": 67004,
+          "rightVolume": 211087,
+          "pairedVolume": 67004
+        },
+        {
+          "expiry": "2611",
+          "current": "4.6325",
+          "leftSymbol": "OI611.ZF",
+          "rightSymbol": "RM611.ZF",
+          "leftVolume": 63822,
+          "rightVolume": 241098,
+          "pairedVolume": 63822
+        },
+        {
+          "expiry": "2703",
+          "current": "4.4144",
+          "leftSymbol": "OI703.ZF",
+          "rightSymbol": "RM703.ZF",
+          "leftVolume": 19485,
+          "rightVolume": 75177,
+          "pairedVolume": 19485
+        }
+      ]
     },
     {
       "pair": "螺卷差",
@@ -36,7 +74,45 @@
       "notional": "6万",
       "margin": "0.6万",
       "leftSymbol": "hc00.SF",
-      "rightSymbol": "rb00.SF"
+      "rightSymbol": "rb00.SF",
+      "contracts": [
+        {
+          "expiry": "2610",
+          "current": "238",
+          "leftSymbol": "hc2610.SF",
+          "rightSymbol": "rb2610.SF",
+          "leftVolume": 262519,
+          "rightVolume": 742347,
+          "pairedVolume": 262519
+        },
+        {
+          "expiry": "2611",
+          "current": "238",
+          "leftSymbol": "hc2611.SF",
+          "rightSymbol": "rb2611.SF",
+          "leftVolume": 44300,
+          "rightVolume": 61519,
+          "pairedVolume": 44300
+        },
+        {
+          "expiry": "2701",
+          "current": "222",
+          "leftSymbol": "hc2701.SF",
+          "rightSymbol": "rb2701.SF",
+          "leftVolume": 41754,
+          "rightVolume": 122588,
+          "pairedVolume": 41754
+        },
+        {
+          "expiry": "2609",
+          "current": "239",
+          "leftSymbol": "hc2609.SF",
+          "rightSymbol": "rb2609.SF",
+          "leftVolume": 3613,
+          "rightVolume": 8749,
+          "pairedVolume": 3613
+        }
+      ]
     },
     {
       "pair": "铜铝比",
@@ -52,7 +128,45 @@
       "notional": "217万",
       "margin": "21.7万",
       "leftSymbol": "cu00.SF",
-      "rightSymbol": "al00.SF"
+      "rightSymbol": "al00.SF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "4.4631",
+          "leftSymbol": "cu2609.SF",
+          "rightSymbol": "al2609.SF",
+          "leftVolume": 96220,
+          "rightVolume": 132277,
+          "pairedVolume": 96220
+        },
+        {
+          "expiry": "2610",
+          "current": "4.4524",
+          "leftSymbol": "cu2610.SF",
+          "rightSymbol": "al2610.SF",
+          "leftVolume": 48739,
+          "rightVolume": 70882,
+          "pairedVolume": 48739
+        },
+        {
+          "expiry": "2611",
+          "current": "4.4482",
+          "leftSymbol": "cu2611.SF",
+          "rightSymbol": "al2611.SF",
+          "leftVolume": 9006,
+          "rightVolume": 15882,
+          "pairedVolume": 9006
+        },
+        {
+          "expiry": "2608",
+          "current": "4.4857",
+          "leftSymbol": "cu2608.SF",
+          "rightSymbol": "al2608.SF",
+          "leftVolume": 18920,
+          "rightVolume": 8755,
+          "pairedVolume": 8755
+        }
+      ]
     },
     {
       "pair": "豆一豆二比",
@@ -68,7 +182,45 @@
       "notional": "107万",
       "margin": "9.6万",
       "leftSymbol": "a00.DF",
-      "rightSymbol": "b00.DF"
+      "rightSymbol": "b00.DF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "1.2757",
+          "leftSymbol": "a2609.DF",
+          "rightSymbol": "b2609.DF",
+          "leftVolume": 176396,
+          "rightVolume": 107645,
+          "pairedVolume": 107645
+        },
+        {
+          "expiry": "2611",
+          "current": "1.2723",
+          "leftSymbol": "a2611.DF",
+          "rightSymbol": "b2611.DF",
+          "leftVolume": 235399,
+          "rightVolume": 50598,
+          "pairedVolume": 50598
+        },
+        {
+          "expiry": "2701",
+          "current": "1.2745",
+          "leftSymbol": "a2701.DF",
+          "rightSymbol": "b2701.DF",
+          "leftVolume": 40762,
+          "rightVolume": 7612,
+          "pairedVolume": 7612
+        },
+        {
+          "expiry": "2705",
+          "current": "1.3997",
+          "leftSymbol": "a2705.DF",
+          "rightSymbol": "b2705.DF",
+          "leftVolume": 6157,
+          "rightVolume": 4053,
+          "pairedVolume": 4053
+        }
+      ]
     },
     {
       "pair": "IC/IF比价",
@@ -84,7 +236,45 @@
       "notional": "4733万",
       "margin": "331.0万",
       "leftSymbol": "IC00.IF",
-      "rightSymbol": "IF00.IF"
+      "rightSymbol": "IF00.IF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "1.6969",
+          "leftSymbol": "IC2609.IF",
+          "rightSymbol": "IF2609.IF",
+          "leftVolume": 100468,
+          "rightVolume": 54064,
+          "pairedVolume": 54064
+        },
+        {
+          "expiry": "2608",
+          "current": "1.7016",
+          "leftSymbol": "IC2608.IF",
+          "rightSymbol": "IF2608.IF",
+          "leftVolume": 31681,
+          "rightVolume": 19218,
+          "pairedVolume": 19218
+        },
+        {
+          "expiry": "2612",
+          "current": "1.6883",
+          "leftSymbol": "IC2612.IF",
+          "rightSymbol": "IF2612.IF",
+          "leftVolume": 24481,
+          "rightVolume": 13616,
+          "pairedVolume": 13616
+        },
+        {
+          "expiry": "2703",
+          "current": "1.6795",
+          "leftSymbol": "IC2703.IF",
+          "rightSymbol": "IF2703.IF",
+          "leftVolume": 6905,
+          "rightVolume": 5442,
+          "pairedVolume": 5442
+        }
+      ]
     },
     {
       "pair": "IM/IF比价",
@@ -100,7 +290,45 @@
       "notional": "3346万",
       "margin": "234.3万",
       "leftSymbol": "IM00.IF",
-      "rightSymbol": "IF00.IF"
+      "rightSymbol": "IF00.IF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "1.6379",
+          "leftSymbol": "IM2609.IF",
+          "rightSymbol": "IF2609.IF",
+          "leftVolume": 142720,
+          "rightVolume": 54064,
+          "pairedVolume": 54064
+        },
+        {
+          "expiry": "2608",
+          "current": "1.6433",
+          "leftSymbol": "IM2608.IF",
+          "rightSymbol": "IF2608.IF",
+          "leftVolume": 47167,
+          "rightVolume": 19218,
+          "pairedVolume": 19218
+        },
+        {
+          "expiry": "2612",
+          "current": "1.6238",
+          "leftSymbol": "IM2612.IF",
+          "rightSymbol": "IF2612.IF",
+          "leftVolume": 32646,
+          "rightVolume": 13616,
+          "pairedVolume": 13616
+        },
+        {
+          "expiry": "2703",
+          "current": "1.6084",
+          "leftSymbol": "IM2703.IF",
+          "rightSymbol": "IF2703.IF",
+          "leftVolume": 11170,
+          "rightVolume": 5442,
+          "pairedVolume": 5442
+        }
+      ]
     },
     {
       "pair": "螺矿比",
@@ -116,7 +344,45 @@
       "notional": "114万",
       "margin": "13.7万",
       "leftSymbol": "rb00.SF",
-      "rightSymbol": "i00.DF"
+      "rightSymbol": "i00.DF",
+      "contracts": [
+        {
+          "expiry": "2701",
+          "current": "4.3179",
+          "leftSymbol": "rb2701.SF",
+          "rightSymbol": "i2701.DF",
+          "leftVolume": 122588,
+          "rightVolume": 146818,
+          "pairedVolume": 122588
+        },
+        {
+          "expiry": "2610",
+          "current": "4.2093",
+          "leftSymbol": "rb2610.SF",
+          "rightSymbol": "i2610.DF",
+          "leftVolume": 742347,
+          "rightVolume": 19010,
+          "pairedVolume": 19010
+        },
+        {
+          "expiry": "2611",
+          "current": "4.2403",
+          "leftSymbol": "rb2611.SF",
+          "rightSymbol": "i2611.DF",
+          "leftVolume": 61519,
+          "rightVolume": 14394,
+          "pairedVolume": 14394
+        },
+        {
+          "expiry": "2609",
+          "current": "4.1626",
+          "leftSymbol": "rb2609.SF",
+          "rightSymbol": "i2609.DF",
+          "leftVolume": 8749,
+          "rightVolume": 200577,
+          "pairedVolume": 8749
+        }
+      ]
     },
     {
       "pair": "焦炭焦煤比",
@@ -132,7 +398,45 @@
       "notional": "260万",
       "margin": "52.1万",
       "leftSymbol": "j00.DF",
-      "rightSymbol": "jm00.DF"
+      "rightSymbol": "jm00.DF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "1.4645",
+          "leftSymbol": "j2609.DF",
+          "rightSymbol": "jm2609.DF",
+          "leftVolume": 26789,
+          "rightVolume": 422891,
+          "pairedVolume": 26789
+        },
+        {
+          "expiry": "2701",
+          "current": "1.3515",
+          "leftSymbol": "j2701.DF",
+          "rightSymbol": "jm2701.DF",
+          "leftVolume": 8556,
+          "rightVolume": 246952,
+          "pairedVolume": 8556
+        },
+        {
+          "expiry": "2610",
+          "current": "1.4739",
+          "leftSymbol": "j2610.DF",
+          "rightSymbol": "jm2610.DF",
+          "leftVolume": 107,
+          "rightVolume": 17067,
+          "pairedVolume": 107
+        },
+        {
+          "expiry": "2611",
+          "current": "1.4921",
+          "leftSymbol": "j2611.DF",
+          "rightSymbol": "jm2611.DF",
+          "leftVolume": 106,
+          "rightVolume": 10188,
+          "pairedVolume": 106
+        }
+      ]
     },
     {
       "pair": "棕榈油菜油比",
@@ -148,7 +452,45 @@
       "notional": "263万",
       "margin": "23.7万",
       "leftSymbol": "p00.DF",
-      "rightSymbol": "OI00.ZF"
+      "rightSymbol": "OI00.ZF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "0.9300",
+          "leftSymbol": "p2609.DF",
+          "rightSymbol": "OI609.ZF",
+          "leftVolume": 310000,
+          "rightVolume": 165617,
+          "pairedVolume": 165617
+        },
+        {
+          "expiry": "2701",
+          "current": "0.9777",
+          "leftSymbol": "p2701.DF",
+          "rightSymbol": "OI701.ZF",
+          "leftVolume": 279393,
+          "rightVolume": 67004,
+          "pairedVolume": 67004
+        },
+        {
+          "expiry": "2611",
+          "current": "0.9444",
+          "leftSymbol": "p2611.DF",
+          "rightSymbol": "OI611.ZF",
+          "leftVolume": 6495,
+          "rightVolume": 63822,
+          "pairedVolume": 6495
+        },
+        {
+          "expiry": "2705",
+          "current": "1.0058",
+          "leftSymbol": "p2705.DF",
+          "rightSymbol": "OI705.ZF",
+          "leftVolume": 22461,
+          "rightVolume": 2328,
+          "pairedVolume": 2328
+        }
+      ]
     },
     {
       "pair": "豆粕豆油比",
@@ -164,7 +506,45 @@
       "notional": "118万",
       "margin": "10.6万",
       "leftSymbol": "m00.DF",
-      "rightSymbol": "y00.DF"
+      "rightSymbol": "y00.DF",
+      "contracts": [
+        {
+          "expiry": "2701",
+          "current": "0.3728",
+          "leftSymbol": "m2701.DF",
+          "rightSymbol": "y2701.DF",
+          "leftVolume": 603209,
+          "rightVolume": 193344,
+          "pairedVolume": 193344
+        },
+        {
+          "expiry": "2609",
+          "current": "0.3675",
+          "leftSymbol": "m2609.DF",
+          "rightSymbol": "y2609.DF",
+          "leftVolume": 456541,
+          "rightVolume": 71963,
+          "pairedVolume": 71963
+        },
+        {
+          "expiry": "2705",
+          "current": "0.3452",
+          "leftSymbol": "m2705.DF",
+          "rightSymbol": "y2705.DF",
+          "leftVolume": 88708,
+          "rightVolume": 24891,
+          "pairedVolume": 24891
+        },
+        {
+          "expiry": "2611",
+          "current": "0.3703",
+          "leftSymbol": "m2611.DF",
+          "rightSymbol": "y2611.DF",
+          "leftVolume": 97611,
+          "rightVolume": 10042,
+          "pairedVolume": 10042
+        }
+      ]
     },
     {
       "pair": "纯碱玻璃比",
@@ -180,7 +560,45 @@
       "notional": "46万",
       "margin": "4.6万",
       "leftSymbol": "SA00.ZF",
-      "rightSymbol": "FG00.ZF"
+      "rightSymbol": "FG00.ZF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "1.0866",
+          "leftSymbol": "SA609.ZF",
+          "rightSymbol": "FG609.ZF",
+          "leftVolume": 1848291,
+          "rightVolume": 1668599,
+          "pairedVolume": 1668599
+        },
+        {
+          "expiry": "2701",
+          "current": "1.0690",
+          "leftSymbol": "SA701.ZF",
+          "rightSymbol": "FG701.ZF",
+          "leftVolume": 559500,
+          "rightVolume": 484539,
+          "pairedVolume": 484539
+        },
+        {
+          "expiry": "2611",
+          "current": "1.0753",
+          "leftSymbol": "SA611.ZF",
+          "rightSymbol": "FG611.ZF",
+          "leftVolume": 482960,
+          "rightVolume": 257171,
+          "pairedVolume": 257171
+        },
+        {
+          "expiry": "2612",
+          "current": "1.0605",
+          "leftSymbol": "SA612.ZF",
+          "rightSymbol": "FG612.ZF",
+          "leftVolume": 130552,
+          "rightVolume": 130173,
+          "pairedVolume": 130173
+        }
+      ]
     },
     {
       "pair": "金银比",
@@ -196,7 +614,45 @@
       "notional": "189万",
       "margin": "23.6万",
       "leftSymbol": "au00.SF",
-      "rightSymbol": "ag00.SF"
+      "rightSymbol": "ag00.SF",
+      "contracts": [
+        {
+          "expiry": "2610",
+          "current": "60.38",
+          "leftSymbol": "au2610.SF",
+          "rightSymbol": "ag2610.SF",
+          "leftVolume": 318936,
+          "rightVolume": 799758,
+          "pairedVolume": 318936
+        },
+        {
+          "expiry": "2612",
+          "current": "60.41",
+          "leftSymbol": "au2612.SF",
+          "rightSymbol": "ag2612.SF",
+          "leftVolume": 45405,
+          "rightVolume": 120645,
+          "pairedVolume": 45405
+        },
+        {
+          "expiry": "2702",
+          "current": "60.46",
+          "leftSymbol": "au2702.SF",
+          "rightSymbol": "ag2702.SF",
+          "leftVolume": 12833,
+          "rightVolume": 108633,
+          "pairedVolume": 12833
+        },
+        {
+          "expiry": "2609",
+          "current": "60.40",
+          "leftSymbol": "au2609.SF",
+          "rightSymbol": "ag2609.SF",
+          "leftVolume": 4419,
+          "rightVolume": 31210,
+          "pairedVolume": 4419
+        }
+      ]
     },
     {
       "pair": "豆粕价差",
@@ -212,7 +668,45 @@
       "notional": "8万",
       "margin": "0.7万",
       "leftSymbol": "m00.DF",
-      "rightSymbol": "a00.DF"
+      "rightSymbol": "a00.DF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "-1755",
+          "leftSymbol": "m2609.DF",
+          "rightSymbol": "a2609.DF",
+          "leftVolume": 456541,
+          "rightVolume": 176396,
+          "pairedVolume": 176396
+        },
+        {
+          "expiry": "2611",
+          "current": "-1760",
+          "leftSymbol": "m2611.DF",
+          "rightSymbol": "a2611.DF",
+          "leftVolume": 97611,
+          "rightVolume": 235399,
+          "pairedVolume": 97611
+        },
+        {
+          "expiry": "2701",
+          "current": "-1774",
+          "leftSymbol": "m2701.DF",
+          "rightSymbol": "a2701.DF",
+          "leftVolume": 603209,
+          "rightVolume": 40762,
+          "pairedVolume": 40762
+        },
+        {
+          "expiry": "2703",
+          "current": "-1840",
+          "leftSymbol": "m2703.DF",
+          "rightSymbol": "a2703.DF",
+          "leftVolume": 17580,
+          "rightVolume": 11374,
+          "pairedVolume": 11374
+        }
+      ]
     },
     {
       "pair": "豆油菜油比",
@@ -228,7 +722,45 @@
       "notional": "101万",
       "margin": "9.1万",
       "leftSymbol": "y00.DF",
-      "rightSymbol": "OI00.ZF"
+      "rightSymbol": "OI00.ZF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "0.8338",
+          "leftSymbol": "y2609.DF",
+          "rightSymbol": "OI609.ZF",
+          "leftVolume": 71963,
+          "rightVolume": 165617,
+          "pairedVolume": 71963
+        },
+        {
+          "expiry": "2701",
+          "current": "0.8504",
+          "leftSymbol": "y2701.DF",
+          "rightSymbol": "OI701.ZF",
+          "leftVolume": 193344,
+          "rightVolume": 67004,
+          "pairedVolume": 67004
+        },
+        {
+          "expiry": "2611",
+          "current": "0.8412",
+          "leftSymbol": "y2611.DF",
+          "rightSymbol": "OI611.ZF",
+          "leftVolume": 10042,
+          "rightVolume": 63822,
+          "pairedVolume": 10042
+        },
+        {
+          "expiry": "2703",
+          "current": "0.8515",
+          "leftSymbol": "y2703.DF",
+          "rightSymbol": "OI703.ZF",
+          "leftVolume": 3986,
+          "rightVolume": 19485,
+          "pairedVolume": 3986
+        }
+      ]
     },
     {
       "pair": "IM-IC价差",
@@ -244,7 +776,45 @@
       "notional": "310万",
       "margin": "22.1万",
       "leftSymbol": "IM00.IF",
-      "rightSymbol": "IC00.IF"
+      "rightSymbol": "IC00.IF",
+      "contracts": [
+        {
+          "expiry": "2609",
+          "current": "-274",
+          "leftSymbol": "IM2609.IF",
+          "rightSymbol": "IC2609.IF",
+          "leftVolume": 142720,
+          "rightVolume": 100468,
+          "pairedVolume": 100468
+        },
+        {
+          "expiry": "2608",
+          "current": "-272",
+          "leftSymbol": "IM2608.IF",
+          "rightSymbol": "IC2608.IF",
+          "leftVolume": 47167,
+          "rightVolume": 31681,
+          "pairedVolume": 31681
+        },
+        {
+          "expiry": "2612",
+          "current": "-294",
+          "leftSymbol": "IM2612.IF",
+          "rightSymbol": "IC2612.IF",
+          "leftVolume": 32646,
+          "rightVolume": 24481,
+          "pairedVolume": 24481
+        },
+        {
+          "expiry": "2703",
+          "current": "-319",
+          "leftSymbol": "IM2703.IF",
+          "rightSymbol": "IC2703.IF",
+          "leftVolume": 11170,
+          "rightVolume": 6905,
+          "pairedVolume": 6905
+        }
+      ]
     }
   ]
 }

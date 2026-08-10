@@ -1,9 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import dashboardData from "./data/arbitrage.json";
 
 type Signal = "偏高" | "中性" | "极度偏低";
+
+type ContractRow = {
+  expiry: string;
+  current: string;
+  leftSymbol: string;
+  rightSymbol: string;
+  leftVolume: number;
+  rightVolume: number;
+  pairedVolume: number;
+};
 
 type PairRow = {
   pair: string;
@@ -20,6 +30,7 @@ type PairRow = {
   margin: string;
   leftSymbol: string;
   rightSymbol: string;
+  contracts: ContractRow[];
 };
 
 const rows: PairRow[] = dashboardData.rows.map((row) => ({
@@ -57,6 +68,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("percentile");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [expandedPairs, setExpandedPairs] = useState<Set<string>>(() => new Set());
 
   const visibleRows = useMemo(() => {
     const filtered = rows.filter((row) => row.pair.toLowerCase().includes(query.trim().toLowerCase()));
@@ -74,6 +86,19 @@ export default function Home() {
       setSortKey(key);
       setSortDirection(key === "pair" ? "asc" : "desc");
     }
+  }
+
+  function togglePair(pair: string) {
+    setExpandedPairs((current) => {
+      const next = new Set(current);
+      if (next.has(pair)) next.delete(pair);
+      else next.add(pair);
+      return next;
+    });
+  }
+
+  function formatVolume(value: number) {
+    return value.toLocaleString("zh-CN");
   }
 
   return (
@@ -134,26 +159,70 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-              {visibleRows.map((row) => (
-                <tr key={row.pair} title={`${row.leftSymbol} / ${row.rightSymbol}`}>
-                  <th scope="row">{row.pair}</th>
-                  <td className="tabular current-value">{row.current}</td>
-                  <td className="tabular muted">{row.previous}</td>
-                  <td className={`tabular change ${row.changeValue === null ? "flat" : row.changeValue > 0 ? "up" : "down"}`}>{row.change}</td>
-                  <td className="tabular">{row.allTime}</td>
-                  <td className="tabular percentile-value">{row.percentile.toFixed(row.percentile % 1 === 0 ? 1 : 2)}%</td>
-                  <td>
-                    <div className="percentile-track" aria-label={`近3年分位 ${row.percentile}%`}>
-                      <span className={`percentile-fill ${row.signal === "偏高" ? "high" : row.signal === "极度偏低" ? "low" : "neutral"}`} style={{ width: `${Math.max(row.percentile, 4)}%` }} />
-                    </div>
-                  </td>
-                  <td><span className={`signal ${row.signal === "偏高" ? "high" : row.signal === "极度偏低" ? "low" : "neutral"}`}>{row.signal}</span></td>
-                  <td className="tabular">{row.lots}</td>
-                  <td className="tabular">{row.deviation}</td>
-                  <td className="tabular">{row.notional}</td>
-                  <td className="tabular">{row.margin}</td>
-                </tr>
-              ))}
+              {visibleRows.map((row) => {
+                const isExpanded = expandedPairs.has(row.pair);
+                const detailId = `contracts-${row.pair.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "-")}`;
+                return (
+                  <Fragment key={row.pair}>
+                    <tr className={`pair-row ${isExpanded ? "expanded" : ""}`} title={`${row.leftSymbol} / ${row.rightSymbol}`}>
+                      <th scope="row">
+                        <div className="pair-cell">
+                          <button
+                            type="button"
+                            className="expand-button"
+                            aria-expanded={isExpanded}
+                            aria-controls={detailId}
+                            aria-label={`${isExpanded ? "收起" : "展开"}${row.pair}合约月份`}
+                            onClick={() => togglePair(row.pair)}
+                          >
+                            {isExpanded ? "−" : "+"}
+                          </button>
+                          <span>{row.pair}</span>
+                        </div>
+                      </th>
+                      <td className="tabular current-value">{row.current}</td>
+                      <td className="tabular muted">{row.previous}</td>
+                      <td className={`tabular change ${row.changeValue === null ? "flat" : row.changeValue > 0 ? "up" : "down"}`}>{row.change}</td>
+                      <td className="tabular">{row.allTime}</td>
+                      <td className="tabular percentile-value">{row.percentile.toFixed(row.percentile % 1 === 0 ? 1 : 2)}%</td>
+                      <td>
+                        <div className="percentile-track" aria-label={`近3年分位 ${row.percentile}%`}>
+                          <span className={`percentile-fill ${row.signal === "偏高" ? "high" : row.signal === "极度偏低" ? "low" : "neutral"}`} style={{ width: `${Math.max(row.percentile, 4)}%` }} />
+                        </div>
+                      </td>
+                      <td><span className={`signal ${row.signal === "偏高" ? "high" : row.signal === "极度偏低" ? "low" : "neutral"}`}>{row.signal}</span></td>
+                      <td className="tabular">{row.lots}</td>
+                      <td className="tabular">{row.deviation}</td>
+                      <td className="tabular">{row.notional}</td>
+                      <td className="tabular">{row.margin}</td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="contract-detail-row">
+                        <td colSpan={columns.length} id={detailId}>
+                          <div className="contract-panel" aria-label={`${row.pair}成交量前四的合约月份`}>
+                            <div className="contract-grid contract-grid-header">
+                              <span>合约月</span>
+                              <span>当前值</span>
+                              <span>{row.leftSymbol.split("00")[0]} 成交量</span>
+                              <span>{row.rightSymbol.split("00")[0]} 成交量</span>
+                              <span>可配对成交量 ↓</span>
+                            </div>
+                            {row.contracts.map((contract) => (
+                              <div className="contract-grid" key={`${row.pair}-${contract.expiry}`}>
+                                <strong className="tabular">{contract.expiry}</strong>
+                                <span className="tabular contract-current">{contract.current}</span>
+                                <span className="tabular" title={contract.leftSymbol}>{formatVolume(contract.leftVolume)}</span>
+                                <span className="tabular" title={contract.rightSymbol}>{formatVolume(contract.rightVolume)}</span>
+                                <span className="tabular paired-volume">{formatVolume(contract.pairedVolume)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
           {visibleRows.length === 0 && <div className="empty-state">没有匹配的品种对</div>}
