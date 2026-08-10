@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-10",
-  "updatedAt": "2026-08-10T20:43:51+08:00",
+  "updatedAt": "2026-08-10T20:52:45+08:00",
   "source": "xtdata",
   "period": "1d",
   "contractMode": "主力连续(00)",
@@ -119,6 +119,22 @@
       "rightSymbol": "IF00.IF"
     },
     {
+      "pair": "螺矿比",
+      "current": "4.2004",
+      "previous": "4.1982",
+      "change": "+0.0022",
+      "changeValue": 0.00223484,
+      "allTime": "18.38%",
+      "percentile": 56.89,
+      "signal": "中性",
+      "lots": "50:21",
+      "deviation": "0.01%",
+      "notional": "300万",
+      "margin": "36.0万",
+      "leftSymbol": "rb00.SF",
+      "rightSymbol": "i00.DF"
+    },
+    {
       "pair": "焦炭焦煤比",
       "current": "1.4645",
       "previous": "1.4742",
@@ -165,22 +181,6 @@
       "margin": "44.1万",
       "leftSymbol": "m00.DF",
       "rightSymbol": "y00.DF"
-    },
-    {
-      "pair": "矿螺比",
-      "current": "0.2381",
-      "previous": "0.2382",
-      "change": "-0.0001",
-      "changeValue": -0.00012673,
-      "allTime": "81.65%",
-      "percentile": 43.25,
-      "signal": "中性",
-      "lots": "8:19",
-      "deviation": "0.24%",
-      "notional": "114万",
-      "margin": "13.7万",
-      "leftSymbol": "i00.DF",
-      "rightSymbol": "rb00.SF"
     },
     {
       "pair": "纯碱玻璃比",

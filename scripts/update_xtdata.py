@@ -78,7 +78,7 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "焦炭焦煤比", "left": "j00.DF", "right": "jm00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "豆粕豆油比", "left": "m00.DF", "right": "y00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "豆油菜油比", "left": "y00.DF", "right": "OI00.ZF", "formula": ratio, "kind": "ratio"},
-    {"pair": "矿螺比", "left": "i00.DF", "right": "rb00.SF", "formula": ratio, "kind": "ratio"},
+    {"pair": "螺矿比", "left": "rb00.SF", "right": "i00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "金银比", "left": "au00.SF", "right": "ag00.SF", "formula": gold_silver, "kind": "gold_silver"},
     {"pair": "豆粕价差", "left": "m00.DF", "right": "a00.DF", "formula": spread, "kind": "spread"},
 ]
