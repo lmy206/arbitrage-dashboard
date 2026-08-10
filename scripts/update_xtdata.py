@@ -66,7 +66,7 @@ def gold_silver(left: pd.Series, right: pd.Series) -> pd.Series:
 
 
 PAIRS: list[dict[str, Any]] = [
-    {"pair": "IC/IM比价", "left": "IC00.IF", "right": "IM00.IF", "formula": ratio, "kind": "ratio"},
+    {"pair": "IM-IC价差", "left": "IM00.IF", "right": "IC00.IF", "formula": spread, "kind": "spread"},
     {"pair": "豆一豆二比", "left": "a00.DF", "right": "b00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "菜油菜粕比", "left": "OI00.ZF", "right": "RM00.ZF", "formula": ratio, "kind": "ratio"},
     {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},

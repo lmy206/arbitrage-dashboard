@@ -21,7 +21,7 @@ test("server-renders the arbitrage dashboard", async () => {
   const html = await response.text();
   assert.match(html, /<title>套利监测看板<\/title>/i);
   assert.match(html, /每日 20:00 更新/);
-  assert.match(html, /IC\/IM比价/);
+  assert.match(html, /IM-IC价差/);
   assert.match(html, /豆粕价差/);
   assert.match(html, /近3年分位/);
   assert.doesNotMatch(html, /codex-preview|Building your site|react-loading-skeleton/i);

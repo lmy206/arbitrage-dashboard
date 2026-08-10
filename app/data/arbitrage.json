@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-10",
-  "updatedAt": "2026-08-10T20:52:45+08:00",
+  "updatedAt": "2026-08-10T20:54:27+08:00",
   "source": "xtdata",
   "period": "1d",
   "contractMode": "主力连续(00)",
@@ -37,22 +37,6 @@
       "margin": "14.6万",
       "leftSymbol": "hc00.SF",
       "rightSymbol": "rb00.SF"
-    },
-    {
-      "pair": "IC/IM比价",
-      "current": "1.0360",
-      "previous": "1.0378",
-      "change": "-0.0018",
-      "changeValue": -0.00179147,
-      "allTime": "97.45%",
-      "percentile": 96.56,
-      "signal": "偏高",
-      "lots": "28:29",
-      "deviation": "0.03%",
-      "notional": "8826万",
-      "margin": "1235.6万",
-      "leftSymbol": "IC00.IF",
-      "rightSymbol": "IM00.IF"
     },
     {
       "pair": "铜铝比",
@@ -245,6 +229,22 @@
       "margin": "9.1万",
       "leftSymbol": "y00.DF",
       "rightSymbol": "OI00.ZF"
+    },
+    {
+      "pair": "IM-IC价差",
+      "current": "-274",
+      "previous": "-287",
+      "change": "+13",
+      "changeValue": 13.0,
+      "allTime": "2.65%",
+      "percentile": 3.58,
+      "signal": "极度偏低",
+      "lots": "29:28",
+      "deviation": "0.03%",
+      "notional": "8826万",
+      "margin": "1235.6万",
+      "leftSymbol": "IM00.IF",
+      "rightSymbol": "IC00.IF"
     }
   ]
 }
