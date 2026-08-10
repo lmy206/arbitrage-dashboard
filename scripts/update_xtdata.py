@@ -9,7 +9,6 @@ import os
 import sqlite3
 import sys
 from datetime import datetime
-from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
@@ -259,15 +258,26 @@ def balance_metrics(
 ) -> tuple[str, str, str, str]:
     left_contract = CONTRACTS[left]
     right_contract = CONTRACTS[right]
-    exposure_ratio = (
-        right_price * right_contract["multiplier"]
-        / (left_price * left_contract["multiplier"])
-    )
     if force_one_to_one:
         left_lots, right_lots = 1, 1
     else:
-        fraction = Fraction(float(exposure_ratio)).limit_denominator(30)
-        left_lots, right_lots = fraction.numerator, fraction.denominator
+        candidates: list[tuple[float, int, int, int, int]] = []
+        for candidate_left in range(1, 21):
+            for candidate_right in range(1, 21):
+                candidate_left_notional = left_price * left_contract["multiplier"] * candidate_left
+                candidate_right_notional = right_price * right_contract["multiplier"] * candidate_right
+                candidate_average = (candidate_left_notional + candidate_right_notional) / 2
+                candidate_deviation = abs(candidate_left_notional - candidate_right_notional) / candidate_average
+                candidates.append(
+                    (
+                        candidate_deviation,
+                        candidate_left + candidate_right,
+                        max(candidate_left, candidate_right),
+                        candidate_left,
+                        candidate_right,
+                    )
+                )
+        _, _, _, left_lots, right_lots = min(candidates)
     left_notional = left_price * left_contract["multiplier"] * left_lots
     right_notional = right_price * right_contract["multiplier"] * right_lots
     average = (left_notional + right_notional) / 2
