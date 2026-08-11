@@ -153,6 +153,17 @@ PAIRS: list[dict[str, Any]] = [
 ]
 
 
+HISTORY_CHART_PAIRS = [
+    ("ic-if", "IC/IF比价"),
+    ("im-if", "IM/IF比价"),
+    ("star50-sse50", "科创50/上证50"),
+    ("chinext-csi300", "创业板/沪深300"),
+    ("im-ic-spread", "IM-IC价差"),
+    ("meal-spread", "豆粕菜粕差"),
+    ("soda-glass-spread", "纯碱玻璃差"),
+]
+
+
 def load_xt_token() -> str:
     token = os.environ.get("XTQUANT_TOKEN", "").strip()
     if token:
@@ -845,8 +856,51 @@ def build_rows(
     return rows, data_date
 
 
+def build_history_charts(
+    histories: dict[str, pd.Series],
+    data_date: pd.Timestamp,
+) -> list[dict[str, Any]]:
+    definitions = {definition["pair"]: definition for definition in PAIRS}
+    charts: list[dict[str, Any]] = []
+    for chart_id, pair_name in HISTORY_CHART_PAIRS:
+        definition = definitions[pair_name]
+        left = definition["left"]
+        right = definition["right"]
+        aligned = pd.concat([histories[left], histories[right]], axis=1, join="inner").dropna()
+        aligned = aligned[aligned.index <= data_date]
+        formula: Callable[[pd.Series, pd.Series], pd.Series] = definition["formula"]
+        values = formula(aligned[left], aligned[right]).replace([math.inf, -math.inf], pd.NA).dropna()
+        if len(values) < 12:
+            raise RuntimeError(f"{pair_name} 的历史图表数据不足 12 个观测值")
+
+        monthly = values.groupby(values.index.to_period("M")).last().tail(60)
+        points = [
+            {"date": str(period), "value": round(float(value), 6)}
+            for period, value in monthly.items()
+        ]
+        latest_date = values.index[-1]
+        three_year = values[values.index >= latest_date - pd.DateOffset(years=3)]
+        charts.append(
+            {
+                "id": chart_id,
+                "pair": pair_name,
+                "title": f"{pair_name}走势",
+                "unit": "点差" if definition["kind"] == "spread" else "比值",
+                "grain": "月末值",
+                "source": "xtdata",
+                "current": display_number(float(values.iloc[-1]), definition["kind"]),
+                "percentile": percentile(three_year),
+                "startDate": points[0]["date"],
+                "endDate": points[-1]["date"],
+                "points": points,
+            }
+        )
+    return charts
+
+
 def write_outputs(
     rows: list[dict[str, Any]],
+    charts: list[dict[str, Any]],
     data_date: str,
     port: int,
     source_validation: dict[str, Any],
@@ -862,6 +916,7 @@ def write_outputs(
         "contractMode": "期货主力连续(00)；现货指数收盘",
         "updateSchedule": "每日20:00 Asia/Shanghai",
         "rows": rows,
+        "charts": charts,
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -871,8 +926,9 @@ def write_outputs(
     lag_days = (now.date() - latest).days
     tradable_rows = [row for row in rows if row["pairType"] == "期货套利"]
     contract_rows_complete = all(len(row["contracts"]) == 4 for row in tradable_rows)
+    charts_complete = len(charts) == len(HISTORY_CHART_PAIRS) and all(len(chart["points"]) >= 12 for chart in charts)
     report = {
-        "status": "ok" if lag_days <= 4 and len(rows) == len(PAIRS) and contract_rows_complete else "warning",
+        "status": "ok" if lag_days <= 4 and len(rows) == len(PAIRS) and contract_rows_complete and charts_complete else "warning",
         "checkedAt": now.isoformat(timespec="seconds"),
         "dataDate": data_date,
         "calendarLagDays": lag_days,
@@ -882,6 +938,9 @@ def write_outputs(
         "contractRowsAvailable": all(len(row["contracts"]) > 0 for row in tradable_rows),
         "contractRowsComplete": contract_rows_complete,
         "contractRowCounts": {row["pair"]: len(row["contracts"]) for row in rows},
+        "chartCount": len(charts),
+        "expectedChartCount": len(HISTORY_CHART_PAIRS),
+        "chartsComplete": charts_complete,
         "sourceValidation": source_validation["summary"],
         "akshareErrors": akshare_errors,
         "futureDataDetected": latest > now.date(),
@@ -956,7 +1015,8 @@ def main() -> int:
             monthly_contracts,
             source_validation,
         )
-        report = write_outputs(rows, data_date, port, source_validation, akshare_errors)
+        charts = build_history_charts(histories, pd.Timestamp(data_date))
+        report = write_outputs(rows, charts, data_date, port, source_validation, akshare_errors)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 0 if report["status"] == "ok" else 2
     except Exception as error:

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import dashboardData from "./data/arbitrage.json";
 
 type Signal = "偏高" | "中性" | "极度偏低";
@@ -14,6 +14,25 @@ type ContractRow = {
   leftVolume: number;
   rightVolume: number;
   pairedVolume: number;
+};
+
+type ChartPoint = {
+  date: string;
+  value: number;
+};
+
+type HistoryChartData = {
+  id: string;
+  pair: string;
+  title: string;
+  unit: "比值" | "点差";
+  grain: string;
+  source: string;
+  current: string;
+  percentile: number;
+  startDate: string;
+  endDate: string;
+  points: ChartPoint[];
 };
 
 type PairRow = {
@@ -41,6 +60,7 @@ const rows: PairRow[] = dashboardData.rows.map((row) => ({
   signal: row.signal as Signal,
   sourceStatus: row.sourceStatus as SourceStatus,
 }));
+const historyCharts: HistoryChartData[] = dashboardData.charts as HistoryChartData[];
 
 type SortKey = "pair" | "current" | "previous" | "change" | "allTime" | "percentile" | "lots" | "deviation" | "notional" | "margin";
 
@@ -76,6 +96,95 @@ function sourceStatusClass(status: SourceStatus) {
   if (status === "需复核") return "review";
   if (status === "仅xtdata") return "primary-only";
   return "pending";
+}
+
+function formatChartNumber(value: number) {
+  if (Math.abs(value) >= 100) return value.toFixed(0);
+  if (Math.abs(value) >= 10) return value.toFixed(2);
+  return value.toFixed(4);
+}
+
+function HistoryLineChart({ chart }: { chart: HistoryChartData }) {
+  const width = 640;
+  const height = 250;
+  const inset = { top: 18, right: 22, bottom: 30, left: 54 };
+  const plotWidth = width - inset.left - inset.right;
+  const plotHeight = height - inset.top - inset.bottom;
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const values = chart.points.map((point) => point.value);
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  const rawRange = rawMax - rawMin || Math.max(Math.abs(rawMax) * 0.1, 1);
+  const yMin = rawMin - rawRange * 0.08;
+  const yMax = rawMax + rawRange * 0.08;
+  const x = (index: number) => inset.left + (index / Math.max(chart.points.length - 1, 1)) * plotWidth;
+  const y = (value: number) => inset.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
+  const linePath = chart.points.map((point, index) => `${index === 0 ? "M" : "L"}${x(index).toFixed(2)},${y(point.value).toFixed(2)}`).join(" ");
+  const yTicks = Array.from({ length: 5 }, (_, index) => yMin + ((yMax - yMin) * index) / 4);
+  const xTickIndexes = Array.from(new Set([0, Math.floor((chart.points.length - 1) / 4), Math.floor((chart.points.length - 1) / 2), Math.floor(((chart.points.length - 1) * 3) / 4), chart.points.length - 1]));
+  const hoveredPoint = hoveredIndex === null ? null : chart.points[hoveredIndex];
+
+  function updateHover(clientX: number) {
+    const bounds = svgRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+    const viewBoxX = ((clientX - bounds.left) / bounds.width) * width;
+    const index = Math.round(((viewBoxX - inset.left) / plotWidth) * (chart.points.length - 1));
+    setHoveredIndex(Math.max(0, Math.min(chart.points.length - 1, index)));
+  }
+
+  return (
+    <article className={`chart-card history-chart ${chart.unit === "点差" ? "spread-chart" : "ratio-chart"}`}>
+      <header className="chart-card-header">
+        <div>
+          <h3>{chart.title}</h3>
+          <p>{chart.startDate}—{chart.endDate} · {chart.grain} · {chart.source}</p>
+        </div>
+        <div className="chart-kpi">
+          <strong className="tabular">{chart.current}</strong>
+          <span>近3年 {chart.percentile.toFixed(2)}%</span>
+        </div>
+      </header>
+      <svg
+        ref={svgRef}
+        className="line-chart"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label={`${chart.title}，${chart.startDate}至${chart.endDate}，当前值${chart.current}`}
+        onPointerMove={(event) => updateHover(event.clientX)}
+        onPointerLeave={() => setHoveredIndex(null)}
+      >
+        <title>{chart.title}</title>
+        {yTicks.map((tick) => (
+          <g key={tick}>
+            <line className="chart-grid-line" x1={inset.left} x2={width - inset.right} y1={y(tick)} y2={y(tick)} />
+            <text className="chart-axis-label" x={inset.left - 9} y={y(tick) + 3} textAnchor="end">{formatChartNumber(tick)}</text>
+          </g>
+        ))}
+        {chart.unit === "点差" && yMin < 0 && yMax > 0 && (
+          <line className="chart-zero-line" x1={inset.left} x2={width - inset.right} y1={y(0)} y2={y(0)} />
+        )}
+        {xTickIndexes.map((index) => (
+          <text key={index} className="chart-axis-label" x={x(index)} y={height - 8} textAnchor={index === 0 ? "start" : index === chart.points.length - 1 ? "end" : "middle"}>
+            {chart.points[index].date}
+          </text>
+        ))}
+        <path className="history-line" d={linePath} />
+        <circle className="history-endpoint" cx={x(chart.points.length - 1)} cy={y(chart.points[chart.points.length - 1].value)} r="4" />
+        {hoveredPoint && hoveredIndex !== null && (
+          <g className="chart-hover">
+            <line x1={x(hoveredIndex)} x2={x(hoveredIndex)} y1={inset.top} y2={height - inset.bottom} />
+            <circle cx={x(hoveredIndex)} cy={y(hoveredPoint.value)} r="4" />
+            <g transform={`translate(${Math.min(Math.max(x(hoveredIndex) - 50, inset.left), width - inset.right - 100)}, ${Math.max(y(hoveredPoint.value) - 48, inset.top)})`}>
+              <rect width="100" height="37" rx="5" />
+              <text x="8" y="14">{hoveredPoint.date}</text>
+              <text x="8" y="29">{formatChartNumber(hoveredPoint.value)}</text>
+            </g>
+          </g>
+        )}
+      </svg>
+    </article>
+  );
 }
 
 export default function Home() {
@@ -311,6 +420,42 @@ export default function Home() {
           <span>保证金：中金所组合取较大单边；其他期货组合两腿相加；现货指数仅作参考。</span>
           <span>数据日：{dashboardData.dataDate} · 更新时间：每日 20:00</span>
         </footer>
+      </section>
+
+      <section className="analytics-section" aria-labelledby="analytics-title">
+        <header className="analytics-header">
+          <div>
+            <div className="eyebrow">CHART ANALYSIS</div>
+            <h2 id="analytics-title">图表分析</h2>
+            <p>分位排名与关键组合最近 60 个月走势</p>
+          </div>
+          <span>{dashboardData.dataDate} · xtdata 主值</span>
+        </header>
+
+        <article className="chart-card percentile-chart-card">
+          <header className="chart-card-header">
+            <div>
+              <h3>近3年分位总览</h3>
+              <p>全部 {rows.length} 个品种对 · 0%—100% · 按分位降序</p>
+            </div>
+          </header>
+          <div className="percentile-chart-grid">
+            {[...rows].sort((a, b) => b.percentile - a.percentile).map((row) => (
+              <div className="percentile-chart-row" key={`chart-${row.pair}`}>
+                <span title={row.pair}>{row.pair}</span>
+                <div className="percentile-chart-track" aria-label={`${row.pair}近3年分位${row.percentile}%`}>
+                  <i className={row.signal === "偏高" ? "high" : row.signal === "极度偏低" ? "low" : "neutral"} style={{ width: `${Math.max(row.percentile, 1)}%` }} />
+                </div>
+                <strong className="tabular">{row.percentile.toFixed(2)}%</strong>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <div className="history-chart-grid">
+          {historyCharts.map((chart) => <HistoryLineChart chart={chart} key={chart.id} />)}
+        </div>
+        <p className="analytics-note">历史走势图采用月末值；当前月使用截至数据日的最新收盘。现货指数图仍以 xtdata 为主，并由 AkShare 校验。</p>
       </section>
     </main>
   );

@@ -619,6 +619,215 @@ tbody th {
   font-size: 11px;
 }
 
+.analytics-section {
+  width: min(1440px, 100%);
+  margin: 20px auto 0;
+}
+
+.analytics-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.analytics-header h2 {
+  margin: 0;
+  color: #151d2c;
+  font-size: 21px;
+  letter-spacing: -.02em;
+}
+
+.analytics-header p {
+  margin: 4px 0 0;
+  color: #7d8795;
+  font-size: 12px;
+}
+
+.analytics-header > span {
+  color: #8a94a1;
+  font-size: 10px;
+}
+
+.chart-card {
+  min-width: 0;
+  border: 1px solid #e3e7ec;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgba(35, 48, 67, .055);
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 20px 8px;
+}
+
+.chart-card-header h3 {
+  margin: 0;
+  color: #202b3d;
+  font-size: 14px;
+  font-weight: 730;
+}
+
+.chart-card-header p {
+  margin: 4px 0 0;
+  color: #8a94a1;
+  font-size: 10px;
+}
+
+.chart-kpi { text-align: right; }
+
+.chart-kpi strong {
+  display: block;
+  color: #1d2939;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.chart-kpi span {
+  display: block;
+  margin-top: 4px;
+  color: #7e8793;
+  font-size: 9px;
+}
+
+.percentile-chart-card { padding-bottom: 16px; }
+
+.percentile-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 36px;
+  padding: 4px 20px 0;
+}
+
+.percentile-chart-row {
+  display: grid;
+  grid-template-columns: 112px minmax(100px, 1fr) 54px;
+  align-items: center;
+  gap: 9px;
+  min-height: 22px;
+  color: #53606f;
+  font-size: 10px;
+}
+
+.percentile-chart-row > span {
+  overflow: hidden;
+  color: #344054;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.percentile-chart-row > strong {
+  color: #3f4c5e;
+  text-align: right;
+  font-size: 10px;
+}
+
+.percentile-chart-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e5e8eb;
+}
+
+.percentile-chart-track i {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: inherit;
+}
+
+.percentile-chart-track i.high { background: var(--orange); }
+.percentile-chart-track i.neutral { background: var(--slate); }
+.percentile-chart-track i.low { background: var(--purple); }
+
+.history-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.history-chart { padding-bottom: 8px; }
+
+.line-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+  color: #4f70a8;
+  touch-action: none;
+}
+
+.spread-chart .line-chart { color: #a56b12; }
+
+.chart-grid-line {
+  stroke: #e8ebef;
+  stroke-width: 1;
+}
+
+.chart-zero-line {
+  stroke: #8a94a1;
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+}
+
+.chart-axis-label {
+  fill: #8993a2;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.history-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.history-endpoint {
+  fill: #fff;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.chart-hover > line {
+  stroke: #687385;
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+.chart-hover > circle {
+  fill: #fff;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.chart-hover g rect {
+  fill: #202938;
+  opacity: .94;
+}
+
+.chart-hover g text {
+  fill: #fff;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-note {
+  margin: 10px 4px 0;
+  color: #929aa6;
+  font-size: 10px;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -646,6 +855,9 @@ tbody th {
   .audit-summary { width: 100%; flex-wrap: wrap; }
   .source-audit-body { padding-inline: 20px; }
   .dashboard-footer { flex-direction: column; gap: 4px; padding-inline: 20px; }
+  .analytics-header { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .percentile-chart-grid, .history-chart-grid { grid-template-columns: 1fr; }
+  .percentile-chart-grid { gap: 6px; }
 }
 
 @media (max-width: 480px) {

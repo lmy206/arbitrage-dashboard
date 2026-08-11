@@ -29,6 +29,11 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /科创50\/上证50/);
   assert.match(html, /xtdata 主值 · AkShare 补充校对/);
   assert.match(html, /近3年分位/);
+  assert.match(html, /图表分析/);
+  assert.match(html, /近3年分位总览/);
+  assert.match(html, /IC\/IF比价走势/);
+  assert.match(html, /纯碱玻璃差走势/);
+  assert.match(html, /class="history-line"/);
   assert.doesNotMatch(html, /codex-preview|Building your site|react-loading-skeleton/i);
 });
 
@@ -71,5 +76,21 @@ test("xtdata and AkShare validation is internally consistent", async () => {
   for (const check of validation.checks.filter((item) => item.status === "主力口径不同")) {
     assert.ok(check.matchedContract);
     assert.ok(Number.isFinite(check.matchedContractClose));
+  }
+});
+
+test("all author-inspired chart datasets are present and ordered", async () => {
+  const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
+  assert.equal(payload.charts.length, 7);
+  assert.deepEqual(
+    new Set(payload.charts.map((chart) => chart.id)),
+    new Set(["ic-if", "im-if", "star50-sse50", "chinext-csi300", "im-ic-spread", "meal-spread", "soda-glass-spread"]),
+  );
+  for (const chart of payload.charts) {
+    assert.ok(chart.points.length >= 12, `${chart.pair} should have enough observations for a trend chart`);
+    assert.ok(chart.points.length <= 60, `${chart.pair} should stay within the 60-month window`);
+    assert.equal(chart.startDate, chart.points[0].date);
+    assert.equal(chart.endDate, chart.points.at(-1).date);
+    assert.ok(chart.points.every((point, index) => Number.isFinite(point.value) && (index === 0 || point.date > chart.points[index - 1].date)));
   }
 });
