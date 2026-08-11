@@ -1,14 +1,15 @@
 # 套利监测看板
 
-基于 `xtdata` 日线主力连续合约生成的跨品种比价与价差看板，每日 20:00（Asia/Shanghai）更新。
+以 `xtdata` 为主源、AkShare 为补充校验源的跨品种比价与价差看板，每日 20:00（Asia/Shanghai）更新。
 
 ## 数据流程
 
-1. `scripts/update_xtdata.py` 连接 `xtdata` 并下载全部可得日线历史。
-2. 原始合约缓存写入 `E_SHARED_DATA_ROOT`，未设置时使用 `E:\data`。
-3. 脚本更新 `catalog.sqlite`、`manifest.jsonl` 与完整性报告。
-4. 15 组指标及各组合成交量最大的 4 个共同合约月写入 `app/data/arbitrage.json`，网站从该文件渲染。
-5. Codex 自动任务在每天 20:00 验证新交易日数据；仅更新本地数据与构建，不发布网站。
+1. `scripts/update_xtdata.py` 连接 `xtdata`，下载期货主力连续、具体月份和现货指数的全部可得日线历史。
+2. 同一脚本从 AkShare 获取 18 个商品主力（`futures_main_sina`）与 6 个指数（`stock_zh_index_daily`），逐品种校验同日收盘价。
+3. xtdata 数据写入 `E:\data\market\futures_daily` 和 `E:\data\market\index_daily`；AkShare 数据写入 `E:\data\market\external\akshare`。
+4. 脚本更新 `catalog.sqlite`、`manifest.jsonl`、完整性报告及 `E:\data\reports\arbitrage_source_validation.json`。
+5. 20 组指标及各期货组合成交量最大的 4 个共同合约月写入 `app/data/arbitrage.json`，网站从该文件渲染。
+6. Codex 自动任务在每天 20:00 验证新交易日数据；仅更新本地数据与构建，不发布网站。
 
 本机执行：
 
@@ -20,7 +21,9 @@ node --test tests\rendered-html.test.mjs
 
 ## 口径
 
-- 行情源：仅使用 `xtdata`。
+- 行情源：展示值、历史分位、手数和保证金均以 `xtdata` 为主；AkShare 只用于补充与交叉校验，不做均值混算或覆盖。
+- AkShare 覆盖：18 个商品主力的全部可得日线，以及沪深300、中证500、中证1000、科创50、上证50、创业板指的全部可得日线。
+- 双源校验：按同一数据日比较收盘价，差异不超过 0.05% 判为一致；若 AkShare 价格能匹配 xtdata 的另一具体月份，则标记为“主力口径不同”，不视为价格错误。
 - 合约：各品种 `00` 主力连续合约。
 - 月份展开：默认折叠；点击品种对前的 `+` 展开。只展示共同合约月、当前值及两腿成交量，不计算月份合约的历史分位。
 - 月份排序：按两腿当日成交量的较小值（可配对成交量）降序，取前 4 个共同月份。
@@ -30,8 +33,9 @@ node --test tests\rendered-html.test.mjs
 - 判断：近 3 年分位不低于 75% 为“偏高”，不高于 10% 为“极度偏低”，其余为“中性”。
 - 平衡手数：价差组合固定为 1:1；比价组合遍历两腿各 1–20 手的整数组合，选择名义市值偏差最小的一组，偏差相同时优先总手数更少的组合。
 - 保证金：使用脚本内配置的保证金比例估算；中金所股指期货组合按跨品种冲抵口径取两腿中较大的单边保证金，其他组合按两腿相加，不代表账户实际占用。
+- 新增组合：豆粕菜粕差、纯碱玻璃差、豆棕价差均使用 xtdata 期货主连；科创50/上证50、创业板/沪深300使用 xtdata 现货指数并由 AkShare 校验，只作风格参考，因此不展示平衡手数、名义值和保证金。
 - IM-IC价差：中证1000股指期货减中证500股指期货；螺卷差：热卷减螺纹钢；螺矿比：螺纹钢除以铁矿石；豆粕价差：豆粕减豆一；金银比：黄金价格乘 1000 后除以白银价格。
 
 ## 安全与失败处理
 
-`xtdata` 凭证只从 `XTQUANT_TOKEN` 环境变量或本机 `E:\IM\config.py` 读取，不写入项目。若行情不可用、15 组数据不齐、交易日不一致或检测到未来数据，脚本保留上次有效网页数据并记录 `xtdata_unavailable` 或校验错误，不发布异常结果。
+`xtdata` 凭证只从 `XTQUANT_TOKEN` 环境变量或本机 `E:\IM\config.py` 读取，不写入项目。若 AkShare 暂时不可用，校验层优先读取最近一次本地缓存且不阻断 xtdata 主数据更新；若 xtdata 行情不可用、20 组数据不齐、交易日不一致或检测到未来数据，脚本保留上次有效网页数据并记录 `xtdata_unavailable` 或校验错误，不发布异常结果。

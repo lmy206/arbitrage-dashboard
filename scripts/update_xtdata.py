@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Fetch daily continuous futures data from xtdata and rebuild dashboard data."""
+"""Fetch xtdata market data, cross-check it with AkShare, and rebuild the dashboard."""
 
 from __future__ import annotations
 
@@ -20,6 +20,8 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SHARED_ROOT = Path(os.environ.get("E_SHARED_DATA_ROOT", r"E:\data"))
 MARKET_DIR = SHARED_ROOT / "market" / "futures_daily"
+INDEX_DIR = SHARED_ROOT / "market" / "index_daily"
+AKSHARE_DIR = SHARED_ROOT / "market" / "external" / "akshare"
 REPORT_DIR = SHARED_ROOT / "reports"
 CATALOG_PATH = SHARED_ROOT / "catalog.sqlite"
 MANIFEST_PATH = SHARED_ROOT / "manifest.jsonl"
@@ -63,6 +65,44 @@ CONTRACTS: dict[str, dict[str, float]] = {
 }
 
 
+INDEXES: dict[str, dict[str, str]] = {
+    "000300.SH": {"name": "沪深300", "ak_symbol": "sh000300"},
+    "000905.SH": {"name": "中证500", "ak_symbol": "sh000905"},
+    "000852.SH": {"name": "中证1000", "ak_symbol": "sh000852"},
+    "000688.SH": {"name": "科创50", "ak_symbol": "sh000688"},
+    "000016.SH": {"name": "上证50", "ak_symbol": "sh000016"},
+    "399006.SZ": {"name": "创业板指", "ak_symbol": "sz399006"},
+}
+
+
+AKSHARE_FUTURES: dict[str, dict[str, str]] = {
+    "au00.SF": {"name": "黄金", "ak_symbol": "AU0"},
+    "ag00.SF": {"name": "白银", "ak_symbol": "AG0"},
+    "cu00.SF": {"name": "沪铜", "ak_symbol": "CU0"},
+    "al00.SF": {"name": "沪铝", "ak_symbol": "AL0"},
+    "rb00.SF": {"name": "螺纹钢", "ak_symbol": "RB0"},
+    "hc00.SF": {"name": "热卷", "ak_symbol": "HC0"},
+    "i00.DF": {"name": "铁矿石", "ak_symbol": "I0"},
+    "j00.DF": {"name": "焦炭", "ak_symbol": "J0"},
+    "jm00.DF": {"name": "焦煤", "ak_symbol": "JM0"},
+    "a00.DF": {"name": "豆一", "ak_symbol": "A0"},
+    "b00.DF": {"name": "豆二", "ak_symbol": "B0"},
+    "m00.DF": {"name": "豆粕", "ak_symbol": "M0"},
+    "y00.DF": {"name": "豆油", "ak_symbol": "Y0"},
+    "p00.DF": {"name": "棕榈油", "ak_symbol": "P0"},
+    "SA00.ZF": {"name": "纯碱", "ak_symbol": "SA0"},
+    "FG00.ZF": {"name": "玻璃", "ak_symbol": "FG0"},
+    "OI00.ZF": {"name": "菜油", "ak_symbol": "OI0"},
+    "RM00.ZF": {"name": "菜粕", "ak_symbol": "RM0"},
+}
+
+
+AKSHARE_SERIES: dict[str, dict[str, str]] = {
+    **{symbol: {**spec, "asset_type": "商品期货"} for symbol, spec in AKSHARE_FUTURES.items()},
+    **{symbol: {**spec, "asset_type": "现货指数"} for symbol, spec in INDEXES.items()},
+}
+
+
 def ratio(left: pd.Series, right: pd.Series) -> pd.Series:
     return left / right
 
@@ -91,6 +131,25 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "螺矿比", "left": "rb00.SF", "right": "i00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "金银比", "left": "au00.SF", "right": "ag00.SF", "formula": gold_silver, "kind": "gold_silver"},
     {"pair": "豆粕价差", "left": "m00.DF", "right": "a00.DF", "formula": spread, "kind": "spread"},
+    {"pair": "豆粕菜粕差", "left": "m00.DF", "right": "RM00.ZF", "formula": spread, "kind": "spread"},
+    {"pair": "纯碱玻璃差", "left": "SA00.ZF", "right": "FG00.ZF", "formula": spread, "kind": "spread"},
+    {"pair": "豆棕价差", "left": "y00.DF", "right": "p00.DF", "formula": spread, "kind": "spread"},
+    {
+        "pair": "科创50/上证50",
+        "left": "000688.SH",
+        "right": "000016.SH",
+        "formula": ratio,
+        "kind": "ratio",
+        "tradable": False,
+    },
+    {
+        "pair": "创业板/沪深300",
+        "left": "399006.SZ",
+        "right": "000300.SH",
+        "formula": ratio,
+        "kind": "ratio",
+        "tradable": False,
+    },
 ]
 
 
@@ -150,7 +209,15 @@ def normalize_market_frame(frame: pd.DataFrame, include_volume: bool = False) ->
     return result[["close", "volume"]] if include_volume else result[["close"]]
 
 
-def update_catalog(symbol: str, frame: pd.DataFrame, csv_path: Path, updated_at: str) -> None:
+def update_catalog(
+    symbol: str,
+    frame: pd.DataFrame,
+    csv_path: Path,
+    updated_at: str,
+    *,
+    source: str = "xtdata",
+    dataset_type: str = "futures",
+) -> None:
     with sqlite3.connect(CATALOG_PATH) as connection:
         connection.execute(
             """
@@ -172,7 +239,7 @@ def update_catalog(symbol: str, frame: pd.DataFrame, csv_path: Path, updated_at:
             """
             INSERT INTO datasets
               (dataset_key, source, symbol, period, path, start_date, end_date, row_count, status, updated_at)
-            VALUES (?, 'xtdata', ?, '1d', ?, ?, ?, ?, 'ok', ?)
+            VALUES (?, ?, ?, '1d', ?, ?, ?, ?, 'ok', ?)
             ON CONFLICT(dataset_key) DO UPDATE SET
               path=excluded.path,
               start_date=excluded.start_date,
@@ -182,7 +249,8 @@ def update_catalog(symbol: str, frame: pd.DataFrame, csv_path: Path, updated_at:
               updated_at=excluded.updated_at
             """,
             (
-                f"xtdata:futures:{symbol}:1d",
+                f"{source}:{dataset_type}:{symbol}:1d",
+                source,
                 symbol,
                 str(csv_path),
                 frame.index.min().strftime("%Y-%m-%d"),
@@ -244,8 +312,9 @@ def discover_monthly_contracts(xtdata, asof: pd.Timestamp) -> dict[str, dict[str
 
 def fetch_history() -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame], dict[str, dict[str, str]], int]:
     xtdata, port = connect_xtdata()
-    symbols = list(CONTRACTS)
+    symbols = [*CONTRACTS, *INDEXES]
     MARKET_DIR.mkdir(parents=True, exist_ok=True)
+    INDEX_DIR.mkdir(parents=True, exist_ok=True)
     now = datetime.now(SHANGHAI).isoformat(timespec="seconds")
 
     xtdata.download_history_data2(
@@ -273,20 +342,31 @@ def fetch_history() -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame], dict
         if frame.empty:
             missing.append(symbol)
             continue
-        csv_path = MARKET_DIR / f"{symbol.replace('.', '_')}.csv"
+        output_dir = INDEX_DIR if symbol in INDEXES else MARKET_DIR
+        csv_path = output_dir / f"{symbol.replace('.', '_')}.csv"
         frame.reset_index().to_csv(csv_path, index=False, encoding="utf-8-sig")
-        update_catalog(symbol, frame, csv_path, now)
+        update_catalog(
+            symbol,
+            frame,
+            csv_path,
+            now,
+            dataset_type="index" if symbol in INDEXES else "futures",
+        )
         histories[symbol] = frame["close"].rename(symbol)
 
     if missing:
-        raise RuntimeError(f"xtdata 未返回以下合约数据: {', '.join(missing)}")
+        raise RuntimeError(f"xtdata 未返回以下行情数据: {', '.join(missing)}")
 
-    common_latest_date = min(series.index.max() for series in histories.values())
+    required_symbols = {
+        symbol for definition in PAIRS for symbol in (definition["left"], definition["right"])
+    }
+    common_latest_date = min(histories[symbol].index.max() for symbol in required_symbols)
     monthly_contracts = discover_monthly_contracts(xtdata, common_latest_date)
     monthly_symbols = sorted(
         {
             symbol
             for definition in PAIRS
+            if definition.get("tradable", True)
             for continuous_symbol in (definition["left"], definition["right"])
             for symbol in monthly_contracts[continuous_symbol].values()
         }
@@ -326,6 +406,204 @@ def fetch_history() -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame], dict
         monthly_histories[symbol] = frame
 
     return histories, monthly_histories, monthly_contracts, port
+
+
+def normalize_akshare_frame(frame: pd.DataFrame, asset_type: str) -> pd.DataFrame:
+    date_column = "date" if "date" in frame.columns else "日期"
+    close_column = "close" if "close" in frame.columns else "收盘价"
+    volume_column = "volume" if "volume" in frame.columns else "成交量"
+    if frame.empty or date_column not in frame.columns or close_column not in frame.columns:
+        return pd.DataFrame(columns=["close", "volume"])
+
+    fields = [date_column, close_column]
+    if volume_column in frame.columns:
+        fields.append(volume_column)
+    result = frame[fields].copy().rename(columns={date_column: "date", close_column: "close"})
+    if volume_column in result.columns:
+        result = result.rename(columns={volume_column: "volume"})
+    else:
+        result["volume"] = 0
+    result["date"] = pd.to_datetime(result["date"], errors="coerce")
+    result["close"] = pd.to_numeric(result["close"], errors="coerce")
+    result["volume"] = pd.to_numeric(result["volume"], errors="coerce").fillna(0)
+    if asset_type == "现货指数":
+        # AkShare 指数成交量以股计，xtdata 以手计；这里只校验收盘价，不比较成交量。
+        result["volume"] = 0
+    result = result.dropna(subset=["date", "close"])
+    result = result[result["close"] > 0]
+    result["date"] = result["date"].dt.normalize()
+    return result.drop_duplicates(subset=["date"], keep="last").set_index("date").sort_index()
+
+
+def load_cached_akshare_frame(csv_path: Path) -> pd.DataFrame:
+    if not csv_path.exists():
+        return pd.DataFrame(columns=["close", "volume"])
+    cached = pd.read_csv(csv_path, encoding="utf-8-sig")
+    if "date" not in cached.columns or "close" not in cached.columns:
+        return pd.DataFrame(columns=["close", "volume"])
+    cached["date"] = pd.to_datetime(cached["date"], errors="coerce")
+    cached["close"] = pd.to_numeric(cached["close"], errors="coerce")
+    if "volume" not in cached.columns:
+        cached["volume"] = 0
+    cached["volume"] = pd.to_numeric(cached["volume"], errors="coerce").fillna(0)
+    cached = cached.dropna(subset=["date", "close"])
+    return cached.set_index("date").sort_index()[["close", "volume"]]
+
+
+def fetch_akshare_history() -> tuple[dict[str, pd.Series], dict[str, str], list[str]]:
+    histories: dict[str, pd.Series] = {}
+    states: dict[str, str] = {}
+    errors: list[str] = []
+    now = datetime.now(SHANGHAI).isoformat(timespec="seconds")
+
+    try:
+        import akshare as ak
+    except Exception as exc:
+        ak = None
+        errors.append(f"AkShare 导入失败: {exc}")
+
+    for xt_symbol, spec in AKSHARE_SERIES.items():
+        api_name = "stock_zh_index_daily" if spec["asset_type"] == "现货指数" else "futures_main_sina"
+        output_dir = AKSHARE_DIR / api_name
+        output_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = output_dir / f"{spec['ak_symbol']}.csv"
+        frame = pd.DataFrame(columns=["close", "volume"])
+        state = "missing"
+
+        if ak is not None:
+            try:
+                if api_name == "stock_zh_index_daily":
+                    raw = ak.stock_zh_index_daily(symbol=spec["ak_symbol"])
+                else:
+                    raw = ak.futures_main_sina(symbol=spec["ak_symbol"])
+                frame = normalize_akshare_frame(raw, spec["asset_type"])
+                if frame.empty:
+                    raise RuntimeError("返回空数据")
+                temporary_path = csv_path.with_suffix(".tmp")
+                frame.reset_index().to_csv(temporary_path, index=False, encoding="utf-8-sig")
+                temporary_path.replace(csv_path)
+                update_catalog(
+                    spec["ak_symbol"],
+                    frame,
+                    csv_path,
+                    now,
+                    source="akshare",
+                    dataset_type="index" if spec["asset_type"] == "现货指数" else "futures",
+                )
+                state = "live"
+            except Exception as exc:
+                errors.append(f"{spec['ak_symbol']}: {exc}")
+
+        if frame.empty:
+            frame = load_cached_akshare_frame(csv_path)
+            if not frame.empty:
+                state = "cache"
+
+        states[xt_symbol] = state
+        if not frame.empty:
+            histories[xt_symbol] = frame["close"].rename(xt_symbol)
+
+    return histories, states, errors
+
+
+def build_source_validation(
+    xt_histories: dict[str, pd.Series],
+    ak_histories: dict[str, pd.Series],
+    ak_states: dict[str, str],
+    data_date: pd.Timestamp,
+    monthly_histories: dict[str, pd.DataFrame],
+    monthly_contracts: dict[str, dict[str, str]],
+) -> dict[str, Any]:
+    checks: list[dict[str, Any]] = []
+    for xt_symbol, spec in AKSHARE_SERIES.items():
+        xt_series = xt_histories.get(xt_symbol)
+        ak_series = ak_histories.get(xt_symbol)
+        check: dict[str, Any] = {
+            "name": spec["name"],
+            "assetType": spec["asset_type"],
+            "xtSymbol": xt_symbol,
+            "akSymbol": spec["ak_symbol"],
+            "date": data_date.strftime("%Y-%m-%d"),
+            "xtClose": None,
+            "akClose": None,
+            "relativeDiffPct": None,
+            "status": "AkShare缺失",
+            "akMode": ak_states.get(xt_symbol, "missing"),
+            "matchedContract": None,
+            "matchedContractClose": None,
+            "xtStartDate": xt_series.index.min().strftime("%Y-%m-%d") if xt_series is not None else None,
+            "xtEndDate": xt_series.index.max().strftime("%Y-%m-%d") if xt_series is not None else None,
+            "xtRows": len(xt_series) if xt_series is not None else 0,
+            "akStartDate": ak_series.index.min().strftime("%Y-%m-%d") if ak_series is not None else None,
+            "akEndDate": ak_series.index.max().strftime("%Y-%m-%d") if ak_series is not None else None,
+            "akRows": len(ak_series) if ak_series is not None else 0,
+        }
+        if xt_series is None or data_date not in xt_series.index:
+            check["status"] = "xtdata缺失"
+        elif ak_series is None or data_date not in ak_series.index:
+            check["xtClose"] = round(float(xt_series.loc[data_date]), 6)
+            check["status"] = "日期不齐" if ak_series is not None else "AkShare缺失"
+        else:
+            xt_close = float(xt_series.loc[data_date])
+            ak_close = float(ak_series.loc[data_date])
+            relative_diff = abs(xt_close - ak_close) / max(abs(xt_close), 1) * 100
+            check.update(
+                {
+                    "xtClose": round(xt_close, 6),
+                    "akClose": round(ak_close, 6),
+                    "relativeDiffPct": round(relative_diff, 4),
+                    "status": "一致" if relative_diff <= 0.05 else "需复核",
+                }
+            )
+            if check["status"] == "需复核" and xt_symbol in monthly_contracts:
+                candidates: list[tuple[float, str, float]] = []
+                for monthly_symbol in monthly_contracts[xt_symbol].values():
+                    monthly_frame = monthly_histories.get(monthly_symbol)
+                    if monthly_frame is None or data_date not in monthly_frame.index:
+                        continue
+                    monthly_close = float(monthly_frame.loc[data_date, "close"])
+                    monthly_diff = abs(monthly_close - ak_close) / max(abs(ak_close), 1) * 100
+                    candidates.append((monthly_diff, monthly_symbol, monthly_close))
+                if candidates:
+                    best_diff, matched_symbol, matched_close = min(candidates)
+                    if best_diff <= 0.05:
+                        check.update(
+                            {
+                                "status": "主力口径不同",
+                                "matchedContract": matched_symbol,
+                                "matchedContractClose": round(matched_close, 6),
+                            }
+                        )
+        checks.append(check)
+
+    status_priority = {"需复核": 0, "主力口径不同": 1, "日期不齐": 2, "AkShare缺失": 3, "xtdata缺失": 4, "一致": 5}
+    checks.sort(key=lambda check: (status_priority.get(check["status"], 9), check["assetType"], check["name"]))
+    consistent = sum(check["status"] == "一致" for check in checks)
+    contract_mismatch = sum(check["status"] == "主力口径不同" for check in checks)
+    review = sum(check["status"] == "需复核" for check in checks)
+    unavailable = len(checks) - consistent - contract_mismatch - review
+    comparable_differences = [
+        check["relativeDiffPct"] for check in checks if check["relativeDiffPct"] is not None
+    ]
+    return {
+        "policy": "xtdata为展示主源；AkShare仅补充与校验，不做均值混算",
+        "thresholdPct": 0.05,
+        "summary": {
+            "status": (
+                "通过"
+                if consistent == len(checks)
+                else ("有异常" if review else ("主力口径差异" if contract_mismatch else "待补齐"))
+            ),
+            "total": len(checks),
+            "consistent": consistent,
+            "contractMismatch": contract_mismatch,
+            "review": review,
+            "unavailable": unavailable,
+            "coveragePct": round((consistent + contract_mismatch + review) / len(checks) * 100, 2),
+            "maxRelativeDiffPct": round(max(comparable_differences), 4) if comparable_differences else None,
+        },
+        "checks": checks,
+    }
 
 
 def percentile(series: pd.Series) -> float:
@@ -408,6 +686,8 @@ def build_contract_rows(
     monthly_contracts: dict[str, dict[str, str]],
     common_latest_date: pd.Timestamp,
 ) -> list[dict[str, Any]]:
+    if not definition.get("tradable", True):
+        return []
     left_months = monthly_contracts[definition["left"]]
     right_months = monthly_contracts[definition["right"]]
     formula: Callable[[pd.Series, pd.Series], pd.Series] = definition["formula"]
@@ -464,14 +744,38 @@ def build_contract_rows(
     return results[:4]
 
 
+def pair_source_status(definition: dict[str, Any], source_validation: dict[str, Any]) -> str:
+    checks_by_symbol = {
+        check["xtSymbol"]: check for check in source_validation["checks"]
+    }
+    checks = [
+        checks_by_symbol[symbol]
+        for symbol in (definition["left"], definition["right"])
+        if symbol in checks_by_symbol
+    ]
+    if not checks:
+        return "仅xtdata"
+    if all(check["status"] == "一致" for check in checks):
+        return "双源一致"
+    if any(check["status"] == "需复核" for check in checks):
+        return "需复核"
+    if any(check["status"] == "主力口径不同" for check in checks):
+        return "口径不同"
+    return "待校验"
+
+
 def build_rows(
     histories: dict[str, pd.Series],
     monthly_histories: dict[str, pd.DataFrame],
     monthly_contracts: dict[str, dict[str, str]],
+    source_validation: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], str]:
     rows: list[dict[str, Any]] = []
     latest_dates: list[pd.Timestamp] = []
-    common_latest_date = min(series.index.max() for series in histories.values())
+    required_symbols = {
+        symbol for definition in PAIRS for symbol in (definition["left"], definition["right"])
+    }
+    common_latest_date = min(histories[symbol].index.max() for symbol in required_symbols)
 
     for definition in PAIRS:
         left = definition["left"]
@@ -494,13 +798,17 @@ def build_rows(
         three_year_percentile = percentile(three_year)
         left_price = float(aligned.loc[latest_date, left])
         right_price = float(aligned.loc[latest_date, right])
-        lots, deviation, notional, margin = balance_metrics(
-            left,
-            right,
-            left_price,
-            right_price,
-            force_one_to_one=definition["kind"] == "spread",
-        )
+        tradable = definition.get("tradable", True)
+        if tradable:
+            lots, deviation, notional, margin = balance_metrics(
+                left,
+                right,
+                left_price,
+                right_price,
+                force_one_to_one=definition["kind"] == "spread",
+            )
+        else:
+            lots = deviation = notional = margin = "—"
 
         rows.append(
             {
@@ -518,6 +826,8 @@ def build_rows(
                 "margin": margin,
                 "leftSymbol": left,
                 "rightSymbol": right,
+                "pairType": "期货套利" if tradable else "现货参考",
+                "sourceStatus": pair_source_status(definition, source_validation),
                 "contracts": build_contract_rows(
                     definition,
                     monthly_histories,
@@ -535,14 +845,21 @@ def build_rows(
     return rows, data_date
 
 
-def write_outputs(rows: list[dict[str, Any]], data_date: str, port: int) -> dict[str, Any]:
+def write_outputs(
+    rows: list[dict[str, Any]],
+    data_date: str,
+    port: int,
+    source_validation: dict[str, Any],
+    akshare_errors: list[str],
+) -> dict[str, Any]:
     now = datetime.now(SHANGHAI)
     payload = {
         "dataDate": data_date,
         "updatedAt": now.isoformat(timespec="seconds"),
-        "source": "xtdata",
+        "source": "xtdata（主）+ AkShare（补充校验）",
+        "sourceValidation": source_validation,
         "period": "1d",
-        "contractMode": "主力连续(00)",
+        "contractMode": "期货主力连续(00)；现货指数收盘",
         "updateSchedule": "每日20:00 Asia/Shanghai",
         "rows": rows,
     }
@@ -552,7 +869,8 @@ def write_outputs(rows: list[dict[str, Any]], data_date: str, port: int) -> dict
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     latest = pd.Timestamp(data_date).date()
     lag_days = (now.date() - latest).days
-    contract_rows_complete = all(len(row["contracts"]) == 4 for row in rows)
+    tradable_rows = [row for row in rows if row["pairType"] == "期货套利"]
+    contract_rows_complete = all(len(row["contracts"]) == 4 for row in tradable_rows)
     report = {
         "status": "ok" if lag_days <= 4 and len(rows) == len(PAIRS) and contract_rows_complete else "warning",
         "checkedAt": now.isoformat(timespec="seconds"),
@@ -561,9 +879,11 @@ def write_outputs(rows: list[dict[str, Any]], data_date: str, port: int) -> dict
         "pairCount": len(rows),
         "expectedPairCount": len(PAIRS),
         "percentilesInRange": all(0 <= row["percentile"] <= 100 for row in rows),
-        "contractRowsAvailable": all(len(row["contracts"]) > 0 for row in rows),
+        "contractRowsAvailable": all(len(row["contracts"]) > 0 for row in tradable_rows),
         "contractRowsComplete": contract_rows_complete,
         "contractRowCounts": {row["pair"]: len(row["contracts"]) for row in rows},
+        "sourceValidation": source_validation["summary"],
+        "akshareErrors": akshare_errors,
         "futureDataDetected": latest > now.date(),
         "xtdataPort": port,
         "output": str(OUTPUT_PATH),
@@ -572,10 +892,14 @@ def write_outputs(rows: list[dict[str, Any]], data_date: str, port: int) -> dict
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    (REPORT_DIR / "arbitrage_source_validation.json").write_text(
+        json.dumps(source_validation, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     write_manifest(
         {
             "dataset_key": "xtdata:arbitrage-dashboard:daily",
-            "source": "xtdata",
+            "source": "xtdata+akshare",
             "status": report["status"],
             "data_date": data_date,
             "pair_count": len(rows),
@@ -613,8 +937,26 @@ def record_failure(error: Exception) -> None:
 def main() -> int:
     try:
         histories, monthly_histories, monthly_contracts, port = fetch_history()
-        rows, data_date = build_rows(histories, monthly_histories, monthly_contracts)
-        report = write_outputs(rows, data_date, port)
+        required_symbols = {
+            symbol for definition in PAIRS for symbol in (definition["left"], definition["right"])
+        }
+        common_latest_date = min(histories[symbol].index.max() for symbol in required_symbols)
+        ak_histories, ak_states, akshare_errors = fetch_akshare_history()
+        source_validation = build_source_validation(
+            histories,
+            ak_histories,
+            ak_states,
+            common_latest_date,
+            monthly_histories,
+            monthly_contracts,
+        )
+        rows, data_date = build_rows(
+            histories,
+            monthly_histories,
+            monthly_contracts,
+            source_validation,
+        )
+        report = write_outputs(rows, data_date, port, source_validation, akshare_errors)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 0 if report["status"] == "ok" else 2
     except Exception as error:
