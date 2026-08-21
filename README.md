@@ -41,7 +41,7 @@ Cloudflare Pages 使用静态快照构建，不运行本机 xtdata 更新接口�
 
 Cloudflare 连接的 Git 仓库必须包含当前代码；部署页面显示的提交号应与准备发布的提交一致。
 
-`scripts/update-and-publish.ps1` 是唯一获准自动执行 `git push` 的入口。它要求本地 `main` 与 `origin/main` 完全同步、没有其他已跟踪文件修改、完整性报告通过且数据日更新；随后运行 `npm run test:pages`、仅提交 `app/data/arbitrage.json`、推送 `main`，最后等待线上页面出现新的数据日。任何一步失败都会停止发布并写入 `.runtime/cloud-publish-status.json`。
+`scripts/update-and-publish.ps1` 是唯一获准自动执行 `git push` 的入口。它要求本地 `main` 与 `origin/main` 完全同步、没有其他已跟踪文件修改、完整性报告通过且数据日更新；随后运行 `npm run test:pages`、仅提交 `app/data/arbitrage.json`、推送 `main`，最后等待线上页面出现新的数据日。任何一步失败都会停止发布并写入 `.runtime/cloud-publish-status.json`；计划任务会每 10 分钟重试，最多 3 次。
 
 安装或刷新计划任务：
 

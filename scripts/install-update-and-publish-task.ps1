@@ -26,6 +26,8 @@ $settings = New-ScheduledTaskSettingsSet `
   -WakeToRun `
   -RunOnlyIfNetworkAvailable `
   -MultipleInstances IgnoreNew `
+  -RestartCount 3 `
+  -RestartInterval (New-TimeSpan -Minutes 10) `
   -ExecutionTimeLimit (New-TimeSpan -Hours 1)
 $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $principal = New-ScheduledTaskPrincipal `
