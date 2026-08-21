@@ -42,3 +42,7 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/.runtime/
+/.tmp/
+/data/
+*.dmp

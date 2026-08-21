@@ -1,48 +1,136 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import dashboardData from "./data/arbitrage.json";
 
-type Signal = "偏高" | "中性" | "极度偏低";
-type SourceStatus = "双源一致" | "口径不同" | "仅xtdata" | "需复核" | "待校验";
+type Signal = "极度偏高" | "偏高" | "中性" | "偏低" | "极度偏低";
+type SourceStatus = "双源一致" | "口径不同" | "仅xtdata" | "需复核" | "待校验" | "外部补充";
+type StrategyType = "回归" | "趋势" | "内外盘";
 
-type ContractRow = {
-  expiry: string;
-  current: string;
-  leftSymbol: string;
-  rightSymbol: string;
-  leftVolume: number;
-  rightVolume: number;
-  pairedVolume: number;
+type TermStructure = {
+  state: "Contango" | "Back";
+  nearExpiry: string;
+  farExpiry: string;
+  nearPrice: number;
+  farPrice: number;
+  changePct: number;
+  contractCount: number;
 };
 
-type ChartPoint = {
+type ContractHistoryPoint = {
   date: string;
   value: number;
 };
 
-type HistoryChartData = {
-  id: string;
-  pair: string;
+type ContractHistorySeries = {
+  expiry: string;
+  leftSymbol: string;
+  rightSymbol: string;
+  points: ContractHistoryPoint[];
+};
+
+type ContractHistoryOverlaySeries = {
+  label: string;
+  symbol: string;
+  unit: "人民币/美元";
+  points: ContractHistoryPoint[];
+};
+
+type ContractHistoryChartData = {
   title: string;
-  unit: "比值" | "点差";
-  grain: string;
-  source: string;
-  current: string;
-  percentile: number;
+  unit: "比值" | "点差" | "百分比";
+  month: string;
   startDate: string;
   endDate: string;
-  points: ChartPoint[];
+  source: string;
+  grain: string;
+  series: ContractHistorySeries[];
+  overlaySeries?: ContractHistoryOverlaySeries;
+};
+
+type ContractRow = {
+  expiry: string;
+  current: string;
+  previous: string;
+  change: string;
+  changeValue: number;
+  allTime: string;
+  allTimeRange: string;
+  percentile: number;
+  fiveYearRange: string;
+  signal: Signal;
+  lots: string;
+  deviation: string;
+  notional: string;
+  margin: string;
+  sourceStatus: SourceStatus;
+  leftSymbol: string;
+  rightSymbol: string;
+  leftChangePct: number | null;
+  rightChangePct: number | null;
+  leftVolume: number;
+  rightVolume: number;
+  pairedVolume: number;
+  historyChart: ContractHistoryChartData | null;
+};
+
+type SpotObservation = Omit<ContractRow, "expiry" | "leftVolume" | "rightVolume" | "pairedVolume" | "historyChart"> & {
+  key: "spot";
+  label: string;
+  historyChart: ContractHistoryChartData | null;
+};
+
+type MainContinuousObservation = Omit<ContractRow, "expiry" | "leftVolume" | "rightVolume" | "pairedVolume" | "historyChart"> & {
+  key: "main";
+  label: "主连";
+  historyChart: ContractHistoryChartData | null;
+};
+
+type TermObservation = Omit<ContractRow, "expiry" | "leftVolume" | "rightVolume" | "pairedVolume" | "historyChart"> & {
+  key: "term-down" | "term-skip";
+  label: "下季" | "隔季";
+  denominatorSymbol: string;
+  formulaLabel: string;
+  nearPrice: number;
+  farPrice: number;
+  spotPrice: number;
+  monthGap: number;
+  historyChart: ContractHistoryChartData | null;
+};
+
+type ObservationOption = {
+  key: string;
+  label: string;
+  detail?: string;
+  current: string;
+  percentile: number;
+  signal: Signal;
+  leftSymbol: string;
+  rightSymbol: string;
+  leftChangePct: number | null;
+  rightChangePct: number | null;
+  leftVolume: number | null;
+  rightVolume: number | null;
+  pairedVolume: number | null;
+  pinned: boolean;
+  spot: boolean;
+  term: boolean;
+  denominatorSymbol?: string;
+  historyChart: ContractHistoryChartData | null;
 };
 
 type PairRow = {
+  strategyType: StrategyType;
+  marketCategory: "股指" | "农产品" | "工业品";
   pair: string;
   current: string;
   previous: string;
   change: string;
   changeValue: number | null;
   allTime: string;
+  allTimeRange: string;
   percentile: number;
+  fiveYearRange: string;
   signal: Signal;
   lots: string;
   deviation: string;
@@ -50,34 +138,53 @@ type PairRow = {
   margin: string;
   leftSymbol: string;
   rightSymbol: string;
-  pairType: "期货套利" | "现货参考";
+  leftChangePct: number | null;
+  rightChangePct: number | null;
+  denominatorSymbol?: string;
+  seriesMode: "weighted" | "main" | "spot" | "term" | "external";
+  pairType: "期货套利" | "现货参考" | "期限套利" | "跨市场套利";
+  formulaLabel?: string;
+  rollRule?: string;
   sourceStatus: SourceStatus;
+  leftStructure: TermStructure | null;
+  rightStructure: TermStructure | null;
+  mainHistoryChart: ContractHistoryChartData | null;
+  spotObservation: SpotObservation | null;
+  mainContinuousObservation: MainContinuousObservation | null;
+  termObservations?: TermObservation[];
   contracts: ContractRow[];
+  formulaKind: "spread" | "ratio";
 };
 
 const rows: PairRow[] = dashboardData.rows.map((row) => ({
   ...row,
   signal: row.signal as Signal,
   sourceStatus: row.sourceStatus as SourceStatus,
+  formulaKind: row.pair.includes("差") ? "spread" : "ratio",
 }));
-const historyCharts: HistoryChartData[] = dashboardData.charts as HistoryChartData[];
+const xtdataOnly = dashboardData.sourceValidation.mode === "xtdata_only";
+const externalSources = dashboardData.externalSources ?? [];
+const hasExternalSources = externalSources.length > 0;
+const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
 
 type SortKey = "pair" | "current" | "previous" | "change" | "allTime" | "percentile" | "lots" | "deviation" | "notional" | "margin";
 
-const columns: { key: SortKey | "bar" | "signal" | "source"; label: string }[] = [
+const columns: { key: SortKey | "strategyType" | "bar" | "signal" | "leftStructure" | "rightStructure"; label: string }[] = [
+  { key: "strategyType", label: "类型" },
   { key: "pair", label: "品种对" },
   { key: "current", label: "当前值" },
   { key: "previous", label: "前日值" },
   { key: "change", label: "变动" },
   { key: "allTime", label: "全历史分位" },
-  { key: "percentile", label: "近3年分位" },
+  { key: "percentile", label: "近5年分位" },
   { key: "bar", label: "分位条" },
   { key: "signal", label: "判断" },
-  { key: "source", label: "校验" },
   { key: "lots", label: "平衡手数" },
   { key: "deviation", label: "偏差" },
   { key: "notional", label: "总名义值" },
   { key: "margin", label: "保证金" },
+  { key: "leftStructure", label: "左腿结构" },
+  { key: "rightStructure", label: "右腿结构" },
 ];
 
 function numericValue(row: PairRow, key: SortKey) {
@@ -90,12 +197,158 @@ function numericValue(row: PairRow, key: SortKey) {
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
 }
 
-function sourceStatusClass(status: SourceStatus) {
-  if (status === "双源一致") return "consistent";
-  if (status === "口径不同") return "contract-mismatch";
-  if (status === "需复核") return "review";
-  if (status === "仅xtdata") return "primary-only";
-  return "pending";
+const strategyTypeOrder: Record<StrategyType, number> = { 回归: 0, 趋势: 1, 内外盘: 2 };
+const strategyTypeClass: Record<StrategyType, string> = { 回归: "regression", 趋势: "trend", 内外盘: "cross-market" };
+const marketCategoryOrder: Record<PairRow["marketCategory"], number> = { 股指: 0, 农产品: 1, 工业品: 2 };
+
+function pairFormula(
+  row: Pick<PairRow, "formulaKind" | "leftSymbol" | "rightSymbol" | "formulaLabel">,
+  leftSymbol = row.leftSymbol,
+  rightSymbol = row.rightSymbol,
+) {
+  if (
+    row.formulaLabel
+    && leftSymbol === row.leftSymbol
+    && rightSymbol === row.rightSymbol
+  ) {
+    return row.formulaLabel;
+  }
+  const operator = row.formulaKind === "spread" ? "−" : "/";
+  return `${leftSymbol} ${operator} ${rightSymbol}`;
+}
+
+function historyToggleLabel(pair: string, optionLabel: string, expanded: boolean) {
+  const action = expanded ? "收起" : "展开";
+  return /^\d{4}$/.test(optionLabel)
+    ? `${action}${pair}${optionLabel}历年同月合约折线图`
+    : `${action}${pair}${optionLabel}折线图`;
+}
+
+function signalClass(signal: Signal) {
+  if (signal === "极度偏高") return "extreme-high";
+  if (signal === "偏高") return "high";
+  if (signal === "偏低") return "low";
+  if (signal === "极度偏低") return "extreme-low";
+  return "neutral";
+}
+
+function applyPrimaryObservation(row: PairRow, selection?: string): PairRow {
+  const observation = selection === "spot"
+    ? row.spotObservation
+    : row.termObservations?.find((item) => item.key === selection)
+      ?? row.contracts.find((item) => item.expiry === selection);
+  if (!observation) return row;
+
+  return {
+    ...row,
+    current: observation.current,
+    previous: observation.previous,
+    change: observation.change,
+    changeValue: observation.changeValue,
+    allTime: observation.allTime,
+    allTimeRange: observation.allTimeRange,
+    percentile: observation.percentile,
+    fiveYearRange: observation.fiveYearRange,
+    signal: observation.signal,
+    lots: observation.lots,
+    deviation: observation.deviation,
+    notional: observation.notional,
+    margin: observation.margin,
+    sourceStatus: observation.sourceStatus,
+    leftSymbol: observation.leftSymbol,
+    rightSymbol: observation.rightSymbol,
+    leftChangePct: observation.leftChangePct,
+    rightChangePct: observation.rightChangePct,
+    denominatorSymbol: "denominatorSymbol" in observation ? observation.denominatorSymbol : row.denominatorSymbol,
+    formulaLabel: "formulaLabel" in observation ? observation.formulaLabel : row.formulaLabel,
+  };
+}
+
+function observationOptionsFor(row: PairRow): ObservationOption[] {
+  if (row.termObservations?.length) {
+    return row.termObservations.map((observation) => ({
+      key: observation.key,
+      label: observation.label,
+      detail: observation.formulaLabel,
+      current: observation.current,
+      percentile: observation.percentile,
+      signal: observation.signal,
+      leftSymbol: observation.leftSymbol,
+      rightSymbol: observation.rightSymbol,
+      leftChangePct: observation.leftChangePct,
+      rightChangePct: observation.rightChangePct,
+      denominatorSymbol: observation.denominatorSymbol,
+      leftVolume: null,
+      rightVolume: null,
+      pairedVolume: null,
+      pinned: true,
+      spot: false,
+      term: true,
+      historyChart: observation.historyChart,
+    }));
+  }
+  const pinned: ObservationOption[] = [];
+  if (row.spotObservation) {
+    pinned.push({
+      key: "spot",
+      label: "现货指数",
+      detail: row.spotObservation.label,
+      current: row.spotObservation.current,
+      percentile: row.spotObservation.percentile,
+      signal: row.spotObservation.signal,
+      leftSymbol: row.spotObservation.leftSymbol,
+      rightSymbol: row.spotObservation.rightSymbol,
+      leftChangePct: row.spotObservation.leftChangePct,
+      rightChangePct: row.spotObservation.rightChangePct,
+      leftVolume: null,
+      rightVolume: null,
+      pairedVolume: null,
+      pinned: true,
+      spot: true,
+      term: false,
+      historyChart: row.spotObservation.historyChart,
+    });
+  }
+  pinned.push({
+    key: "default",
+    label: row.seriesMode === "weighted" ? "加权" : row.seriesMode === "term" ? "期限套" : "主连",
+    detail: pairFormula(row),
+    current: row.current,
+    percentile: row.percentile,
+    signal: row.signal,
+    leftSymbol: row.leftSymbol,
+    rightSymbol: row.rightSymbol,
+    leftChangePct: row.leftChangePct,
+    rightChangePct: row.rightChangePct,
+    leftVolume: null,
+    rightVolume: null,
+    pairedVolume: null,
+    pinned: true,
+    spot: false,
+    term: false,
+    historyChart: row.mainHistoryChart,
+  });
+  return [
+    ...pinned,
+    ...row.contracts.map((contract) => ({
+      key: contract.expiry,
+      label: contract.expiry,
+      current: contract.current,
+      percentile: contract.percentile,
+      signal: contract.signal,
+      leftSymbol: contract.leftSymbol,
+      rightSymbol: contract.rightSymbol,
+      leftChangePct: contract.leftChangePct,
+      rightChangePct: contract.rightChangePct,
+      leftVolume: contract.leftVolume,
+      rightVolume: contract.rightVolume,
+      pairedVolume: contract.pairedVolume,
+      pinned: false,
+      spot: false,
+      term: false,
+      historyChart: contract.historyChart,
+    })),
+  ];
 }
 
 function formatChartNumber(value: number) {
@@ -104,109 +357,356 @@ function formatChartNumber(value: number) {
   return value.toFixed(4);
 }
 
-function HistoryLineChart({ chart }: { chart: HistoryChartData }) {
-  const width = 640;
-  const height = 250;
-  const inset = { top: 18, right: 22, bottom: 30, left: 54 };
+function formatLegChange(value: number | null) {
+  if (value === null || !Number.isFinite(value)) return "—";
+  const normalized = Math.abs(value) < 0.005 ? 0 : value;
+  return `${normalized > 0 ? "+" : ""}${normalized.toFixed(2)}%`;
+}
+
+function legChangeClass(value: number | null) {
+  if (value === null || Math.abs(value) < 0.005) return "flat";
+  return value > 0 ? "up" : "down";
+}
+
+function formatContractHistoryValue(value: number, unit: ContractHistoryChartData["unit"]) {
+  return unit === "百分比" ? `${(value * 100).toFixed(2)}%` : formatChartNumber(value);
+}
+
+function quantile(values: number[], percentile: number) {
+  const sorted = [...values].sort((left, right) => left - right);
+  if (sorted.length === 0) return 0;
+  const position = (sorted.length - 1) * percentile;
+  const lowerIndex = Math.floor(position);
+  const upperIndex = Math.ceil(position);
+  const weight = position - lowerIndex;
+  return sorted[lowerIndex] + (sorted[upperIndex] - sorted[lowerIndex]) * weight;
+}
+
+const contractRootNames: Record<string, string> = {
+  A: "豆一",
+  B: "豆二",
+  C: "玉米",
+  M: "豆粕",
+  Y: "豆油",
+  P: "棕榈油",
+  OI: "菜油",
+  RM: "菜粕",
+  LH: "生猪",
+  HC: "热卷",
+  RB: "螺纹钢",
+  I: "铁矿石",
+  J: "焦炭",
+  JM: "焦煤",
+  CU: "铜",
+  AL: "铝",
+  ZN: "锌",
+  AU: "黄金",
+  AG: "白银",
+  SA: "纯碱",
+  FG: "玻璃",
+  FU: "燃料油",
+  BU: "沥青",
+  NR: "20号胶",
+  BR: "BR橡胶",
+  SH: "烧碱",
+  NI: "镍",
+  SS: "不锈钢",
+  L: "聚乙烯",
+  PP: "聚丙烯",
+  IF: "沪深300",
+  IC: "中证500",
+  IM: "中证1000",
+  IH: "上证50",
+  CAD: "伦铜",
+  AHD: "伦铝",
+  ZSD: "伦锌",
+};
+
+const spotSymbolNames: Record<string, string> = {
+  "000016.SH": "上证50",
+  "000300.SH": "沪深300",
+  "000688.SH": "科创50",
+  "000852.SH": "中证1000",
+  "000905.SH": "中证500",
+  "399006.SZ": "创业板指",
+};
+
+function contractRootLabel(symbol: string) {
+  if (spotSymbolNames[symbol]) return spotSymbolNames[symbol];
+  const root = symbol.match(/^[A-Za-z]+/)?.[0].replace(/JQ$/i, "").toUpperCase();
+  if (!root) return symbol;
+  return contractRootNames[root] ?? root;
+}
+
+function termStructureTitle(symbol: string, structure: TermStructure) {
+  const sign = structure.changePct > 0 ? "+" : "";
+  return `${contractRootLabel(symbol)}：${structure.nearExpiry} ${structure.nearPrice} → ${structure.farExpiry} ${structure.farPrice}（${sign}${structure.changePct.toFixed(2)}%）`;
+}
+
+const seasonalSeriesStyles = [
+  { color: "#2f6fca", dash: undefined },
+  { color: "#d97706", dash: "8 4" },
+  { color: "#6b7f2a", dash: "3 3" },
+  { color: "#7c3aed", dash: "10 3 2 3" },
+  { color: "#c2417a", dash: "2 4" },
+  { color: "#2f6fca", dash: "12 4" },
+  { color: "#d97706", dash: "4 3" },
+  { color: "#6b7f2a", dash: "9 3 2 3" },
+  { color: "#7c3aed", dash: "2 3" },
+  { color: "#c2417a", dash: "12 3 2 3" },
+];
+
+function ContractHistoryChart({ chart }: { chart: ContractHistoryChartData }) {
+  const width = 920;
+  const height = 270;
+  const overlaySeries = chart.overlaySeries;
+  const inset = { top: 18, right: overlaySeries ? 68 : 24, bottom: 32, left: 62 };
   const plotWidth = width - inset.left - inset.right;
   const plotHeight = height - inset.top - inset.bottom;
   const svgRef = useRef<SVGSVGElement>(null);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const values = chart.points.map((point) => point.value);
+  const [hovered, setHovered] = useState<{ series: ContractHistorySeries; point: ContractHistoryPoint } | null>(null);
+  const startTime = Date.parse(chart.startDate);
+  const endTime = Date.parse(chart.endDate);
+  const timeRange = Math.max(endTime - startTime, 1);
+  const allPoints = chart.series.flatMap((series) => series.points.map((point) => ({ series, point })));
+  const values = allPoints.map(({ point }) => point.value);
+  const lowerThreshold = quantile(values, 0.03);
+  const upperThreshold = quantile(values, 0.97);
+  const thresholds = [
+    { label: "3%", value: lowerThreshold },
+    { label: "97%", value: upperThreshold },
+  ];
+  const isSeasonalHistory = chart.series.every((series) => /^\d{4}$/.test(series.expiry));
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
   const rawRange = rawMax - rawMin || Math.max(Math.abs(rawMax) * 0.1, 1);
   const yMin = rawMin - rawRange * 0.08;
   const yMax = rawMax + rawRange * 0.08;
-  const x = (index: number) => inset.left + (index / Math.max(chart.points.length - 1, 1)) * plotWidth;
+  const x = (date: string) => inset.left + ((Date.parse(date) - startTime) / timeRange) * plotWidth;
   const y = (value: number) => inset.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
-  const linePath = chart.points.map((point, index) => `${index === 0 ? "M" : "L"}${x(index).toFixed(2)},${y(point.value).toFixed(2)}`).join(" ");
+  const overlayValues = overlaySeries?.points.map((point) => point.value) ?? [];
+  const overlayRawMin = overlayValues.length ? Math.min(...overlayValues) : 0;
+  const overlayRawMax = overlayValues.length ? Math.max(...overlayValues) : 1;
+  const overlayRawRange = overlayRawMax - overlayRawMin || Math.max(Math.abs(overlayRawMax) * 0.01, 0.01);
+  const overlayYMin = overlayRawMin - overlayRawRange * 0.08;
+  const overlayYMax = overlayRawMax + overlayRawRange * 0.08;
+  const overlayY = (value: number) => inset.top + ((overlayYMax - value) / (overlayYMax - overlayYMin)) * plotHeight;
+  const gapThreshold = 21 * 24 * 60 * 60 * 1000;
+  const paths = chart.series.map((series, seriesIndex) => {
+    let previousTime: number | null = null;
+    const path = series.points.map((point) => {
+      const currentTime = Date.parse(point.date);
+      const command = previousTime === null || currentTime - previousTime > gapThreshold ? "M" : "L";
+      previousTime = currentTime;
+      return `${command}${x(point.date).toFixed(2)},${y(point.value).toFixed(2)}`;
+    }).join(" ");
+    return { series, path, style: seasonalSeriesStyles[seriesIndex % seasonalSeriesStyles.length] };
+  });
   const yTicks = Array.from({ length: 5 }, (_, index) => yMin + ((yMax - yMin) * index) / 4);
-  const xTickIndexes = Array.from(new Set([0, Math.floor((chart.points.length - 1) / 4), Math.floor((chart.points.length - 1) / 2), Math.floor(((chart.points.length - 1) * 3) / 4), chart.points.length - 1]));
-  const hoveredPoint = hoveredIndex === null ? null : chart.points[hoveredIndex];
+  const overlayYTicks = overlaySeries
+    ? Array.from({ length: 5 }, (_, index) => overlayYMin + ((overlayYMax - overlayYMin) * index) / 4)
+    : [];
+  const xTicks = Array.from({ length: 6 }, (_, index) => startTime + (timeRange * index) / 5);
+  let overlayPreviousTime: number | null = null;
+  const overlayPath = overlaySeries?.points.map((point) => {
+    const currentTime = Date.parse(point.date);
+    const command = overlayPreviousTime === null || currentTime - overlayPreviousTime > gapThreshold ? "M" : "L";
+    overlayPreviousTime = currentTime;
+    return `${command}${x(point.date).toFixed(2)},${overlayY(point.value).toFixed(2)}`;
+  }).join(" ") ?? "";
+  const hoveredOverlayPoint = hovered && overlaySeries?.points.length
+    ? overlaySeries.points.reduce((best, candidate) => (
+        Math.abs(Date.parse(candidate.date) - Date.parse(hovered.point.date)) < Math.abs(Date.parse(best.date) - Date.parse(hovered.point.date))
+          ? candidate
+          : best
+      ))
+    : null;
 
   function updateHover(clientX: number) {
     const bounds = svgRef.current?.getBoundingClientRect();
-    if (!bounds) return;
+    if (!bounds || allPoints.length === 0) return;
     const viewBoxX = ((clientX - bounds.left) / bounds.width) * width;
-    const index = Math.round(((viewBoxX - inset.left) / plotWidth) * (chart.points.length - 1));
-    setHoveredIndex(Math.max(0, Math.min(chart.points.length - 1, index)));
+    const targetTime = startTime + ((viewBoxX - inset.left) / plotWidth) * timeRange;
+    const nearest = allPoints.reduce((best, candidate) => (
+      Math.abs(Date.parse(candidate.point.date) - targetTime) < Math.abs(Date.parse(best.point.date) - targetTime)
+        ? candidate
+        : best
+    ));
+    setHovered(nearest);
   }
 
   return (
-    <article className={`chart-card history-chart ${chart.unit === "点差" ? "spread-chart" : "ratio-chart"}`}>
-      <header className="chart-card-header">
+    <section className={`contract-history-chart ${chart.unit === "点差" ? "spread" : "ratio"}`}>
+      <header>
         <div>
-          <h3>{chart.title}</h3>
-          <p>{chart.startDate}—{chart.endDate} · {chart.grain} · {chart.source}</p>
+          <h4>{chart.title}</h4>
+          <p>{chart.startDate}—{chart.endDate} · {chart.grain} · 3%/97%阈值按图内全部历史值 · 断档处不连线 · {chart.source}</p>
         </div>
-        <div className="chart-kpi">
-          <strong className="tabular">{chart.current}</strong>
-          <span>近3年 {chart.percentile.toFixed(2)}%</span>
-        </div>
+        <span>{isSeasonalHistory ? `${chart.series.length} 个历年合约` : chart.series.map((series) => series.expiry).join(" / ")}</span>
       </header>
+      <div className="contract-history-legend" aria-label="历年合约图例">
+        {paths.map(({ series, style }) => (
+          <span key={series.expiry} title={`${series.leftSymbol} ${chart.unit === "比值" ? "/" : "−"} ${series.rightSymbol}`}>
+            <i style={{ borderTopColor: style.color, borderTopStyle: style.dash ? "dashed" : "solid" }} aria-hidden="true" />
+            {series.expiry}
+          </span>
+        ))}
+        {overlaySeries && (
+          <span className="overlay-legend" title={`${overlaySeries.symbol} · ${overlaySeries.unit}`}>
+            <i aria-hidden="true" />
+            {overlaySeries.label}
+          </span>
+        )}
+        <span className="threshold-legend"><i aria-hidden="true" />3% / 97% 阈值</span>
+      </div>
       <svg
         ref={svgRef}
-        className="line-chart"
+        className="contract-history-svg"
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={`${chart.title}，${chart.startDate}至${chart.endDate}，当前值${chart.current}`}
+        aria-label={`${chart.title}折线图，包含${chart.series.map((series) => series.expiry).join("、")}${overlaySeries ? `、${overlaySeries.label}` : ""}`}
         onPointerMove={(event) => updateHover(event.clientX)}
-        onPointerLeave={() => setHoveredIndex(null)}
+        onPointerLeave={() => setHovered(null)}
       >
         <title>{chart.title}</title>
         {yTicks.map((tick) => (
           <g key={tick}>
             <line className="chart-grid-line" x1={inset.left} x2={width - inset.right} y1={y(tick)} y2={y(tick)} />
-            <text className="chart-axis-label" x={inset.left - 9} y={y(tick) + 3} textAnchor="end">{formatChartNumber(tick)}</text>
+            <text className="chart-axis-label" x={inset.left - 10} y={y(tick) + 3} textAnchor="end">{formatContractHistoryValue(tick, chart.unit)}</text>
           </g>
+        ))}
+        {overlayYTicks.map((tick) => (
+          <text className="chart-axis-label overlay-axis-label" key={`overlay-${tick}`} x={width - inset.right + 10} y={overlayY(tick) + 3} textAnchor="start">
+            {tick.toFixed(4)}
+          </text>
         ))}
         {chart.unit === "点差" && yMin < 0 && yMax > 0 && (
           <line className="chart-zero-line" x1={inset.left} x2={width - inset.right} y1={y(0)} y2={y(0)} />
         )}
-        {xTickIndexes.map((index) => (
-          <text key={index} className="chart-axis-label" x={x(index)} y={height - 8} textAnchor={index === 0 ? "start" : index === chart.points.length - 1 ? "end" : "middle"}>
-            {chart.points[index].date}
+        {thresholds.map((threshold) => (
+          <line
+            className="contract-history-threshold-line"
+            key={`${threshold.label}-line`}
+            x1={inset.left}
+            x2={width - inset.right}
+            y1={y(threshold.value)}
+            y2={y(threshold.value)}
+          />
+        ))}
+        {xTicks.map((tick, index) => (
+          <text className="chart-axis-label" key={tick} x={inset.left + (plotWidth * index) / 5} y={height - 8} textAnchor={index === 0 ? "start" : index === 5 ? "end" : "middle"}>
+            {new Date(tick).toISOString().slice(0, 7)}
           </text>
         ))}
-        <path className="history-line" d={linePath} />
-        <circle className="history-endpoint" cx={x(chart.points.length - 1)} cy={y(chart.points[chart.points.length - 1].value)} r="4" />
-        {hoveredPoint && hoveredIndex !== null && (
+        {overlaySeries && (
+          <path className="contract-history-overlay-line" d={overlayPath} />
+        )}
+        {paths.map(({ series, path, style }) => (
+          <path
+            className="contract-history-line"
+            d={path}
+            key={series.expiry}
+            stroke={style.color}
+            strokeDasharray={style.dash}
+          />
+        ))}
+        {thresholds.map((threshold) => (
+          <text
+            className="contract-history-threshold-label"
+            key={`${threshold.label}-label`}
+            x={width - inset.right - 4}
+            y={y(threshold.value) - 5}
+            textAnchor="end"
+          >
+            {threshold.label}阈值 {formatContractHistoryValue(threshold.value, chart.unit)}
+          </text>
+        ))}
+        {hovered && (
           <g className="chart-hover">
-            <line x1={x(hoveredIndex)} x2={x(hoveredIndex)} y1={inset.top} y2={height - inset.bottom} />
-            <circle cx={x(hoveredIndex)} cy={y(hoveredPoint.value)} r="4" />
-            <g transform={`translate(${Math.min(Math.max(x(hoveredIndex) - 50, inset.left), width - inset.right - 100)}, ${Math.max(y(hoveredPoint.value) - 48, inset.top)})`}>
-              <rect width="100" height="37" rx="5" />
-              <text x="8" y="14">{hoveredPoint.date}</text>
-              <text x="8" y="29">{formatChartNumber(hoveredPoint.value)}</text>
+            <line x1={x(hovered.point.date)} x2={x(hovered.point.date)} y1={inset.top} y2={height - inset.bottom} />
+            <circle cx={x(hovered.point.date)} cy={y(hovered.point.value)} r="4" />
+            {hoveredOverlayPoint && <circle className="overlay-hover-point" cx={x(hoveredOverlayPoint.date)} cy={overlayY(hoveredOverlayPoint.value)} r="3.5" />}
+            <g transform={`translate(${Math.min(Math.max(x(hovered.point.date) - 80, inset.left), width - inset.right - 176)}, ${Math.max(y(hovered.point.value) - (hoveredOverlayPoint ? 70 : 52), inset.top)})`}>
+              <rect width={hoveredOverlayPoint ? 176 : 132} height={hoveredOverlayPoint ? 58 : 41} rx="5" />
+              <text x="8" y="15">{hovered.series.expiry} · {hovered.point.date}</text>
+              <text x="8" y="32">{formatContractHistoryValue(hovered.point.value, chart.unit)}</text>
+              {hoveredOverlayPoint && <text className="overlay-tooltip-value" x="8" y="49">汇率 {hoveredOverlayPoint.value.toFixed(4)}</text>}
             </g>
           </g>
         )}
       </svg>
-    </article>
+    </section>
   );
 }
 
 export default function Home() {
   const [query, setQuery] = useState("");
-  const [pairTypeFilter, setPairTypeFilter] = useState<"全部" | PairRow["pairType"]>("全部");
   const [sortKey, setSortKey] = useState<SortKey>("percentile");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [expandedPairs, setExpandedPairs] = useState<Set<string>>(() => new Set());
+  const [expandedContractCharts, setExpandedContractCharts] = useState<Set<string>>(() => new Set());
+  const [primaryObservations, setPrimaryObservations] = useState<Record<string, string>>({});
+  const [primaryObservationsLoaded, setPrimaryObservationsLoaded] = useState(false);
+  const [manualUpdateStatus, setManualUpdateStatus] = useState<"idle" | "updating" | "error">("idle");
+  const [manualUpdateMessage, setManualUpdateMessage] = useState("");
+  const [manualUpdateAvailable, setManualUpdateAvailable] = useState(true);
+
+  useEffect(() => {
+    setManualUpdateAvailable(["localhost", "127.0.0.1", "::1"].includes(window.location.hostname));
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(primaryObservationStorageKey);
+      const parsed = stored ? JSON.parse(stored) as Record<string, unknown> : {};
+      const validSelections: Record<string, string> = {};
+      rows.forEach((row) => {
+        const expiry = parsed[row.pair];
+        if (
+          typeof expiry === "string" &&
+          (
+            (expiry === "spot" && row.spotObservation !== null) ||
+            row.termObservations?.some((observation) => observation.key === expiry) ||
+            row.contracts.some((contract) => contract.expiry === expiry)
+          )
+        ) {
+          validSelections[row.pair] = expiry;
+        }
+      });
+      setPrimaryObservations(validSelections);
+    } catch {
+      setPrimaryObservations({});
+    } finally {
+      setPrimaryObservationsLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!primaryObservationsLoaded) return;
+    window.localStorage.setItem(primaryObservationStorageKey, JSON.stringify(primaryObservations));
+  }, [primaryObservations, primaryObservationsLoaded]);
 
   const visibleRows = useMemo(() => {
-    const filtered = rows.filter(
-      (row) =>
-        row.pair.toLowerCase().includes(query.trim().toLowerCase()) &&
-        (pairTypeFilter === "全部" || row.pairType === pairTypeFilter),
+    const observedRows = rows.map((row) => applyPrimaryObservation(row, primaryObservations[row.pair]));
+    const filtered = observedRows.filter(
+      (row) => {
+        const searchableName = `${row.pair} ${primaryObservations[row.pair] ?? ""}`.toLowerCase();
+        return searchableName.includes(query.trim().toLowerCase());
+      },
     );
     return [...filtered].sort((a, b) => {
+      const strategyPriority = strategyTypeOrder[a.strategyType] - strategyTypeOrder[b.strategyType];
+      if (strategyPriority !== 0) return strategyPriority;
+
+      const marketPriority = marketCategoryOrder[a.marketCategory] - marketCategoryOrder[b.marketCategory];
+      if (marketPriority !== 0) return marketPriority;
+
       const av = numericValue(a, sortKey);
       const bv = numericValue(b, sortKey);
       const result = typeof av === "string" && typeof bv === "string" ? av.localeCompare(bv, "zh-CN") : Number(av) - Number(bv);
       return sortDirection === "asc" ? result : -result;
     });
-  }, [pairTypeFilter, query, sortDirection, sortKey]);
+  }, [primaryObservations, query, sortDirection, sortKey]);
 
   function updateSort(key: SortKey) {
     if (key === sortKey) setSortDirection((direction) => (direction === "desc" ? "asc" : "desc"));
@@ -225,8 +725,45 @@ export default function Home() {
     });
   }
 
-  function formatVolume(value: number) {
-    return value.toLocaleString("zh-CN");
+  function toggleContractChart(pair: string, expiry: string) {
+    const key = `${pair}:${expiry}`;
+    setExpandedContractCharts((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function togglePrimaryObservation(pair: string, selection: string) {
+    setPrimaryObservations((current) => {
+      if (selection === "default" || selection === "term-down" || current[pair] === selection) {
+        const next = { ...current };
+        delete next[pair];
+        return next;
+      }
+      return { ...current, [pair]: selection };
+    });
+  }
+
+  function formatVolume(value: number | null) {
+    return value === null ? "—" : value.toLocaleString("zh-CN");
+  }
+
+  async function runManualUpdate() {
+    if (!manualUpdateAvailable || manualUpdateStatus === "updating") return;
+    setManualUpdateStatus("updating");
+    setManualUpdateMessage("正在读取 xtdata 与外盘数据…");
+    try {
+      const response = await fetch("/api/manual-update", { method: "POST" });
+      const result = await response.json() as { ok?: boolean; dataDate?: string; error?: string };
+      if (!response.ok || !result.ok) throw new Error(result.error || "更新失败");
+      setManualUpdateMessage(`已更新至 ${result.dataDate}，正在刷新…`);
+      window.setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      setManualUpdateStatus("error");
+      setManualUpdateMessage(error instanceof Error ? error.message : "更新失败，请稍后重试");
+    }
   }
 
   return (
@@ -238,13 +775,20 @@ export default function Home() {
             <h1 id="dashboard-title">套利监测看板</h1>
             <p>跟踪跨品种比价、价差与历史分位</p>
           </div>
-          <div className="update-status" aria-label="数据更新时间">
+          <button
+            type="button"
+            className={`update-status ${manualUpdateStatus}${manualUpdateAvailable ? "" : " remote"}`}
+            aria-label={manualUpdateAvailable ? "立即使用xtdata更新看板数据" : "云端静态数据快照"}
+            disabled={!manualUpdateAvailable || manualUpdateStatus === "updating"}
+            onClick={runManualUpdate}
+          >
             <span className="status-dot" aria-hidden="true" />
             <div>
-              <strong>每日 20:00 更新</strong>
-              <span>{dashboardData.dataDate} · 双源校验</span>
+              <strong>{manualUpdateAvailable ? (manualUpdateStatus === "updating" ? "正在更新…" : "立即更新数据") : "云端数据快照"}</strong>
+              <span>{manualUpdateAvailable ? (manualUpdateMessage || `${dashboardData.dataDate} · 每日 20:00`) : `数据截止 ${dashboardData.dataDate}`}</span>
             </div>
-          </div>
+            <span className="update-action" aria-hidden="true">{manualUpdateAvailable ? "↻" : "●"}</span>
+          </button>
         </header>
 
         <div className="toolbar">
@@ -259,23 +803,13 @@ export default function Home() {
                 type="search"
               />
             </label>
-            <div className="pair-type-filter" aria-label="品种对类型筛选">
-              {(["全部", "期货套利", "现货参考"] as const).map((filter) => (
-                <button
-                  type="button"
-                  key={filter}
-                  aria-pressed={pairTypeFilter === filter}
-                  onClick={() => setPairTypeFilter(filter)}
-                >
-                  {filter === "期货套利" ? "期货" : filter === "现货参考" ? "指数" : filter}
-                </button>
-              ))}
-            </div>
           </div>
           <div className="legend" aria-label="判断图例">
+            <span><i className="legend-dot extreme-high" />极度偏高</span>
             <span><i className="legend-dot high" />偏高</span>
             <span><i className="legend-dot neutral" />中性</span>
             <span><i className="legend-dot low" />偏低</span>
+            <span><i className="legend-dot extreme-low" />极度偏低</span>
             <b>{visibleRows.length} 组</b>
           </div>
         </div>
@@ -285,22 +819,35 @@ export default function Home() {
             <div className="source-audit-title">
               <span className={`audit-dot ${dashboardData.sourceValidation.summary.review > 0 ? "warning" : dashboardData.sourceValidation.summary.contractMismatch > 0 ? "scope" : "ok"}`} aria-hidden="true" />
               <strong>数据源校验</strong>
-              <span>xtdata 主值 · AkShare 补充校对</span>
+              <span>{hasExternalSources ? "国内 xtdata · LME与汇率 AKShare 补充" : xtdataOnly ? "仅使用 xtdata" : "xtdata 主值 · AkShare 补充校对"}</span>
             </div>
             <div className="audit-summary">
-              <span className="audit-count consistent">一致 {dashboardData.sourceValidation.summary.consistent}</span>
-              <span className="audit-count contract-mismatch">主力口径不同 {dashboardData.sourceValidation.summary.contractMismatch}</span>
+              <span className="audit-count consistent">{xtdataOnly ? "完整" : "一致"} {dashboardData.sourceValidation.summary.consistent}</span>
+              {!xtdataOnly && <span className="audit-count contract-mismatch">主力口径不同 {dashboardData.sourceValidation.summary.contractMismatch}</span>}
               <span className={`audit-count ${dashboardData.sourceValidation.summary.review > 0 ? "review" : "quiet"}`}>异常 {dashboardData.sourceValidation.summary.review}</span>
               <span className="audit-expand">查看 {dashboardData.sourceValidation.summary.total} 项明细</span>
             </div>
           </summary>
           <div className="source-audit-body">
-            <p>{dashboardData.sourceValidation.policy}；收盘价差异不超过 {dashboardData.sourceValidation.thresholdPct}% 判为一致。</p>
+            <p>{dashboardData.sourceValidation.policy}{!xtdataOnly && `；收盘价差异不超过 ${dashboardData.sourceValidation.thresholdPct}% 判为一致。`}</p>
+            {hasExternalSources && (
+              <div className="external-source-summary">
+                <strong>跨市场补充口径</strong>
+                <span>{dashboardData.externalSourcePolicy}</span>
+                <div>
+                  {externalSources.map((source) => (
+                    <i key={source.symbol} title={source.path}>
+                      {source.name} · {source.provider} · {source.endDate}
+                    </i>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="source-check-grid source-check-header">
               <span>品种</span>
               <span>数据日</span>
               <span>xtdata</span>
-              <span>AkShare</span>
+              <span>{xtdataOnly ? "记录数" : "AkShare"}</span>
               <span>差异</span>
               <span>结果</span>
             </div>
@@ -309,7 +856,7 @@ export default function Home() {
                 <span><strong>{check.name}</strong><small>{check.xtSymbol} / {check.akSymbol}</small></span>
                 <span className="tabular">{check.date}</span>
                 <span className="tabular">{check.xtClose ?? "—"}</span>
-                <span className="tabular">{check.akClose ?? "—"}</span>
+                <span className="tabular">{xtdataOnly ? check.xtRows : (check.akClose ?? "—")}</span>
                 <span className="tabular">{check.relativeDiffPct === null ? "—" : `${check.relativeDiffPct.toFixed(4)}%`}</span>
                 <span>
                   <i className={`check-status ${check.status === "一致" ? "consistent" : check.status === "主力口径不同" ? "contract-mismatch" : "review"}`}>{check.status}</i>
@@ -326,7 +873,7 @@ export default function Home() {
               <tr>
                 {columns.map((column) => (
                   <th key={column.key} scope="col">
-                    {column.key === "bar" || column.key === "signal" || column.key === "source" ? (
+                    {column.key === "strategyType" || column.key === "bar" || column.key === "signal" || column.key === "leftStructure" || column.key === "rightStructure" ? (
                       column.label
                     ) : (
                       <button type="button" onClick={() => updateSort(column.key)} aria-label={`按${column.label}排序`}>
@@ -342,21 +889,40 @@ export default function Home() {
             </thead>
             <tbody>
               {visibleRows.map((row) => {
+                const baseRow = rows.find((candidate) => candidate.pair === row.pair) ?? row;
                 const isExpanded = expandedPairs.has(row.pair);
-                const hasContracts = row.contracts.length > 0;
+                const hasContracts = baseRow.contracts.length > 0;
+                const hasTermObservations = (baseRow.termObservations?.length ?? 0) > 0;
+                const hasObservationPanel = hasContracts || hasTermObservations;
+                const standaloneHistoryChart = ["现货参考", "跨市场套利"].includes(baseRow.pairType)
+                  ? baseRow.mainHistoryChart
+                  : null;
+                const hasExpandableContent = hasObservationPanel || standaloneHistoryChart !== null;
+                const selectedObservation = primaryObservations[row.pair];
+                const selectedTermLabel = baseRow.termObservations
+                  ?.find((observation) => observation.key === selectedObservation)?.label;
+                const selectedLabel = selectedObservation === "spot"
+                  ? "现货"
+                  : selectedTermLabel ?? (
+                      baseRow.contracts.some((contract) => contract.expiry === selectedObservation)
+                        ? selectedObservation
+                        : undefined
+                    );
+                const observationOptions = observationOptionsFor(baseRow);
                 const detailId = `contracts-${row.pair.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "-")}`;
                 return (
                   <Fragment key={row.pair}>
-                    <tr className={`pair-row ${isExpanded ? "expanded" : ""} ${row.pairType === "现货参考" ? "reference" : ""}`} title={`${row.leftSymbol} / ${row.rightSymbol}`}>
+                    <tr className={`pair-row ${isExpanded ? "expanded" : ""} ${selectedLabel ? "primary-observation" : ""} ${["现货参考", "跨市场套利"].includes(row.pairType) ? "reference" : ""}`} title={pairFormula(row)}>
+                      <td><span className={`strategy-type ${strategyTypeClass[row.strategyType]}`}>{row.strategyType}</span></td>
                       <th scope="row">
                         <div className="pair-cell">
-                          {hasContracts ? (
+                          {hasExpandableContent ? (
                             <button
                               type="button"
                               className="expand-button"
                               aria-expanded={isExpanded}
                               aria-controls={detailId}
-                              aria-label={`${isExpanded ? "收起" : "展开"}${row.pair}合约月份`}
+                              aria-label={`${isExpanded ? "收起" : "展开"}${row.pair}${hasContracts ? "合约月份" : hasTermObservations ? "观察口径" : "现货折线图"}`}
                               onClick={() => togglePair(row.pair)}
                             >
                               {isExpanded ? "−" : "+"}
@@ -364,46 +930,132 @@ export default function Home() {
                           ) : (
                             <span className="reference-mark" title="现货指数参考，不对应可交易期货组合">参考</span>
                           )}
-                          <span>{row.pair}</span>
+                          <span>{row.pair}{selectedLabel ? `（${selectedLabel}）` : ""}</span>
                         </div>
                       </th>
                       <td className="tabular current-value">{row.current}</td>
                       <td className="tabular muted">{row.previous}</td>
                       <td className={`tabular change ${row.changeValue === null ? "flat" : row.changeValue > 0 ? "up" : "down"}`}>{row.change}</td>
-                      <td className="tabular">{row.allTime}</td>
-                      <td className="tabular percentile-value">{row.percentile.toFixed(row.percentile % 1 === 0 ? 1 : 2)}%</td>
-                      <td>
-                        <div className="percentile-track" aria-label={`近3年分位 ${row.percentile}%`}>
-                          <span className={`percentile-fill ${row.signal === "偏高" ? "high" : row.signal === "极度偏低" ? "low" : "neutral"}`} style={{ width: `${Math.max(row.percentile, 4)}%` }} />
+                      <td className="tabular">
+                        <div className="percentile-metric">
+                          <span>{row.allTime}</span>
+                          <small title="全历史区间">{row.allTimeRange}</small>
                         </div>
                       </td>
-                      <td><span className={`signal ${row.signal === "偏高" ? "high" : row.signal === "极度偏低" ? "low" : "neutral"}`}>{row.signal}</span></td>
-                      <td><span className={`source-badge ${sourceStatusClass(row.sourceStatus)}`}>{row.sourceStatus}</span></td>
+                      <td className="tabular percentile-value">
+                        <div className="percentile-metric">
+                          <span>{row.percentile.toFixed(row.percentile % 1 === 0 ? 1 : 2)}%</span>
+                          <small title="近5年区间">{row.fiveYearRange}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="percentile-track" aria-label={`近5年分位 ${row.percentile}%`}>
+                          <span className={`percentile-fill ${signalClass(row.signal)}`} style={{ width: `${Math.max(row.percentile, 4)}%` }} />
+                        </div>
+                      </td>
+                      <td><span className={`signal ${signalClass(row.signal)}`}>{row.signal}</span></td>
                       <td className="tabular">{row.lots}</td>
                       <td className="tabular">{row.deviation}</td>
                       <td className="tabular">{row.notional}</td>
                       <td className="tabular">{row.margin}</td>
+                      <td className="term-structure-cell">
+                        {row.leftStructure ? (
+                          <span className={`term-structure-badge ${row.leftStructure.state === "Contango" ? "contango" : "back"}`} title={termStructureTitle(baseRow.leftSymbol, row.leftStructure)}>
+                            <small>{contractRootLabel(baseRow.leftSymbol)}</small>
+                            <strong>{row.leftStructure.state}</strong>
+                          </span>
+                        ) : <span className="muted">—</span>}
+                      </td>
+                      <td className="term-structure-cell">
+                        {row.rightStructure ? (
+                          <span className={`term-structure-badge ${row.rightStructure.state === "Contango" ? "contango" : "back"}`} title={termStructureTitle(baseRow.rightSymbol, row.rightStructure)}>
+                            <small>{contractRootLabel(baseRow.rightSymbol)}</small>
+                            <strong>{row.rightStructure.state}</strong>
+                          </span>
+                        ) : <span className="muted">—</span>}
+                      </td>
                     </tr>
-                    {isExpanded && hasContracts && (
+                    {isExpanded && hasObservationPanel && (
                       <tr className="contract-detail-row">
                         <td colSpan={columns.length} id={detailId}>
-                          <div className="contract-panel" aria-label={`${row.pair}成交量前四的合约月份`}>
+                          <div className="contract-panel" aria-label={hasTermObservations ? `${row.pair}下季与隔季观察口径` : `${row.pair}观察口径及成交量前四的合约月份`}>
                             <div className="contract-grid contract-grid-header">
-                              <span>合约月</span>
+                              <span>观察口径</span>
                               <span>当前值</span>
-                              <span>{row.leftSymbol.split("00")[0]} 成交量</span>
-                              <span>{row.rightSymbol.split("00")[0]} 成交量</span>
-                              <span>可配对成交量 ↓</span>
+                              <span>{hasTermObservations ? "当月涨跌幅" : `${contractRootLabel(baseRow.leftSymbol)} 涨跌幅`}</span>
+                              <span>{hasTermObservations ? "当月合约" : `${contractRootLabel(baseRow.contracts[0].leftSymbol)} 成交量`}</span>
+                              <span>{hasTermObservations ? "远季涨跌幅" : `${contractRootLabel(baseRow.rightSymbol)} 涨跌幅`}</span>
+                              <span>{hasTermObservations ? "远季合约" : `${contractRootLabel(baseRow.contracts[0].rightSymbol)} 成交量`}</span>
+                              <span>{hasTermObservations ? "现货指数" : "可配对成交量 ↓"}</span>
+                              <span>近5年分位</span>
+                              <span>判断</span>
+                              <span>主要观察</span>
                             </div>
-                            {row.contracts.map((contract) => (
-                              <div className="contract-grid" key={`${row.pair}-${contract.expiry}`}>
-                                <strong className="tabular">{contract.expiry}</strong>
-                                <span className="tabular contract-current">{contract.current}</span>
-                                <span className="tabular" title={contract.leftSymbol}>{formatVolume(contract.leftVolume)}</span>
-                                <span className="tabular" title={contract.rightSymbol}>{formatVolume(contract.rightVolume)}</span>
-                                <span className="tabular paired-volume">{formatVolume(contract.pairedVolume)}</span>
-                              </div>
-                            ))}
+                            {observationOptions.map((option) => {
+                              const isPrimaryObservation = option.key === "default" || option.key === "term-down"
+                                ? selectedObservation === undefined
+                                : selectedObservation === option.key;
+                              const chartKey = `${row.pair}:${option.key}`;
+                              const isHistoryExpanded = expandedContractCharts.has(chartKey);
+                              const historyId = `history-${detailId}-${option.key}`;
+                              return (
+                                <Fragment key={`${row.pair}-${option.key}`}>
+                                  <div className={`contract-grid ${option.pinned ? "pinned" : ""} ${option.spot ? "spot" : ""} ${isPrimaryObservation ? "primary" : ""}`}>
+                                    <span className="observation-label" title={option.detail ?? pairFormula(baseRow, option.leftSymbol, option.rightSymbol)}>
+                                      <span className="observation-title">
+                                        {option.historyChart && (
+                                          <button
+                                            type="button"
+                                            className="contract-history-toggle"
+                                            aria-expanded={isHistoryExpanded}
+                                            aria-controls={historyId}
+                                            aria-label={historyToggleLabel(row.pair, option.label, isHistoryExpanded)}
+                                            onClick={() => toggleContractChart(row.pair, option.key)}
+                                          >
+                                            {isHistoryExpanded ? "−" : "+"}
+                                          </button>
+                                        )}
+                                        <strong className="tabular">{option.label}</strong>
+                                      </span>
+                                      {option.detail && <small>{option.detail}</small>}
+                                    </span>
+                                    <span className="tabular contract-current">{option.current}</span>
+                                    <span className={`tabular change ${legChangeClass(option.leftChangePct)}`} title={`${option.leftSymbol} 最近一个交易日涨跌幅`}>{formatLegChange(option.leftChangePct)}</span>
+                                    <span className="tabular" title={option.leftSymbol}>{option.term ? option.leftSymbol.replace(".IF", "") : formatVolume(option.leftVolume)}</span>
+                                    <span className={`tabular change ${legChangeClass(option.rightChangePct)}`} title={`${option.rightSymbol} 最近一个交易日涨跌幅`}>{formatLegChange(option.rightChangePct)}</span>
+                                    <span className="tabular" title={option.rightSymbol}>{option.term ? option.rightSymbol.replace(".IF", "") : formatVolume(option.rightVolume)}</span>
+                                    <span className="tabular paired-volume">{option.term ? option.denominatorSymbol?.replace(".SH", "") : formatVolume(option.pairedVolume)}</span>
+                                    <span className="tabular contract-percentile">{option.percentile.toFixed(option.percentile % 1 === 0 ? 1 : 2)}%</span>
+                                    <span><i className={`signal contract-signal ${signalClass(option.signal)}`}>{option.signal}</i></span>
+                                    <span>
+                                      <button
+                                        type="button"
+                                        className={`primary-observation-button ${isPrimaryObservation ? "active" : ""}`}
+                                        aria-pressed={isPrimaryObservation}
+                                        aria-label={`${isPrimaryObservation ? "当前为" : "设为"}${row.pair}${option.label}主要观察`}
+                                        onClick={() => togglePrimaryObservation(row.pair, option.key)}
+                                      >
+                                        {isPrimaryObservation ? "主要观察中" : "设为主要观察"}
+                                      </button>
+                                    </span>
+                                  </div>
+                                  {isHistoryExpanded && option.historyChart && (
+                                    <div className="contract-history-expanded" id={historyId}>
+                                      <ContractHistoryChart chart={option.historyChart} />
+                                    </div>
+                                  )}
+                                </Fragment>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {isExpanded && !hasContracts && standaloneHistoryChart && (
+                      <tr className="contract-detail-row reference-history-row">
+                        <td colSpan={columns.length} id={detailId}>
+                          <div className="contract-history-expanded">
+                            <ContractHistoryChart chart={standaloneHistoryChart} />
                           </div>
                         </td>
                       </tr>
@@ -417,46 +1069,11 @@ export default function Home() {
         </div>
 
         <footer className="dashboard-footer">
-          <span>保证金：中金所组合取较大单边；其他期货组合两腿相加；现货指数仅作参考。</span>
+          <span>口径：商品默认 JQ00 持仓量加权，股指及内外盘国内腿使用 00 主连；内外盘使用 LME三个月电子盘价格，内盘直接除以外盘，不做汇率换算；汇率仅作图表参考。</span>
           <span>数据日：{dashboardData.dataDate} · 更新时间：每日 20:00</span>
         </footer>
       </section>
 
-      <section className="analytics-section" aria-labelledby="analytics-title">
-        <header className="analytics-header">
-          <div>
-            <div className="eyebrow">CHART ANALYSIS</div>
-            <h2 id="analytics-title">图表分析</h2>
-            <p>分位排名与关键组合最近 60 个月走势</p>
-          </div>
-          <span>{dashboardData.dataDate} · xtdata 主值</span>
-        </header>
-
-        <article className="chart-card percentile-chart-card">
-          <header className="chart-card-header">
-            <div>
-              <h3>近3年分位总览</h3>
-              <p>全部 {rows.length} 个品种对 · 0%—100% · 按分位降序</p>
-            </div>
-          </header>
-          <div className="percentile-chart-grid">
-            {[...rows].sort((a, b) => b.percentile - a.percentile).map((row) => (
-              <div className="percentile-chart-row" key={`chart-${row.pair}`}>
-                <span title={row.pair}>{row.pair}</span>
-                <div className="percentile-chart-track" aria-label={`${row.pair}近3年分位${row.percentile}%`}>
-                  <i className={row.signal === "偏高" ? "high" : row.signal === "极度偏低" ? "low" : "neutral"} style={{ width: `${Math.max(row.percentile, 1)}%` }} />
-                </div>
-                <strong className="tabular">{row.percentile.toFixed(2)}%</strong>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <div className="history-chart-grid">
-          {historyCharts.map((chart) => <HistoryLineChart chart={chart} key={chart.id} />)}
-        </div>
-        <p className="analytics-note">历史走势图采用月末值；当前月使用截至数据日的最新收盘。现货指数图仍以 xtdata 为主，并由 AkShare 校验。</p>
-      </section>
     </main>
   );
 }
