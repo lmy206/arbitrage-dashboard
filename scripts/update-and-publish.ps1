@@ -4,6 +4,8 @@
 )
 
 $ErrorActionPreference = "Stop"
+$env:GIT_TERMINAL_PROMPT = "0"
+$env:GCM_INTERACTIVE = "Never"
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $runtimeDirectory = Join-Path $projectRoot ".runtime"
 $outputPath = Join-Path $projectRoot "app\data\arbitrage.json"
