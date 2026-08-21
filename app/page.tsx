@@ -580,9 +580,6 @@ function ContractHistoryChart({ chart }: { chart: ContractHistoryChartData }) {
             {tick.toFixed(4)}
           </text>
         ))}
-        {chart.unit === "点差" && yMin < 0 && yMax > 0 && (
-          <line className="chart-zero-line" x1={inset.left} x2={width - inset.right} y1={y(0)} y2={y(0)} />
-        )}
         {thresholds.map((threshold) => (
           <line
             className="contract-history-threshold-line"

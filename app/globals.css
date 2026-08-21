@@ -1134,12 +1134,6 @@ tbody th {
   stroke-width: 1;
 }
 
-.chart-zero-line {
-  stroke: #8a94a1;
-  stroke-dasharray: 4 4;
-  stroke-width: 1;
-}
-
 .chart-axis-label {
   fill: #8993a2;
   font-size: 9px;

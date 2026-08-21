@@ -69,6 +69,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.doesNotMatch(html, /图表分析/);
   assert.doesNotMatch(html, /近5年分位总览/);
   assert.doesNotMatch(html, /近3年分位/);
+  assert.doesNotMatch(html, /chart-zero-line/);
   assert.doesNotMatch(html, /IM-IC价差走势/);
   assert.doesNotMatch(html, /IC\/IF比价走势/);
   assert.doesNotMatch(html, /IM\/IF比价走势/);
