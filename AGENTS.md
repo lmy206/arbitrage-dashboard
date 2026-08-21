@@ -2,9 +2,10 @@
 
 ## 项目范围
 
-- 本项目是仅在本机运行的套利监测看板，目录固定为 `D:\arbitrage-dashboard`。
-- 严禁发布、部署、推送远端或创建 Sites 版本。
-- 本地服务使用 `http://localhost:3001/`，启动与健康检查脚本位于 `scripts/`。
+- 本项目目录固定为 `D:\arbitrage-dashboard`，本地服务使用 `http://localhost:3001/`。
+- Cloudflare Pages 只发布 GitHub `main` 分支中的静态数据快照，不在云端连接或运行 xtdata。
+- 除用户明确授权的自动发布及其实现变更外，不执行 `git push`，不调用 Sites 或其他发布工具；日常自动推送只能由 `scripts/update-and-publish.ps1` 执行。
+- 自动发布只能提交 `app/data/arbitrage.json`；不得自动提交源代码、配置、凭证或其他工作区修改。
 
 ## 数据规则
 
@@ -19,12 +20,13 @@
 1. 运行 `D:\anaconda\python.exe scripts\update_xtdata.py`。
 2. 读取 `E:\data\reports\arbitrage_dashboard_integrity.json`。
 3. 只有在 `status=ok`、`pairCount=expectedPairCount=30`、`futureDataDetected=false`、`hierarchySorted=true` 且 `externalSourcesComplete=true` 时，才运行：
-   - `npm run build`
-   - `node --test tests\rendered-html.test.mjs`
-4. 更新失败时保留上次有效数据，并明确报告具体错误。
+   - 本地验证：`npm run build` 和 `node --test tests\rendered-html.test.mjs`
+   - Cloudflare 静态发布验证：`npm run test:pages`
+4. `scripts/update-and-publish.ps1` 仅在数据日相对 `HEAD` 有更新、上述校验通过、当前分支为 `main`、本地与 `origin/main` 同步，且没有其他已跟踪文件修改时，才提交 `app/data/arbitrage.json` 并推送 `main`。
+5. 更新、校验、提交或推送失败时保留上一版线上页面，写入 `.runtime` 日志和状态文件，不自动回滚或强推。
 
 ## 开发原则
 
 - 优先使用中文，结论直接、可执行。
 - 保留用户已有修改，不使用破坏性 Git 命令。
-- 不执行 `git push`，不调用任何发布工具。
+- 不使用强制推送，不自动拉取或覆盖用户修改，不调用 Sites 发布工具。

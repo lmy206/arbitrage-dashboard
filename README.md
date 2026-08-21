@@ -1,6 +1,6 @@
 # 套利监测看板
 
-本地运行的跨品种比价与价差看板，独立项目目录为 `D:\arbitrage-dashboard`，每日 20:00（Asia/Shanghai）更新，不发布或部署到远端。
+跨品种比价与价差看板，独立项目目录为 `D:\arbitrage-dashboard`。本地每日更新，并通过 GitHub `main` 自动触发 Cloudflare Pages 发布静态快照。
 
 国内行情以 `xtdata` 为准；铜、铝、锌内外盘跟踪补充 LME 三个月电子盘数据，并在历史图右轴叠加美元兑人民币中间价作为参考。
 
@@ -10,7 +10,7 @@
 2. xtdata 数据写入 `E:\data\market\futures_daily` 和 `E:\data\market\index_daily`。
 3. 脚本更新 `catalog.sqlite`、`manifest.jsonl` 和完整性报告。
 4. 30 组指标及常规期货组合成交量最大的 4 个共同合约月写入 `app/data/arbitrage.json`，网站从该文件渲染。
-5. Codex 自动任务在每天 20:00 验证新交易日数据；仅更新本地数据与构建，不发布网站。
+5. Windows 计划任务在周一至周五 20:10 检查新交易日数据；校验和静态页面测试通过后，只提交 `app/data/arbitrage.json` 并推送 `main`。节假日因数据日不变而自动跳过。
 
 ## 图表
 
@@ -39,7 +39,21 @@ Cloudflare Pages 使用静态快照构建，不运行本机 xtdata 更新接口�
 
 构建命令会先完成 Vinext 构建，再把服务器渲染的首页导出为 `dist/client/index.html`；`npm run test:pages` 可同时验证首页、客户端资源和原有看板测试。云端页面只展示提交时的 `app/data/arbitrage.json`，本机的“立即更新数据”功能在云端会自动显示为“云端数据快照”。
 
-Cloudflare 连接的 Git 仓库必须包含当前代码；部署页面显示的提交号应与准备发布的提交一致。项目本身不会自动执行 `git push` 或 Cloudflare 发布。
+Cloudflare 连接的 Git 仓库必须包含当前代码；部署页面显示的提交号应与准备发布的提交一致。
+
+`scripts/update-and-publish.ps1` 是唯一获准自动执行 `git push` 的入口。它要求本地 `main` 与 `origin/main` 完全同步、没有其他已跟踪文件修改、完整性报告通过且数据日更新；随后运行 `npm run test:pages`、仅提交 `app/data/arbitrage.json`、推送 `main`，最后等待线上页面出现新的数据日。任何一步失败都会停止发布并写入 `.runtime/cloud-publish-status.json`。
+
+安装或刷新计划任务：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\install-update-and-publish-task.ps1
+```
+
+无更新、无提交、无推送的安全演练：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\update-and-publish.ps1 -DryRun
+```
 
 ## 口径
 
