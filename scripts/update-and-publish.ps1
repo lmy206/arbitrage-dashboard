@@ -89,11 +89,17 @@ function Invoke-LoggedCommand {
 function Get-JsonDataDate {
   param([string]$JsonText)
 
-  $payload = $JsonText | ConvertFrom-Json
-  if (-not $payload.dataDate) {
+  $matched = [regex]::Match($JsonText, '"dataDate"\s*:\s*"(?<date>\d{4}-\d{2}-\d{2})"')
+  if (-not $matched.Success) {
     throw "数据文件缺少 dataDate"
   }
-  return [string]$payload.dataDate
+  return $matched.Groups["date"].Value
+}
+
+function Read-Utf8Text {
+  param([string]$Path)
+
+  return [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
 }
 
 function Assert-RepositoryReady {
@@ -142,7 +148,7 @@ function Assert-IntegrityReport {
     throw "完整性报告不存在：$reportPath"
   }
 
-  $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+  $report = Read-Utf8Text -Path $reportPath | ConvertFrom-Json
   $checks = @(
     $report.status -eq "ok",
     [int]$report.pairCount -eq 30,
@@ -159,7 +165,7 @@ function Assert-IntegrityReport {
   if (-not (Test-Path -LiteralPath $outputPath)) {
     throw "看板数据文件不存在：$outputPath"
   }
-  $outputDate = Get-JsonDataDate -JsonText (Get-Content -LiteralPath $outputPath -Raw)
+  $outputDate = Get-JsonDataDate -JsonText (Read-Utf8Text -Path $outputPath)
   if ($outputDate -ne [string]$report.dataDate) {
     throw "数据文件日期 $outputDate 与完整性报告日期 $($report.dataDate) 不一致"
   }
