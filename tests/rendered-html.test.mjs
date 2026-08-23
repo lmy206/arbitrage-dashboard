@@ -93,7 +93,7 @@ test("dashboard rows follow strategy, market and percentile hierarchy", async ()
     strategyOrder.get(a.strategyType) - strategyOrder.get(b.strategyType)
     || marketOrder.get(a.marketCategory) - marketOrder.get(b.marketCategory)
     || b.percentile - a.percentile
-    || a.pair.localeCompare(b.pair, "zh-CN")
+    || (a.pair < b.pair ? -1 : a.pair > b.pair ? 1 : 0)
   ));
 
   assert.deepEqual(payload.rows.map((row) => row.pair), expected.map((row) => row.pair));
@@ -347,7 +347,8 @@ test("monthly contract details contain only current values and liquidity", async
       assert.ok(row.mainHistoryChart, `${row.pair} should include an expandable main-continuous chart`);
     } else {
       assert.equal(row.seriesMode, "weighted", `${row.pair} should use the JQ00 weighted default`);
-      assert.equal(row.mainHistoryChart, null);
+      assert.ok(row.mainHistoryChart, `${row.pair} should include an expandable weighted-index chart`);
+      assert.equal(row.mainHistoryChart.series[0].expiry, "加权");
       assert.match(row.leftSymbol, /JQ00\./);
       assert.match(row.rightSymbol, /JQ00\./);
       assert.ok(row.mainContinuousObservation, `${row.pair} should retain a main-continuous observation`);
@@ -391,6 +392,33 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
     assert.ok(row.contracts.every((contract) => contract.historyChart === null));
   }
   assert.equal(payload.rows.filter((row) => row.spotObservation !== null).length, expected.size);
+});
+
+test("every weighted pair includes an expandable ten-year weighted-index chart", async () => {
+  const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
+  const weightedRows = payload.rows.filter((row) => row.seriesMode === "weighted");
+
+  assert.ok(weightedRows.length > 0);
+  for (const row of weightedRows) {
+    const chart = row.mainHistoryChart;
+    assert.ok(chart, `${row.pair} should include a weighted-index chart`);
+    assert.equal(chart.title, `${row.pair}加权走势`);
+    assert.equal(chart.source, "xtdata");
+    assert.equal(chart.grain, "周末值");
+    assert.equal(chart.series.length, 1);
+    assert.equal(chart.series[0].expiry, "加权");
+    assert.equal(chart.series[0].leftSymbol, row.leftSymbol);
+    assert.equal(chart.series[0].rightSymbol, row.rightSymbol);
+    assert.ok(chart.series[0].points.length >= 8);
+    assert.equal(chart.series[0].points.at(-1).date, payload.dataDate);
+    assert.ok(Date.parse(chart.endDate) - Date.parse(chart.startDate) >= 3650 * 24 * 60 * 60 * 1000);
+    assert.ok(chart.series[0].points.every((point) => point.date <= payload.dataDate));
+  }
+
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /historyChart: row\.mainHistoryChart/);
+  assert.match(pageSource, /historyToggleLabel\(row\.pair, option\.label, isHistoryExpanded\)/);
+  assert.match(pageSource, /option\.historyChart &&/);
 });
 
 test("spot-reference pairs include expandable xtdata history charts", async () => {

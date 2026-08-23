@@ -2240,13 +2240,21 @@ def build_rows(
                 "mainHistoryChart": (
                     build_observation_history_chart(
                         definition,
-                        "主连" if tradable else "现货",
+                        (
+                            "加权"
+                            if any(is_weighted_symbol(symbol) for symbol in (left, right))
+                            else ("主连" if tradable else "现货")
+                        ),
                         left,
                         right,
                         values,
                         common_latest_date,
                     )
-                    if is_equity_index_definition(definition) or not tradable
+                    if (
+                        is_equity_index_definition(definition)
+                        or any(is_weighted_symbol(symbol) for symbol in (left, right))
+                        or not tradable
+                    )
                     else None
                 ),
                 "spotObservation": build_spot_observation(
@@ -2394,6 +2402,23 @@ def write_outputs(
         for row in tradable_rows
         if is_equity_index_definition(definitions_by_pair[row["pair"]])
     ]
+    weighted_rows = [row for row in tradable_rows if row["seriesMode"] == "weighted"]
+    weighted_observation_history_charts = [
+        row.get("mainHistoryChart") for row in weighted_rows
+    ]
+    weighted_observation_histories_complete = all(
+        chart is not None
+        and chart["title"].endswith("加权走势")
+        and chart["endDate"] == data_date
+        and len(chart["series"]) == 1
+        and chart["series"][0]["expiry"] == "加权"
+        and len(chart["series"][0]["points"]) >= 8
+        and all(
+            point["date"] <= data_date
+            for point in chart["series"][0]["points"]
+        )
+        for chart in weighted_observation_history_charts
+    )
     contract_history_charts = [
         contract.get("historyChart")
         for row in commodity_tradable_rows
@@ -2492,6 +2517,7 @@ def write_outputs(
         len(rows) == len(PAIRS),
         contract_rows_complete,
         contract_history_charts_complete,
+        weighted_observation_histories_complete,
         equity_index_contract_history_disabled,
         equity_index_observation_histories_complete,
         spot_reference_histories_complete,
@@ -2522,6 +2548,11 @@ def write_outputs(
         "contractHistoryChartCount": sum(chart is not None for chart in contract_history_charts),
         "expectedContractHistoryChartCount": len(contract_history_charts),
         "contractHistoryChartsComplete": contract_history_charts_complete,
+        "weightedObservationHistoryCount": sum(
+            chart is not None for chart in weighted_observation_history_charts
+        ),
+        "expectedWeightedObservationHistoryCount": len(weighted_rows),
+        "weightedObservationHistoriesComplete": weighted_observation_histories_complete,
         "equityIndexContractHistoryDisabled": equity_index_contract_history_disabled,
         "equityIndexObservationHistoryCount": sum(
             chart is not None for chart in equity_index_observation_history_charts
