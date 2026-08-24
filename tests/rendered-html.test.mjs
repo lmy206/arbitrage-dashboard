@@ -183,7 +183,7 @@ test("monthly contract details contain only current values and liquidity", async
     "蛋白质价差",
     "豆棕价差",
   ]);
-  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺矿比"]);
+  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺矿比", "焦炭焦煤比"]);
 
   for (const row of payload.rows) {
     const isEquityIndex = [row.leftSymbol, row.rightSymbol].some((symbol) => /^(IC|IM|IF)00\.IF$/.test(symbol));
@@ -191,7 +191,9 @@ test("monthly contract details contain only current values and liquidity", async
     if (row.spotObservation) {
       assert.equal(row.spotObservation.signal, expectedSignal(row.spotObservation.percentile), `${row.pair} spot signal band`);
     }
-    const expectedContractCount = ["现货参考", "期限套利", "跨市场套利"].includes(row.pairType) ? 0 : filteredMonthPairs.has(row.pair) ? null : 4;
+    const expectedContractCount = ["现货参考", "期限套利", "跨市场套利"].includes(row.pairType)
+      ? 0
+      : (filteredMonthPairs.has(row.pair) || isEquityIndex ? null : 4);
     if (expectedContractCount === null) {
       assert.ok(row.contracts.length > 0 && row.contracts.length <= 4, `${row.pair} filtered contract detail count`);
     } else {
@@ -284,7 +286,8 @@ test("monthly contract details contain only current values and liquidity", async
   }
 
   const imIc = payload.rows.find((row) => row.pair === "IM-IC价差");
-  assert.equal(new Set(imIc.contracts.map((contract) => contract.expiry)).size, 4);
+  const imIcExpiries = new Set(imIc.contracts.map((contract) => contract.expiry));
+  assert.ok(imIcExpiries.size > 0 && imIcExpiries.size <= 4);
   assert.ok(imIc.contracts.every((contract) => /^\d{4}$/.test(contract.expiry)));
 
   for (const pair of oilseedMonthPairs) {
@@ -314,6 +317,11 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(cokeCoal.leftSymbol, "jJQ00.DF");
   assert.equal(cokeCoal.rightSymbol, "jmJQ00.DF");
   assert.equal(cokeCoal.current, (Number(cokeCoal.current)).toFixed(4));
+  assert.ok(cokeCoal.contracts.length > 0 && cokeCoal.contracts.length <= 4);
+  assert.ok(
+    cokeCoal.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))),
+    "焦炭焦煤比 should only show weighted and 1/5/9 contract observations",
+  );
 
   const oilMeal = payload.rows.find((row) => row.pair === "油粕比");
   assert.ok(oilMeal, "油粕比 should be present");

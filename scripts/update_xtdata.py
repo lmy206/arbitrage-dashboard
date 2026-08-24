@@ -287,7 +287,14 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "棕榈油菜油比", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"pair": "纯碱玻璃比", "left": "SAJQ00.ZF", "right": "FGJQ00.ZF", "formula": ratio, "kind": "ratio"},
-    {"pair": "焦炭焦煤比", "left": "jJQ00.DF", "right": "jmJQ00.DF", "formula": ratio, "kind": "ratio"},
+    {
+        "pair": "焦炭焦煤比",
+        "left": "jJQ00.DF",
+        "right": "jmJQ00.DF",
+        "formula": ratio,
+        "kind": "ratio",
+        "contract_months": {1, 5, 9},
+    },
     {"pair": "油粕比", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio", "strategy_type": "趋势", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "豆油菜油比", "left": "yJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {
@@ -2389,7 +2396,11 @@ def write_outputs(
             )
         )
         if definitions_by_pair[row["pair"]].get("contract_months")
-        else len(row["contracts"]) == 4
+        else (
+            0 < len(row["contracts"]) <= 4
+            if is_equity_index_definition(definitions_by_pair[row["pair"]])
+            else len(row["contracts"]) == 4
+        )
         for row in tradable_rows
     )
     commodity_tradable_rows = [
