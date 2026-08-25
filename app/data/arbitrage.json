@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-25",
-  "updatedAt": "2026-08-25T21:33:52+08:00",
+  "updatedAt": "2026-08-25T21:49:55+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与BNM校对数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -3630,6 +3630,16 @@
                 "value": 0.05336
               }
             ]
+          }
+        ],
+        "fixedThresholds": [
+          {
+            "label": "3%",
+            "value": 0.03
+          },
+          {
+            "label": "6%",
+            "value": 0.06
           }
         ]
       },
@@ -203199,13 +203209,13 @@
     {
       "strategyType": "内外盘",
       "pair": "铜内外盘比价",
-      "current": "7.5786",
+      "current": "7.5807",
       "previous": "7.5944",
-      "change": "-0.0158",
-      "changeValue": -0.01578677,
-      "allTime": "20.19%",
+      "change": "-0.0137",
+      "changeValue": -0.01365855,
+      "allTime": "20.23%",
       "allTimeRange": "6.8790 ~ 8.5541",
-      "percentile": 16.27,
+      "percentile": 16.36,
       "fiveYearRange": "6.8790 ~ 8.5541",
       "signal": "中性",
       "lots": "—",
@@ -203215,7 +203225,7 @@
       "leftSymbol": "cu00.SF",
       "rightSymbol": "CAD.LME",
       "leftChangePct": -0.1202,
-      "rightChangePct": 0.0878,
+      "rightChangePct": 0.0597,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "cu00.SF / CAD.LME",
@@ -205290,7 +205300,7 @@
               },
               {
                 "date": "2026-08-25",
-                "value": 7.578608
+                "value": 7.580736
               }
             ]
           }
@@ -207356,16 +207366,16 @@
       "contracts": [],
       "externalSourceDate": "2026-08-25",
       "domesticPrice": 107980.0,
-      "lmePriceUsdPerTonne": 14248.0,
+      "lmePriceUsdPerTonne": 14244.0,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "内外盘",
       "pair": "锌内外盘比价",
-      "current": "6.7811",
+      "current": "6.7785",
       "previous": "6.7690",
-      "change": "+0.0121",
-      "changeValue": 0.01210621,
+      "change": "+0.0095",
+      "changeValue": 0.00946147,
       "allTime": "2.15%",
       "allTimeRange": "6.1944 ~ 9.0651",
       "percentile": 4.32,
@@ -207378,7 +207388,7 @@
       "leftSymbol": "zn00.SF",
       "rightSymbol": "ZSD.LME",
       "leftChangePct": 0.6369,
-      "rightChangePct": 0.4573,
+      "rightChangePct": 0.4965,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "zn00.SF / ZSD.LME",
@@ -209453,7 +209463,7 @@
               },
               {
                 "date": "2026-08-25",
-                "value": 6.781116
+                "value": 6.778471
               }
             ]
           }
@@ -211519,7 +211529,7 @@
       "contracts": [],
       "externalSourceDate": "2026-08-25",
       "domesticPrice": 26070.0,
-      "lmePriceUsdPerTonne": 3844.5,
+      "lmePriceUsdPerTonne": 3846.0,
       "marketCategory": "工业品"
     }
   ],

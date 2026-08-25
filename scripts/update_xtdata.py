@@ -2593,6 +2593,11 @@ def build_external_reference_row(
             "grain": "周末值 · 仅向后匹配已公布数据",
         }
     )
+    if builder == "cn_equity_risk_premium":
+        chart["fixedThresholds"] = [
+            {"label": "3%", "value": 0.03},
+            {"label": "6%", "value": 0.06},
+        ]
     chart["series"][0]["expiry"] = "现货" if pair_type == "现货参考" else "跨市场"
 
     percentage = definition["kind"] == "percentage"

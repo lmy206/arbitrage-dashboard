@@ -46,6 +46,7 @@ type ContractHistoryChartData = {
   grain: string;
   series: ContractHistorySeries[];
   overlaySeries?: ContractHistoryOverlaySeries;
+  fixedThresholds?: { label: string; value: number }[];
 };
 
 type ContractRow = {
@@ -474,15 +475,16 @@ function ContractHistoryChart({ chart }: { chart: ContractHistoryChartData }) {
   const timeRange = Math.max(endTime - startTime, 1);
   const allPoints = chart.series.flatMap((series) => series.points.map((point) => ({ series, point })));
   const values = allPoints.map(({ point }) => point.value);
-  const lowerThreshold = quantile(values, 0.03);
-  const upperThreshold = quantile(values, 0.97);
-  const thresholds = [
-    { label: "3%", value: lowerThreshold },
-    { label: "97%", value: upperThreshold },
+  const thresholds = chart.fixedThresholds ?? [
+    { label: "3%", value: quantile(values, 0.03) },
+    { label: "97%", value: quantile(values, 0.97) },
   ];
+  const thresholdSummary = chart.fixedThresholds
+    ? `${thresholds.map((threshold) => threshold.label).join("/")}固定阈值`
+    : "3%/97%阈值按图内全部历史值";
   const isSeasonalHistory = chart.series.every((series) => /^\d{4}$/.test(series.expiry));
-  const rawMin = Math.min(...values);
-  const rawMax = Math.max(...values);
+  const rawMin = Math.min(...values, ...thresholds.map((threshold) => threshold.value));
+  const rawMax = Math.max(...values, ...thresholds.map((threshold) => threshold.value));
   const rawRange = rawMax - rawMin || Math.max(Math.abs(rawMax) * 0.1, 1);
   const yMin = rawMin - rawRange * 0.08;
   const yMax = rawMax + rawRange * 0.08;
@@ -544,7 +546,7 @@ function ContractHistoryChart({ chart }: { chart: ContractHistoryChartData }) {
       <header>
         <div>
           <h4>{chart.title}</h4>
-          <p>{chart.startDate}—{chart.endDate} · {chart.grain} · 3%/97%阈值按图内全部历史值 · 断档处不连线 · {chart.source}</p>
+          <p>{chart.startDate}—{chart.endDate} · {chart.grain} · {thresholdSummary} · 断档处不连线 · {chart.source}</p>
         </div>
         <span>{isSeasonalHistory ? `${chart.series.length} 个历年合约` : chart.series.map((series) => series.expiry).join(" / ")}</span>
       </header>
@@ -561,7 +563,7 @@ function ContractHistoryChart({ chart }: { chart: ContractHistoryChartData }) {
             {overlaySeries.label}
           </span>
         )}
-        <span className="threshold-legend"><i aria-hidden="true" />3% / 97% 阈值</span>
+        <span className="threshold-legend"><i aria-hidden="true" />{thresholds.map((threshold) => threshold.label).join(" / ")} 阈值</span>
       </div>
       <svg
         ref={svgRef}

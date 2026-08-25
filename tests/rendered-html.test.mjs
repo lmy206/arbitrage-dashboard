@@ -145,6 +145,8 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /const height = 270/);
   assert.match(pageSource, /quantile\(values, 0\.03\)/);
   assert.match(pageSource, /quantile\(values, 0\.97\)/);
+  assert.match(pageSource, /chart\.fixedThresholds \?\?/);
+  assert.match(pageSource, /thresholds\.map\(\(threshold\) => threshold\.label\)\.join\(" \/ "\)/);
   assert.match(pageSource, /3%\/97%阈值按图内全部历史值/);
   assert.match(pageSource, /historyChart: row\.spotObservation\.historyChart/);
   assert.match(pageSource, /historyChart: row\.mainHistoryChart/);
@@ -651,6 +653,11 @@ test("approved external risk premiums, US index ratio, and Malaysia palm-soy rat
   assert.ok(Math.abs(Number(palmSoy.current) - palmSoy.foreignPriceMyrPerTonne * palmSoy.fxCnyPerMyr / palmSoy.domesticPriceCnyPerTonne) < 0.0001);
   assert.equal(cnRisk.mainHistoryChart.unit, "百分比");
   assert.equal(usRisk.mainHistoryChart.unit, "百分比");
+  assert.deepEqual(cnRisk.mainHistoryChart.fixedThresholds, [
+    { label: "3%", value: 0.03 },
+    { label: "6%", value: 0.06 },
+  ]);
+  assert.equal(usRisk.mainHistoryChart.fixedThresholds, undefined);
   assert.equal(palmSoy.pairType, "跨市场套利");
   assert.equal(palmSoy.marketCategory, "农产品");
 
