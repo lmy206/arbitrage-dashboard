@@ -1737,14 +1737,14 @@ def build_contract_history_series(
         ).dropna()
         if len(values) < 2:
             continue
-        weekly_values = values.groupby(values.index.to_period("W-FRI")).tail(1).round(6)
+        daily_values = values.round(6)
 
         series.append(
             {
                 "expiry": historical_expiry,
                 "leftSymbol": left_symbol,
                 "rightSymbol": right_symbol,
-                "values": weekly_values,
+                "values": daily_values,
             }
         )
 
@@ -1777,7 +1777,7 @@ def build_contract_history_chart(
         "startDate": start_date.strftime("%Y-%m-%d"),
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
         "source": "xtdata",
-        "grain": "周末值",
+        "grain": "日线收盘",
         "series": [
             {
                 "expiry": item["expiry"],
@@ -1810,7 +1810,6 @@ def build_observation_history_chart(
     ].dropna()
     if len(window) < 2:
         return None
-    weekly_values = window.groupby(window.index.to_period("W-FRI")).tail(1)
     return {
         "title": f"{definition['pair']}{label}走势",
         "unit": "点差" if definition["kind"] == "spread" else "比值",
@@ -1818,7 +1817,7 @@ def build_observation_history_chart(
         "startDate": start_date.strftime("%Y-%m-%d"),
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
         "source": "xtdata",
-        "grain": "周末值",
+        "grain": "日线收盘",
         "series": [
             {
                 "expiry": label,
@@ -1829,7 +1828,7 @@ def build_observation_history_chart(
                         "date": timestamp.strftime("%Y-%m-%d"),
                         "value": round(float(value), 6),
                     }
-                    for timestamp, value in weekly_values.items()
+                    for timestamp, value in window.items()
                 ],
             }
         ],
@@ -2441,15 +2440,14 @@ def build_lme_cross_market_row(
     fx_window = fx_series[
         (fx_series.index >= chart_start) & (fx_series.index <= common_latest_date)
     ].dropna()
-    fx_weekly = fx_window.groupby(fx_window.index.to_period("W-FRI")).tail(1)
-    if len(fx_weekly) < 2:
+    if len(fx_window) < 2:
         raise ExternalDataError(f"{definition['pair']} 美元兑人民币叠加线数据不足")
     chart["series"][0]["expiry"] = "内外盘比价（左轴）"
     chart.update(
         {
             "title": f"{definition['pair']}走势",
             "source": "国内：xtdata 00主力连续；外盘：AKShare/新浪 LME三个月电子盘；汇率：AKShare/国家外汇管理局",
-            "grain": "周末值 · 比价不做汇率换算 · 汇率仅作右轴参考",
+            "grain": "日线收盘 · 比价不做汇率换算 · 汇率仅作右轴参考",
             "overlaySeries": {
                 "label": "美元兑人民币中间价（右轴）",
                 "symbol": USD_CNY_MID_SYMBOL,
@@ -2459,7 +2457,7 @@ def build_lme_cross_market_row(
                         "date": timestamp.strftime("%Y-%m-%d"),
                         "value": round(float(value), 6),
                     }
-                    for timestamp, value in fx_weekly.items()
+                    for timestamp, value in fx_window.items()
                 ],
             },
         }
@@ -2654,7 +2652,7 @@ def build_external_reference_row(
             "title": f"{definition['pair']}走势",
             "unit": unit,
             "source": source,
-            "grain": "周末值 · 仅向后匹配已公布数据",
+            "grain": "日线收盘 · 仅向后匹配已公布数据",
         }
     )
     if builder == "cn_equity_risk_premium":
@@ -2946,11 +2944,13 @@ def build_history_charts(
                 window=window,
                 min_periods=window,
             ).mean()
-        monthly = daily_chart.groupby(daily_chart.index.to_period("M")).tail(1).tail(60)
+        latest_date = values.index[-1]
+        five_year_start = latest_date - pd.DateOffset(years=5)
+        daily_window = daily_chart[daily_chart.index >= five_year_start]
         points = []
-        for timestamp, point in monthly.iterrows():
+        for timestamp, point in daily_window.iterrows():
             output_point: dict[str, Any] = {
-                "date": str(timestamp.to_period("M")),
+                "date": timestamp.strftime("%Y-%m-%d"),
                 "value": round(float(point["value"]), 6),
             }
             for window in (5, 60, 250):
@@ -2959,15 +2959,14 @@ def build_history_charts(
                     round(float(ma_value), 6) if pd.notna(ma_value) else None
                 )
             points.append(output_point)
-        latest_date = values.index[-1]
-        five_year = values[values.index >= latest_date - pd.DateOffset(years=5)]
+        five_year = values[values.index >= five_year_start]
         charts.append(
             {
                 "id": chart_id,
                 "pair": pair_name,
                 "title": f"{pair_name}走势",
                 "unit": "点差" if definition["kind"] == "spread" else "比值",
-                "grain": "月末值 · MA基于日频",
+                "grain": "日线收盘 · MA基于日频",
                 "source": "xtdata",
                 "leftSymbol": left,
                 "rightSymbol": right,
