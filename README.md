@@ -76,4 +76,4 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\update-and-publi
 
 ## 安全与失败处理
 
-`xtdata` 凭证只从 `XTQUANT_TOKEN` 环境变量或本机 `E:\IM\config.py` 读取，不写入项目。若 xtdata 行情不可用、35 组数据不齐、批准的外部数据缺失或过期、交易日不一致或检测到未来数据，脚本保留上次有效网页数据并记录 `xtdata_unavailable`、`external_source_unavailable` 或校验错误，不发布异常结果。
+`xtdata` 凭证只从 `XTQUANT_TOKEN` 环境变量或本机 `E:\data\config.py` 读取，不写入项目。若 xtdata 行情不可用、35 组数据不齐、批准的外部数据缺失或过期、交易日不一致或检测到未来数据，脚本保留上次有效网页数据并记录 `xtdata_unavailable`、`external_source_unavailable` 或校验错误，不发布异常结果。

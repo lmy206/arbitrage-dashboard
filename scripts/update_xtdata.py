@@ -484,12 +484,12 @@ def load_xt_token() -> str:
     if token:
         return token
 
-    config_dir = Path(os.environ.get("XTQUANT_CONFIG_DIR", r"E:\IM"))
+    config_dir = Path(os.environ.get("XTQUANT_CONFIG_DIR", r"E:\data"))
     sys.path.insert(0, str(config_dir))
     try:
         from config import xt_token  # type: ignore
     except Exception as exc:
-        raise RuntimeError("XTQUANT_TOKEN 未设置，且无法从 E:\\IM\\config.py 读取 xt_token") from exc
+        raise RuntimeError("XTQUANT_TOKEN 未设置，且无法从 E:\\data\\config.py 读取 xt_token") from exc
     finally:
         sys.path.pop(0)
     return str(xt_token)
