@@ -45,6 +45,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /玻璃\/聚乙烯比价/);
   assert.match(html, /玻璃\/聚丙烯比价/);
   assert.match(html, /猪肉\/玉米比价/);
+  assert.match(html, /卷螺价差/);
+  assert.doesNotMatch(html, /螺卷差/);
+  assert.match(html, /title="hcJQ00\.SF − rbJQ00\.SF"/);
   assert.match(html, /铜内外盘比价/);
   assert.match(html, /铝内外盘比价/);
   assert.match(html, /锌内外盘比价/);
