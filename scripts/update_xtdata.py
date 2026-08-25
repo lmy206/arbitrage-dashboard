@@ -40,6 +40,8 @@ SHANGHAI = ZoneInfo("Asia/Shanghai")
 MONTHLY_LOOKBACK_DAYS = 1100
 SEASONAL_CONTRACT_YEARS = 10
 CONTRACT_HISTORY_MAX_SPAN_DAYS = 400
+RECENT_DAILY_TRADING_DAYS = 20
+HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘"
 IM_TERM_START_DATE = pd.Timestamp("2022-07-22")
 IM_TERM_SPOT_SYMBOL = "000852.SH"
 USD_CNY_MID_SYMBOL = "USDCNY_MID.SAFE"
@@ -1693,6 +1695,18 @@ def balance_metrics(
     )
 
 
+def sample_chart_history(values: pd.Series) -> pd.Series:
+    """Keep the latest trading days intact and compact older chart points weekly."""
+    ordered = values.dropna().sort_index()
+    if len(ordered) <= RECENT_DAILY_TRADING_DAYS:
+        return ordered
+
+    recent = ordered.tail(RECENT_DAILY_TRADING_DAYS)
+    older = ordered.iloc[:-RECENT_DAILY_TRADING_DAYS]
+    weekly = older.groupby(older.index.to_period("W-FRI")).tail(1)
+    return pd.concat([weekly, recent]).sort_index()
+
+
 def build_contract_history_series(
     definition: dict[str, Any],
     expiry: str,
@@ -1737,14 +1751,14 @@ def build_contract_history_series(
         ).dropna()
         if len(values) < 2:
             continue
-        daily_values = values.round(6)
+        chart_values = sample_chart_history(values).round(6)
 
         series.append(
             {
                 "expiry": historical_expiry,
                 "leftSymbol": left_symbol,
                 "rightSymbol": right_symbol,
-                "values": daily_values,
+                "values": chart_values,
             }
         )
 
@@ -1777,7 +1791,7 @@ def build_contract_history_chart(
         "startDate": start_date.strftime("%Y-%m-%d"),
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
         "source": "xtdata",
-        "grain": "日线收盘",
+        "grain": HYBRID_CHART_GRAIN,
         "series": [
             {
                 "expiry": item["expiry"],
@@ -1810,6 +1824,7 @@ def build_observation_history_chart(
     ].dropna()
     if len(window) < 2:
         return None
+    chart_values = sample_chart_history(window)
     return {
         "title": f"{definition['pair']}{label}走势",
         "unit": "点差" if definition["kind"] == "spread" else "比值",
@@ -1817,7 +1832,7 @@ def build_observation_history_chart(
         "startDate": start_date.strftime("%Y-%m-%d"),
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
         "source": "xtdata",
-        "grain": "日线收盘",
+        "grain": HYBRID_CHART_GRAIN,
         "series": [
             {
                 "expiry": label,
@@ -1828,7 +1843,7 @@ def build_observation_history_chart(
                         "date": timestamp.strftime("%Y-%m-%d"),
                         "value": round(float(value), 6),
                     }
-                    for timestamp, value in window.items()
+                    for timestamp, value in chart_values.items()
                 ],
             }
         ],
@@ -2442,12 +2457,13 @@ def build_lme_cross_market_row(
     ].dropna()
     if len(fx_window) < 2:
         raise ExternalDataError(f"{definition['pair']} 美元兑人民币叠加线数据不足")
+    fx_chart_values = sample_chart_history(fx_window)
     chart["series"][0]["expiry"] = "内外盘比价（左轴）"
     chart.update(
         {
             "title": f"{definition['pair']}走势",
             "source": "国内：xtdata 00主力连续；外盘：AKShare/新浪 LME三个月电子盘；汇率：AKShare/国家外汇管理局",
-            "grain": "日线收盘 · 比价不做汇率换算 · 汇率仅作右轴参考",
+            "grain": f"{HYBRID_CHART_GRAIN} · 比价不做汇率换算 · 汇率仅作右轴参考",
             "overlaySeries": {
                 "label": "美元兑人民币中间价（右轴）",
                 "symbol": USD_CNY_MID_SYMBOL,
@@ -2457,7 +2473,7 @@ def build_lme_cross_market_row(
                         "date": timestamp.strftime("%Y-%m-%d"),
                         "value": round(float(value), 6),
                     }
-                    for timestamp, value in fx_window.items()
+                    for timestamp, value in fx_chart_values.items()
                 ],
             },
         }
@@ -2652,7 +2668,7 @@ def build_external_reference_row(
             "title": f"{definition['pair']}走势",
             "unit": unit,
             "source": source,
-            "grain": "日线收盘 · 仅向后匹配已公布数据",
+            "grain": f"{HYBRID_CHART_GRAIN} · 仅向后匹配已公布数据",
         }
     )
     if builder == "cn_equity_risk_premium":
@@ -2947,8 +2963,10 @@ def build_history_charts(
         latest_date = values.index[-1]
         five_year_start = latest_date - pd.DateOffset(years=5)
         daily_window = daily_chart[daily_chart.index >= five_year_start]
+        chart_index = sample_chart_history(daily_window["value"]).index
+        chart_window = daily_window.loc[chart_index]
         points = []
-        for timestamp, point in daily_window.iterrows():
+        for timestamp, point in chart_window.iterrows():
             output_point: dict[str, Any] = {
                 "date": timestamp.strftime("%Y-%m-%d"),
                 "value": round(float(point["value"]), 6),
@@ -2966,7 +2984,7 @@ def build_history_charts(
                 "pair": pair_name,
                 "title": f"{pair_name}走势",
                 "unit": "点差" if definition["kind"] == "spread" else "比值",
-                "grain": "日线收盘 · MA基于日频",
+                "grain": f"{HYBRID_CHART_GRAIN} · MA基于日频",
                 "source": "xtdata",
                 "leftSymbol": left,
                 "rightSymbol": right,

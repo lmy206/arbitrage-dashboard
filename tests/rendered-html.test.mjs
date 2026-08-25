@@ -15,11 +15,32 @@ async function render() {
   );
 }
 
-function hasAdjacentTradingDays(points) {
-  return points.some((point, index) => (
-    index > 0
-    && Date.parse(point.date) - Date.parse(points[index - 1].date) <= 4 * 24 * 60 * 60 * 1000
-  ));
+const DAY_MS = 24 * 60 * 60 * 1000;
+const HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘";
+
+function weekEndingFriday(date) {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + ((5 - value.getUTCDay() + 7) % 7));
+  return value.toISOString().slice(0, 10);
+}
+
+function assertHybridHistory(points, label = "history chart") {
+  assert.ok(points.length >= 2, `${label} should include at least two points`);
+  assert.ok(points.every((point, index) => (
+    Number.isFinite(point.value)
+    && (index === 0 || point.date > points[index - 1].date)
+  )), `${label} dates should be unique and increasing`);
+  if (points.length <= 20) return;
+
+  const older = points.slice(0, -20);
+  const recent = points.slice(-20);
+  const olderBuckets = older.map((point) => weekEndingFriday(point.date));
+  assert.equal(new Set(olderBuckets).size, olderBuckets.length, `${label} older observations should be weekly`);
+  assert.ok(older.at(-1).date < recent[0].date, `${label} weekly and daily sections should not overlap`);
+
+  const recentGaps = recent.slice(1).map((point, index) => Date.parse(point.date) - Date.parse(recent[index].date));
+  assert.ok(recentGaps.filter((gap) => gap <= 4 * DAY_MS).length >= 15, `${label} latest 20 observations should be daily`);
+  assert.ok(recentGaps.every((gap) => gap <= 15 * DAY_MS), `${label} latest observations should not have weekly spacing`);
 }
 
 test("server-renders the arbitrage dashboard", async () => {
@@ -276,15 +297,13 @@ test("monthly contract details contain only current values and liquidity", async
       assert.ok(contract.historyChart, `${row.pair} ${contract.expiry} should include a same-month history chart`);
       assert.equal(contract.historyChart.month, contract.expiry.slice(-2));
       assert.equal(contract.historyChart.source, "xtdata");
-      assert.equal(contract.historyChart.grain, "日线收盘");
+      assert.equal(contract.historyChart.grain, HYBRID_CHART_GRAIN);
       assert.ok(contract.historyChart.series.length >= 1 && contract.historyChart.series.length <= 10);
       assert.equal(new Set(contract.historyChart.series.map((series) => series.expiry)).size, contract.historyChart.series.length);
       for (const series of contract.historyChart.series) {
         assert.equal(series.expiry.slice(-2), contract.expiry.slice(-2));
         assert.ok(series.points.length >= 2, `${row.pair} ${series.expiry} should have enough daily points`);
-        if (series.points.length >= 3) {
-          assert.ok(hasAdjacentTradingDays(series.points), `${row.pair} ${series.expiry} should retain daily observations`);
-        }
+        assertHybridHistory(series.points, `${row.pair} ${series.expiry}`);
         assert.ok(
           Date.parse(series.points.at(-1).date) - Date.parse(series.points[0].date) <= 400 * 24 * 60 * 60 * 1000,
           `${row.pair} ${series.expiry} should be a concrete contract rather than an ambiguous long series`,
@@ -310,8 +329,14 @@ test("monthly contract details contain only current values and liquidity", async
       const fiveYearPercentile = Math.round(
         fiveYearSeasonalPoints.filter((point) => point.value <= selectedCurrent).length / fiveYearSeasonalPoints.length * 10000,
       ) / 100;
-      assert.equal(contract.allTime, `${allTimePercentile.toFixed(2)}%`, `${row.pair} ${contract.expiry} all-time percentile should use same-month contracts`);
-      assert.equal(contract.percentile, fiveYearPercentile, `${row.pair} ${contract.expiry} five-year percentile should use same-month contracts`);
+      assert.ok(
+        Math.abs(Number.parseFloat(contract.allTime) - allTimePercentile) <= 5,
+        `${row.pair} ${contract.expiry} all-time percentile should stay consistent with the compact same-month chart`,
+      );
+      assert.ok(
+        Math.abs(contract.percentile - fiveYearPercentile) <= 5,
+        `${row.pair} ${contract.expiry} five-year percentile should stay consistent with the compact same-month chart`,
+      );
     }
   }
 
@@ -421,11 +446,11 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
     ]) {
       assert.ok(chart, `${pair} ${seriesLabel} chart should be present`);
       assert.equal(chart.source, "xtdata");
-      assert.equal(chart.grain, "日线收盘");
+      assert.equal(chart.grain, HYBRID_CHART_GRAIN);
       assert.equal(chart.series.length, 1);
       assert.equal(chart.series[0].expiry, seriesLabel);
-      assert.ok(chart.series[0].points.length >= 900);
-      assert.ok(hasAdjacentTradingDays(chart.series[0].points));
+      assert.ok(chart.series[0].points.length >= 180);
+      assertHybridHistory(chart.series[0].points, `${pair} ${seriesLabel}`);
       assert.ok(Date.parse(chart.endDate) - Date.parse(chart.startDate) >= 1000 * 24 * 60 * 60 * 1000);
     }
     assert.ok(row.contracts.every((contract) => contract.historyChart === null));
@@ -443,13 +468,13 @@ test("every weighted pair includes an expandable ten-year weighted-index chart",
     assert.ok(chart, `${row.pair} should include a weighted-index chart`);
     assert.equal(chart.title, `${row.pair}加权走势`);
     assert.equal(chart.source, "xtdata");
-    assert.equal(chart.grain, "日线收盘");
+    assert.equal(chart.grain, HYBRID_CHART_GRAIN);
     assert.equal(chart.series.length, 1);
     assert.equal(chart.series[0].expiry, "加权");
     assert.equal(chart.series[0].leftSymbol, row.leftSymbol);
     assert.equal(chart.series[0].rightSymbol, row.rightSymbol);
-    assert.ok(chart.series[0].points.length >= 500);
-    assert.ok(hasAdjacentTradingDays(chart.series[0].points));
+    assert.ok(chart.series[0].points.length >= 120);
+    assertHybridHistory(chart.series[0].points, row.pair);
     assert.equal(chart.series[0].points.at(-1).date, payload.dataDate);
     assert.ok(Date.parse(chart.endDate) - Date.parse(chart.startDate) >= 600 * 24 * 60 * 60 * 1000);
     assert.ok(chart.series[0].points.every((point) => point.date <= payload.dataDate));
@@ -476,13 +501,13 @@ test("spot-reference pairs include expandable xtdata history charts", async () =
     assert.ok(row.mainHistoryChart, `${pair} should include an expandable spot chart`);
     assert.equal(row.mainHistoryChart.title, `${pair}现货走势`);
     assert.equal(row.mainHistoryChart.source, "xtdata");
-    assert.equal(row.mainHistoryChart.grain, "日线收盘");
+    assert.equal(row.mainHistoryChart.grain, HYBRID_CHART_GRAIN);
     assert.equal(row.mainHistoryChart.series.length, 1);
     assert.equal(row.mainHistoryChart.series[0].expiry, "现货");
     assert.equal(row.mainHistoryChart.series[0].leftSymbol, leftSymbol);
     assert.equal(row.mainHistoryChart.series[0].rightSymbol, rightSymbol);
-    assert.ok(row.mainHistoryChart.series[0].points.length >= 1000);
-    assert.ok(hasAdjacentTradingDays(row.mainHistoryChart.series[0].points));
+    assert.ok(row.mainHistoryChart.series[0].points.length >= 300);
+    assertHybridHistory(row.mainHistoryChart.series[0].points, pair);
     assert.equal(row.mainHistoryChart.series[0].points.at(-1).date, payload.dataDate);
   }
 });
@@ -547,11 +572,11 @@ test("IM term spread exposes down-quarter and skip-quarter observations without 
     assert.equal(chart.title, `IM期限套（当月-${observation.label}）走势`);
     assert.equal(chart.unit, "百分比");
     assert.equal(chart.source, "xtdata");
-    assert.equal(chart.grain, "日线收盘");
+    assert.equal(chart.grain, HYBRID_CHART_GRAIN);
     assert.equal(chart.series.length, 1);
     assert.equal(chart.series[0].expiry, observation.label);
-    assert.ok(chart.series[0].points.length >= 500);
-    assert.ok(hasAdjacentTradingDays(chart.series[0].points));
+    assert.ok(chart.series[0].points.length >= 180);
+    assertHybridHistory(chart.series[0].points, `IM期限套 ${observation.label}`);
     assert.ok(chart.series[0].points[0].date >= "2022-07-22");
     assert.equal(chart.startDate, chart.series[0].points[0].date);
     assert.equal(chart.series[0].points.at(-1).date, payload.dataDate);
@@ -633,13 +658,13 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assert.match(row.mainHistoryChart.source, /xtdata 00主力连续.*AKShare\/新浪 LME三个月电子盘/);
     assert.equal(row.mainHistoryChart.overlaySeries.label, "美元兑人民币中间价（右轴）");
     assert.equal(row.mainHistoryChart.overlaySeries.symbol, "USDCNY_MID.SAFE");
-    assert.match(row.mainHistoryChart.grain, /^日线收盘/);
-    assert.ok(row.mainHistoryChart.overlaySeries.points.length >= 1000);
-    assert.ok(hasAdjacentTradingDays(row.mainHistoryChart.overlaySeries.points));
+    assert.match(row.mainHistoryChart.grain, /^更早周频 · 最近20个交易日日线收盘/);
+    assert.ok(row.mainHistoryChart.overlaySeries.points.length >= 450);
+    assertHybridHistory(row.mainHistoryChart.overlaySeries.points, `${pair} 汇率叠加线`);
     assert.equal(row.mainHistoryChart.overlaySeries.points.at(-1).date, payload.dataDate);
     assert.equal(row.mainHistoryChart.endDate, payload.dataDate);
-    assert.ok(row.mainHistoryChart.series[0].points.length >= 1000);
-    assert.ok(hasAdjacentTradingDays(row.mainHistoryChart.series[0].points));
+    assert.ok(row.mainHistoryChart.series[0].points.length >= 300);
+    assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
   }
 
   assert.equal(payload.externalSources.length, 14);
@@ -663,9 +688,9 @@ test("approved external risk premiums, US index ratio, Malaysia palm-soy ratio, 
     assert.equal(row.contracts.length, 0);
     assert.ok(row.mainHistoryChart);
     assert.equal(row.mainHistoryChart.endDate, payload.dataDate);
-    assert.match(row.mainHistoryChart.grain, /^日线收盘/);
-    assert.ok(row.mainHistoryChart.series[0].points.length >= 1000);
-    assert.ok(hasAdjacentTradingDays(row.mainHistoryChart.series[0].points));
+    assert.match(row.mainHistoryChart.grain, /^更早周频 · 最近20个交易日日线收盘/);
+    assert.ok(row.mainHistoryChart.series[0].points.length >= 300);
+    assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
     assert.ok(row.mainHistoryChart.series[0].points.every((point) => point.date <= payload.dataDate));
   }
 
@@ -713,13 +738,13 @@ test("the six selected chart datasets are present in the requested order", async
     ["im-ic-spread", "ic-if", "im-if", "rebar-ore", "soy-oil-meal", "copper-aluminum"],
   );
   for (const chart of payload.charts) {
-    assert.ok(chart.points.length >= 900, `${chart.pair} should retain daily observations for the available five-year window`);
-    assert.ok(chart.points.length <= 1400, `${chart.pair} should stay within the five-year window`);
+    assert.ok(chart.points.length >= 180, `${chart.pair} should retain hybrid observations for the available five-year window`);
+    assert.ok(chart.points.length <= 320, `${chart.pair} should stay within the compact five-year window`);
     assert.equal(chart.startDate, chart.points[0].date);
     assert.equal(chart.endDate, chart.points.at(-1).date);
     assert.ok(chart.points.every((point, index) => Number.isFinite(point.value) && (index === 0 || point.date > chart.points[index - 1].date)));
-    assert.equal(chart.grain, "日线收盘 · MA基于日频");
-    assert.ok(hasAdjacentTradingDays(chart.points));
+    assert.equal(chart.grain, `${HYBRID_CHART_GRAIN} · MA基于日频`);
+    assertHybridHistory(chart.points, chart.pair);
     for (const key of ["ma5", "ma60", "ma250"]) {
       assert.ok(chart.points.every((point) => point[key] === null || Number.isFinite(point[key])), `${chart.pair} ${key} values should be valid`);
       assert.ok(chart.points.some((point) => Number.isFinite(point[key])), `${chart.pair} should contain ${key}`);
