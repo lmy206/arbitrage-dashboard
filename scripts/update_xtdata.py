@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
+from io import StringIO
 
 import pandas as pd
 
@@ -24,6 +25,12 @@ INDEX_DIR = SHARED_ROOT / "market" / "index_daily"
 AKSHARE_DIR = SHARED_ROOT / "market" / "external" / "akshare"
 LME_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "lme_sina"
 FX_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "safe"
+CSINDEX_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "csindex"
+CHINABOND_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "chinabond"
+EASTMONEY_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "eastmoney"
+MULTPL_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "multpl"
+SINA_INDEX_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "sina_us_index"
+SINA_FUTURES_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "sina_foreign_futures"
 REPORT_DIR = SHARED_ROOT / "reports"
 CATALOG_PATH = SHARED_ROOT / "catalog.sqlite"
 MANIFEST_PATH = SHARED_ROOT / "manifest.jsonl"
@@ -36,6 +43,15 @@ CONTRACT_HISTORY_MAX_SPAN_DAYS = 400
 IM_TERM_START_DATE = pd.Timestamp("2022-07-22")
 IM_TERM_SPOT_SYMBOL = "000852.SH"
 USD_CNY_MID_SYMBOL = "USDCNY_MID.SAFE"
+CNY_MYR_MID_SYMBOL = "CNYMYR_MID.SAFE"
+CSI300_PE_SYMBOL = "CSI300_PE_TTM.CSINDEX"
+CN10Y_SYMBOL = "CN10Y.CHINABOND"
+US10Y_SYMBOL = "US10Y.EASTMONEY"
+SP500_PE_SYMBOL = "SP500_PE.MULTPL"
+NASDAQ_SYMBOL = "IXIC.SINA"
+SP500_SYMBOL = "INX.SINA"
+FCPO_SYMBOL = "FCPO.SINA"
+EXTERNAL_HISTORY_START = "20160825"
 
 
 class ExternalDataError(RuntimeError):
@@ -168,6 +184,8 @@ def symbol_product_root(symbol: str) -> str:
 
 
 def market_category_for_definition(definition: dict[str, Any]) -> str:
+    if definition.get("market_category"):
+        return str(definition["market_category"])
     if is_equity_index_definition(definition):
         return "股指"
     roots = {
@@ -259,6 +277,13 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
     },
 ]
 
+ADDITIONAL_EXTERNAL_PAIRS = {
+    "沪深300风险溢价",
+    "美股风险溢价",
+    "纳斯达克/标普500",
+    "马盘棕榈油与豆油比价",
+}
+
 
 PAIRS: list[dict[str, Any]] = [
     {"pair": "IM-IC价差", "left": "IM00.IF", "right": "IC00.IF", "formula": spread, "kind": "spread"},
@@ -340,6 +365,50 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "ratio",
         "tradable": False,
     },
+    {
+        "pair": "沪深300风险溢价",
+        "left": CSI300_PE_SYMBOL,
+        "right": CN10Y_SYMBOL,
+        "formula": spread,
+        "kind": "percentage",
+        "tradable": False,
+        "custom_builder": "cn_equity_risk_premium",
+        "strategy_type": "趋势",
+        "market_category": "股指",
+    },
+    {
+        "pair": "美股风险溢价",
+        "left": SP500_PE_SYMBOL,
+        "right": US10Y_SYMBOL,
+        "formula": spread,
+        "kind": "percentage",
+        "tradable": False,
+        "custom_builder": "us_equity_risk_premium",
+        "strategy_type": "趋势",
+        "market_category": "股指",
+    },
+    {
+        "pair": "纳斯达克/标普500",
+        "left": NASDAQ_SYMBOL,
+        "right": SP500_SYMBOL,
+        "formula": ratio,
+        "kind": "ratio",
+        "tradable": False,
+        "custom_builder": "external_ratio",
+        "strategy_type": "趋势",
+        "market_category": "股指",
+    },
+    {
+        "pair": "马盘棕榈油与豆油比价",
+        "left": FCPO_SYMBOL,
+        "right": "yJQ00.DF",
+        "formula": ratio,
+        "kind": "ratio",
+        "tradable": False,
+        "custom_builder": "malaysia_palm_soy_ratio",
+        "strategy_type": "内外盘",
+        "market_category": "农产品",
+    },
 ]
 
 
@@ -366,6 +435,14 @@ def definition_xt_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
     """Return only the symbols that must be supplied by xtdata."""
     if definition.get("custom_builder") == "lme_cross_market":
         return (definition["left"],)
+    if definition.get("custom_builder") == "malaysia_palm_soy_ratio":
+        return (definition["right"],)
+    if definition.get("custom_builder") in {
+        "cn_equity_risk_premium",
+        "us_equity_risk_premium",
+        "external_ratio",
+    }:
+        return ()
     return (definition["left"], definition["right"])
 
 
@@ -841,6 +918,115 @@ def normalize_safe_usdcny(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def normalize_safe_cnymyr(frame: pd.DataFrame) -> pd.DataFrame:
+    """Convert SAFE's MYR per 100 CNY midpoint into CNY per MYR."""
+    if frame.empty or "日期" not in frame.columns or "林吉特" not in frame.columns:
+        return pd.DataFrame(columns=["close", "volume"])
+    result = frame[["日期", "林吉特"]].copy().rename(
+        columns={"日期": "date", "林吉特": "myr_per_100_cny"}
+    )
+    result["date"] = pd.to_datetime(result["date"], errors="coerce")
+    result["myr_per_100_cny"] = pd.to_numeric(
+        result["myr_per_100_cny"], errors="coerce"
+    )
+    result["close"] = 100 / result["myr_per_100_cny"]
+    result["volume"] = 0
+    result = result.dropna(subset=["date", "close"])
+    result = result[result["close"].between(1, 3)]
+    result["date"] = result["date"].dt.normalize()
+    return (
+        result[["date", "close", "volume"]]
+        .drop_duplicates(subset=["date"], keep="last")
+        .set_index("date")
+        .sort_index()
+    )
+
+
+def normalize_value_frame(
+    frame: pd.DataFrame,
+    date_column: str,
+    value_column: str,
+) -> pd.DataFrame:
+    if frame.empty or date_column not in frame.columns or value_column not in frame.columns:
+        return pd.DataFrame(columns=["close", "volume"])
+    result = frame[[date_column, value_column]].copy().rename(
+        columns={date_column: "date", value_column: "close"}
+    )
+    result["date"] = pd.to_datetime(result["date"], errors="coerce")
+    result["close"] = pd.to_numeric(result["close"], errors="coerce")
+    result["volume"] = 0
+    result = result.dropna(subset=["date", "close"])
+    result = result[result["close"] > 0]
+    result["date"] = result["date"].dt.normalize()
+    return (
+        result.drop_duplicates(subset=["date"], keep="last")
+        .set_index("date")
+        .sort_index()[["close", "volume"]]
+    )
+
+
+def fetch_chinabond_cn10y(ak: Any) -> pd.DataFrame:
+    start = pd.Timestamp(EXTERNAL_HISTORY_START)
+    end = pd.Timestamp.now(tz=SHANGHAI).tz_localize(None).normalize()
+    frames: list[pd.DataFrame] = []
+    cursor = start
+    while cursor <= end:
+        chunk_end = min(cursor + pd.DateOffset(months=11, days=25), end)
+        frames.append(
+            ak.bond_china_yield(
+                start_date=cursor.strftime("%Y%m%d"),
+                end_date=chunk_end.strftime("%Y%m%d"),
+            )
+        )
+        cursor = chunk_end + pd.Timedelta(days=1)
+    raw = pd.concat(frames, ignore_index=True)
+    raw = raw[raw["曲线名称"] == "中债国债收益率曲线"]
+    return normalize_value_frame(raw, "日期", "10年")
+
+
+def fetch_multpl_sp500_pe() -> pd.DataFrame:
+    import requests
+
+    response = requests.get(
+        "https://www.multpl.com/s-p-500-pe-ratio/table/by-month",
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=35,
+    )
+    response.raise_for_status()
+    table = pd.read_html(StringIO(response.text))[0]
+    date_column, value_column = table.columns[:2]
+    table[value_column] = (
+        table[value_column]
+        .astype(str)
+        .str.replace(r"[^0-9.\-]", "", regex=True)
+    )
+    return normalize_value_frame(table, str(date_column), str(value_column))
+
+
+def fetch_bnm_cnymyr_latest() -> tuple[str, float] | None:
+    """Return BNM's latest CNY/MYR cross-check as CNY per MYR."""
+    import requests
+
+    try:
+        response = requests.get(
+            "https://api.bnm.gov.my/public/exchange-rate",
+            headers={
+                "Accept": "application/vnd.BNM.API.v1+json",
+                "User-Agent": "Mozilla/5.0",
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        item = next(
+            entry
+            for entry in response.json()["data"]
+            if entry["currency_code"] == "CNY"
+        )
+        return item["rate"]["date"], 1 / float(item["rate"]["middle_rate"])
+    except Exception:
+        return None
+
+
 def persist_external_frame(
     frame: pd.DataFrame,
     csv_path: Path,
@@ -868,7 +1054,7 @@ def fetch_external_market_history() -> tuple[
     list[dict[str, Any]],
     list[str],
 ]:
-    """Fetch approved LME 3M prices and chart-only SAFE USD/CNY with cache fallback."""
+    """Fetch all user-approved external series with cache fallback."""
     histories: dict[str, pd.Series] = {}
     metadata: list[dict[str, Any]] = []
     errors: list[str] = []
@@ -880,7 +1066,26 @@ def fetch_external_market_history() -> tuple[
         ak = None
         errors.append(f"AkShare 导入失败: {exc}")
 
-    specifications = [
+    safe_raw: pd.DataFrame | None = None
+    us_rate_raw: pd.DataFrame | None = None
+
+    def fetch_safe_raw() -> pd.DataFrame:
+        nonlocal safe_raw
+        if safe_raw is None:
+            if ak is None:
+                raise RuntimeError("AkShare 不可用")
+            safe_raw = ak.currency_boc_safe()
+        return safe_raw
+
+    def fetch_us_rate_raw() -> pd.DataFrame:
+        nonlocal us_rate_raw
+        if us_rate_raw is None:
+            if ak is None:
+                raise RuntimeError("AkShare 不可用")
+            us_rate_raw = ak.bond_zh_us_rate(start_date=EXTERNAL_HISTORY_START)
+        return us_rate_raw
+
+    specifications: list[dict[str, Any]] = [
         {
             "symbol": definition["lme_symbol"],
             "name": definition["lme_name"],
@@ -894,6 +1099,7 @@ def fetch_external_market_history() -> tuple[
                 else None
             ),
             "normalize": lambda raw: normalize_akshare_frame(raw, "外盘期货"),
+            "maxLagDays": 5,
         }
         for definition in LME_CROSS_MARKET_PAIRS
     ]
@@ -905,9 +1111,108 @@ def fetch_external_market_history() -> tuple[
             "source": "akshare_safe",
             "dataset_type": "fx_midpoint_chart_overlay",
             "path": FX_EXTERNAL_DIR / "USDCNY_MID.csv",
-            "fetch": (lambda: ak.currency_boc_safe()) if ak is not None else None,
+            "fetch": fetch_safe_raw if ak is not None else None,
             "normalize": normalize_safe_usdcny,
+            "maxLagDays": 5,
         }
+    )
+    specifications.extend(
+        [
+            {
+                "symbol": CNY_MYR_MID_SYMBOL,
+                "name": "人民币兑林吉特中间价",
+                "provider": "AKShare/国家外汇管理局；BNM最新值校对",
+                "source": "akshare_safe",
+                "dataset_type": "fx_midpoint",
+                "path": FX_EXTERNAL_DIR / "CNYMYR_MID.csv",
+                "fetch": fetch_safe_raw if ak is not None else None,
+                "normalize": normalize_safe_cnymyr,
+                "maxLagDays": 5,
+            },
+            {
+                "symbol": CSI300_PE_SYMBOL,
+                "name": "沪深300滚动市盈率",
+                "provider": "AKShare/中证指数有限公司",
+                "source": "akshare_csindex",
+                "dataset_type": "equity_valuation",
+                "path": CSINDEX_EXTERNAL_DIR / "CSI300_PE_TTM.csv",
+                "fetch": (
+                    lambda: ak.stock_zh_index_hist_csindex(
+                        symbol="000300",
+                        start_date=EXTERNAL_HISTORY_START,
+                        end_date=pd.Timestamp.now(tz=SHANGHAI).strftime("%Y%m%d"),
+                    )
+                ) if ak is not None else None,
+                "normalize": lambda raw: normalize_value_frame(raw, "日期", "滚动市盈率"),
+                "maxLagDays": 5,
+            },
+            {
+                "symbol": CN10Y_SYMBOL,
+                "name": "中国10年期国债收益率",
+                "provider": "AKShare/中国债券信息网",
+                "source": "akshare_chinabond",
+                "dataset_type": "bond_yield",
+                "path": CHINABOND_EXTERNAL_DIR / "CN10Y.csv",
+                "fetch": (lambda: fetch_chinabond_cn10y(ak)) if ak is not None else None,
+                "normalize": lambda raw: raw,
+                "maxLagDays": 7,
+            },
+            {
+                "symbol": US10Y_SYMBOL,
+                "name": "美国10年期国债收益率",
+                "provider": "AKShare/东方财富",
+                "source": "akshare_eastmoney",
+                "dataset_type": "bond_yield",
+                "path": EASTMONEY_EXTERNAL_DIR / "US10Y.csv",
+                "fetch": fetch_us_rate_raw if ak is not None else None,
+                "normalize": lambda raw: normalize_value_frame(raw, "日期", "美国国债收益率10年"),
+                "maxLagDays": 7,
+            },
+            {
+                "symbol": SP500_PE_SYMBOL,
+                "name": "标普500市盈率",
+                "provider": "Multpl",
+                "source": "multpl",
+                "dataset_type": "equity_valuation",
+                "path": MULTPL_EXTERNAL_DIR / "SP500_PE.csv",
+                "fetch": fetch_multpl_sp500_pe,
+                "normalize": lambda raw: raw,
+                "maxLagDays": 45,
+            },
+            {
+                "symbol": NASDAQ_SYMBOL,
+                "name": "纳斯达克综合指数",
+                "provider": "AKShare/新浪",
+                "source": "akshare_sina",
+                "dataset_type": "us_equity_index",
+                "path": SINA_INDEX_EXTERNAL_DIR / "IXIC.csv",
+                "fetch": (lambda: ak.index_us_stock_sina(symbol=".IXIC")) if ak is not None else None,
+                "normalize": lambda raw: normalize_akshare_frame(raw, "现货指数"),
+                "maxLagDays": 7,
+            },
+            {
+                "symbol": SP500_SYMBOL,
+                "name": "标普500指数",
+                "provider": "AKShare/新浪",
+                "source": "akshare_sina",
+                "dataset_type": "us_equity_index",
+                "path": SINA_INDEX_EXTERNAL_DIR / "INX.csv",
+                "fetch": (lambda: ak.index_us_stock_sina(symbol=".INX")) if ak is not None else None,
+                "normalize": lambda raw: normalize_akshare_frame(raw, "现货指数"),
+                "maxLagDays": 7,
+            },
+            {
+                "symbol": FCPO_SYMBOL,
+                "name": "马来西亚棕榈油期货",
+                "provider": "AKShare/新浪",
+                "source": "akshare_sina",
+                "dataset_type": "foreign_futures",
+                "path": SINA_FUTURES_EXTERNAL_DIR / "FCPO.csv",
+                "fetch": (lambda: ak.futures_foreign_hist(symbol="FCPO")) if ak is not None else None,
+                "normalize": lambda raw: normalize_akshare_frame(raw, "外盘期货"),
+                "maxLagDays": 7,
+            },
+        ]
     )
     for specification in specifications:
         csv_path = Path(specification["path"])
@@ -940,8 +1245,7 @@ def fetch_external_market_history() -> tuple[
             continue
         symbol = specification["symbol"]
         histories[symbol] = frame["close"].rename(symbol)
-        metadata.append(
-            {
+        source_metadata = {
                 "symbol": symbol,
                 "name": specification["name"],
                 "provider": specification["provider"],
@@ -950,18 +1254,43 @@ def fetch_external_market_history() -> tuple[
                 "startDate": frame.index.min().strftime("%Y-%m-%d"),
                 "endDate": frame.index.max().strftime("%Y-%m-%d"),
                 "rows": len(frame),
+                "maxLagDays": int(specification["maxLagDays"]),
             }
-        )
+        if symbol == CNY_MYR_MID_SYMBOL:
+            bnm_latest = fetch_bnm_cnymyr_latest()
+            if bnm_latest is not None:
+                bnm_date, bnm_value = bnm_latest
+                safe_asof = frame[frame.index <= pd.Timestamp(bnm_date)]
+                if not safe_asof.empty:
+                    safe_value = float(safe_asof["close"].iloc[-1])
+                    source_metadata.update(
+                        {
+                            "bnmCrossCheckDate": bnm_date,
+                            "bnmCnyPerMyr": round(bnm_value, 6),
+                            "bnmRelativeDiffPct": round(
+                                abs(safe_value / bnm_value - 1) * 100, 4
+                            ),
+                        }
+                    )
+        metadata.append(source_metadata)
 
     required = {
         *(definition["lme_symbol"] for definition in LME_CROSS_MARKET_PAIRS),
         USD_CNY_MID_SYMBOL,
+        CNY_MYR_MID_SYMBOL,
+        CSI300_PE_SYMBOL,
+        CN10Y_SYMBOL,
+        US10Y_SYMBOL,
+        SP500_PE_SYMBOL,
+        NASDAQ_SYMBOL,
+        SP500_SYMBOL,
+        FCPO_SYMBOL,
     }
     missing = sorted(required.difference(histories))
     if missing:
         detail = "; ".join(errors) if errors else "没有可用缓存"
         raise ExternalDataError(
-            f"LME三个月电子盘或图表汇率数据不可用: {', '.join(missing)}；{detail}"
+            f"已批准外部补充数据不可用: {', '.join(missing)}；{detail}"
         )
     return histories, metadata, errors
 
@@ -2124,6 +2453,197 @@ def build_lme_cross_market_row(
     )
 
 
+def align_external_asof(
+    anchor: pd.DatetimeIndex,
+    series: pd.Series,
+    max_lag_days: int,
+) -> pd.Series:
+    desired = pd.DataFrame({"date": pd.DatetimeIndex(anchor).normalize()})
+    desired = desired.drop_duplicates().sort_values("date")
+    source = pd.DataFrame(
+        {
+            "sourceDate": pd.DatetimeIndex(series.index).normalize(),
+            "value": pd.to_numeric(series, errors="coerce").to_numpy(),
+        }
+    ).dropna().drop_duplicates(subset=["sourceDate"], keep="last").sort_values("sourceDate")
+    aligned = pd.merge_asof(
+        desired,
+        source,
+        left_on="date",
+        right_on="sourceDate",
+        direction="backward",
+    )
+    lag = (aligned["date"] - aligned["sourceDate"]).dt.days
+    aligned.loc[lag > max_lag_days, "value"] = pd.NA
+    return aligned.set_index("date")["value"].dropna()
+
+
+def build_external_reference_row(
+    definition: dict[str, Any],
+    histories: dict[str, pd.Series],
+    external_histories: dict[str, pd.Series],
+    common_latest_date: pd.Timestamp,
+) -> tuple[dict[str, Any], pd.Timestamp]:
+    builder = definition["custom_builder"]
+    external_anchor = pd.DatetimeIndex([common_latest_date])
+    pair_type = "现货参考"
+    label = "外部"
+    unit = "比值"
+
+    if builder == "cn_equity_risk_premium":
+        pe = external_histories[CSI300_PE_SYMBOL]
+        anchor = pe.index.union(external_anchor)
+        pe_aligned = align_external_asof(anchor, pe, 5)
+        yield_aligned = align_external_asof(anchor, external_histories[CN10Y_SYMBOL], 7)
+        aligned = pd.concat(
+            [pe_aligned.rename("left"), yield_aligned.rename("right")],
+            axis=1,
+            join="inner",
+        ).dropna()
+        values = 1 / aligned["left"] - aligned["right"] / 100
+        formula_label = "100 / 沪深300滚动市盈率 − 中国10年期国债收益率"
+        source = "中证指数有限公司滚动市盈率；中国债券信息网10年期国债收益率"
+        unit = "百分比"
+    elif builder == "us_equity_risk_premium":
+        us10y = external_histories[US10Y_SYMBOL]
+        anchor = us10y.index.union(external_anchor)
+        pe_aligned = align_external_asof(anchor, external_histories[SP500_PE_SYMBOL], 45)
+        yield_aligned = align_external_asof(anchor, us10y, 7)
+        aligned = pd.concat(
+            [pe_aligned.rename("left"), yield_aligned.rename("right")],
+            axis=1,
+            join="inner",
+        ).dropna()
+        values = 1 / aligned["left"] - aligned["right"] / 100
+        formula_label = "100 / 标普500市盈率 − 美国10年期国债收益率"
+        source = "Multpl标普500月度市盈率；东方财富美国10年期国债收益率"
+        unit = "百分比"
+    elif builder == "external_ratio":
+        sp500 = external_histories[SP500_SYMBOL]
+        anchor = sp500.index.union(external_anchor)
+        left_aligned = align_external_asof(anchor, external_histories[NASDAQ_SYMBOL], 7)
+        right_aligned = align_external_asof(anchor, sp500, 7)
+        aligned = pd.concat(
+            [left_aligned.rename("left"), right_aligned.rename("right")],
+            axis=1,
+            join="inner",
+        ).dropna()
+        values = aligned["left"] / aligned["right"]
+        formula_label = "纳斯达克综合指数 / 标普500指数"
+        source = "新浪美股指数"
+    elif builder == "malaysia_palm_soy_ratio":
+        domestic = histories[definition["right"]]
+        anchor = domestic.index[domestic.index <= common_latest_date].union(external_anchor)
+        palm_aligned = align_external_asof(anchor, external_histories[FCPO_SYMBOL], 7)
+        fx_aligned = align_external_asof(anchor, external_histories[CNY_MYR_MID_SYMBOL], 7)
+        domestic_aligned = align_external_asof(anchor, domestic, 3)
+        aligned = pd.concat(
+            [
+                palm_aligned.rename("left"),
+                domestic_aligned.rename("right"),
+                fx_aligned.rename("fx"),
+            ],
+            axis=1,
+            join="inner",
+        ).dropna()
+        values = aligned["left"] * aligned["fx"] / aligned["right"]
+        formula_label = "马盘FCPO（林吉特/吨）× 人民币/林吉特 ÷ 国内豆油加权（人民币/吨）"
+        source = "马盘FCPO：新浪；国内豆油：xtdata JQ00；汇率：国家外汇管理局，BNM最新值校对"
+        pair_type = "跨市场套利"
+    else:
+        raise RuntimeError(f"未知外部组合构建器: {builder}")
+
+    values = values.replace([math.inf, -math.inf], pd.NA).dropna().sort_index()
+    values = values[values.index <= common_latest_date]
+    if len(values) < 2 or pd.Timestamp(values.index[-1]) != common_latest_date:
+        latest = values.index[-1].strftime("%Y-%m-%d") if len(values) else "无"
+        raise ExternalDataError(
+            f"{definition['pair']} 未覆盖国内数据日 {common_latest_date:%Y-%m-%d}，最新={latest}"
+        )
+
+    latest_date = pd.Timestamp(values.index[-1])
+    current = float(values.iloc[-1])
+    previous = float(values.iloc[-2])
+    change = current - previous
+    five_year = values[values.index >= latest_date - pd.DateOffset(years=5)]
+    five_year_percentile = percentile(five_year)
+    chart = build_observation_history_chart(
+        definition,
+        label,
+        definition["left"],
+        definition["right"],
+        values,
+        common_latest_date,
+    )
+    if chart is None:
+        raise ExternalDataError(f"{definition['pair']} 历史折线图数据不足")
+    chart.update(
+        {
+            "title": f"{definition['pair']}走势",
+            "unit": unit,
+            "source": source,
+            "grain": "周末值 · 仅向后匹配已公布数据",
+        }
+    )
+    chart["series"][0]["expiry"] = "现货" if pair_type == "现货参考" else "跨市场"
+
+    percentage = definition["kind"] == "percentage"
+    latest_components = aligned.loc[latest_date]
+    extra_fields: dict[str, Any] = {}
+    if builder in {"cn_equity_risk_premium", "us_equity_risk_premium"}:
+        extra_fields = {
+            "priceEarningsRatio": round(float(latest_components["left"]), 6),
+            "bondYieldPct": round(float(latest_components["right"]), 6),
+        }
+    elif builder == "external_ratio":
+        extra_fields = {
+            "leftIndexLevel": round(float(latest_components["left"]), 6),
+            "rightIndexLevel": round(float(latest_components["right"]), 6),
+        }
+    elif builder == "malaysia_palm_soy_ratio":
+        extra_fields = {
+            "foreignPriceMyrPerTonne": round(float(latest_components["left"]), 6),
+            "fxCnyPerMyr": round(float(latest_components["fx"]), 6),
+            "domesticPriceCnyPerTonne": round(float(latest_components["right"]), 6),
+        }
+    return (
+        {
+            "strategyType": definition["strategy_type"],
+            "pair": definition["pair"],
+            "current": display_percentage(current) if percentage else display_number(current, "ratio"),
+            "previous": display_percentage(previous) if percentage else display_number(previous, "ratio"),
+            "change": display_percentage_change(change) if percentage else display_change(change, "ratio"),
+            "changeValue": round(change, 8),
+            "allTime": f"{percentile(values):.2f}%",
+            "allTimeRange": display_percentage_range(values) if percentage else display_range(values, "ratio"),
+            "percentile": five_year_percentile,
+            "fiveYearRange": display_percentage_range(five_year) if percentage else display_range(five_year, "ratio"),
+            "signal": signal_for(five_year_percentile),
+            "lots": "—",
+            "deviation": "—",
+            "notional": "—",
+            "margin": "—",
+            "leftSymbol": definition["left"],
+            "rightSymbol": definition["right"],
+            "leftChangePct": latest_leg_change_pct(aligned["left"], latest_date),
+            "rightChangePct": latest_leg_change_pct(aligned["right"], latest_date),
+            "seriesMode": "external",
+            "pairType": pair_type,
+            "formulaLabel": formula_label,
+            "sourceStatus": "外部补充",
+            "leftStructure": None,
+            "rightStructure": None,
+            "mainHistoryChart": chart,
+            "spotObservation": None,
+            "mainContinuousObservation": None,
+            "contracts": [],
+            "externalSourceDate": latest_date.strftime("%Y-%m-%d"),
+            **extra_fields,
+        },
+        latest_date,
+    )
+
+
 def build_rows(
     histories: dict[str, pd.Series],
     external_histories: dict[str, pd.Series],
@@ -2177,6 +2697,22 @@ def build_rows(
                 common_latest_date,
                 source_validation,
                 term_structures.get(definition["left"]),
+            )
+            rows.append(row)
+            latest_dates.append(latest_date)
+            continue
+
+        if definition.get("custom_builder") in {
+            "cn_equity_risk_premium",
+            "us_equity_risk_premium",
+            "external_ratio",
+            "malaysia_palm_soy_ratio",
+        }:
+            row, latest_date = build_external_reference_row(
+                definition,
+                histories,
+                external_histories,
+                common_latest_date,
             )
             rows.append(row)
             latest_dates.append(latest_date)
@@ -2369,12 +2905,12 @@ def write_outputs(
     payload = {
         "dataDate": data_date,
         "updatedAt": now.isoformat(timespec="seconds"),
-        "source": "xtdata（国内）+ AKShare/新浪（LME三个月电子盘）+ AKShare/国家外汇管理局（图表汇率）",
+        "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与BNM校对数据",
         "sourceValidation": source_validation,
         "externalSources": external_sources,
-        "externalSourcePolicy": "铜铝锌内外盘比价：国内使用xtdata 00主力连续，外盘使用LME三个月电子盘价格，内盘价格直接除以外盘价格，不做汇率换算；美元兑人民币中间价仅叠加在折线图右轴作为参考，不参与比价计算。",
+        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；马盘棕榈油与豆油比价使用FCPO×人民币/林吉特÷国内豆油加权，外管局汇率以BNM最新值校对。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
-        "contractMode": "商品期货持仓量加权(JQ00)；股指及内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；现货指数收盘",
+        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指与估值指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",
         "rows": rows,
         "charts": charts,
@@ -2507,8 +3043,9 @@ def write_outputs(
     )
     charts_complete = len(charts) == len(HISTORY_CHARTS) and all(len(chart["points"]) >= 12 for chart in charts)
     cross_market_rows = [row for row in rows if row["pairType"] == "跨市场套利"]
+    expected_cross_market_count = len(LME_CROSS_MARKET_PAIRS) + 1
     cross_market_rows_complete = (
-        len(cross_market_rows) == len(LME_CROSS_MARKET_PAIRS)
+        len(cross_market_rows) == expected_cross_market_count
         and all(
             row["mainHistoryChart"] is not None
             and row["sourceStatus"] == "外部补充"
@@ -2516,9 +3053,26 @@ def write_outputs(
             for row in cross_market_rows
         )
     )
+    expected_external_symbols = {
+        *(definition["lme_symbol"] for definition in LME_CROSS_MARKET_PAIRS),
+        USD_CNY_MID_SYMBOL,
+        CNY_MYR_MID_SYMBOL,
+        CSI300_PE_SYMBOL,
+        CN10Y_SYMBOL,
+        US10Y_SYMBOL,
+        SP500_PE_SYMBOL,
+        NASDAQ_SYMBOL,
+        SP500_SYMBOL,
+        FCPO_SYMBOL,
+    }
     external_sources_complete = (
-        len(external_sources) == len(LME_CROSS_MARKET_PAIRS) + 1
-        and all(source["endDate"] >= data_date for source in external_sources)
+        {source["symbol"] for source in external_sources} == expected_external_symbols
+        and all(
+            pd.Timestamp(source["endDate"]).date() <= now.date()
+            and pd.Timestamp(source["endDate"])
+            >= pd.Timestamp(data_date) - pd.Timedelta(days=int(source["maxLagDays"]))
+            for source in external_sources
+        )
     )
     hierarchy_sorted = [row["pair"] for row in rows] == [
         row["pair"] for row in sorted(rows, key=dashboard_row_sort_key)
@@ -2600,7 +3154,7 @@ def write_outputs(
         "expectedChartCount": len(HISTORY_CHARTS),
         "chartsComplete": charts_complete,
         "crossMarketPairCount": len(cross_market_rows),
-        "expectedCrossMarketPairCount": len(LME_CROSS_MARKET_PAIRS),
+        "expectedCrossMarketPairCount": expected_cross_market_count,
         "crossMarketRowsComplete": cross_market_rows_complete,
         "externalSources": external_sources,
         "externalSourcesComplete": external_sources_complete,
@@ -2622,7 +3176,7 @@ def write_outputs(
     write_manifest(
         {
             "dataset_key": "xtdata:arbitrage-dashboard:daily",
-            "source": "xtdata+akshare_sina+akshare_safe",
+            "source": "xtdata+approved_external_sources",
             "status": report["status"],
             "data_date": data_date,
             "pair_count": len(rows),

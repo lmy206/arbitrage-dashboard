@@ -51,16 +51,20 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /铜内外盘比价/);
   assert.match(html, /铝内外盘比价/);
   assert.match(html, /锌内外盘比价/);
+  assert.match(html, /沪深300风险溢价/);
+  assert.match(html, /美股风险溢价/);
+  assert.match(html, /纳斯达克\/标普500/);
+  assert.match(html, /马盘棕榈油与豆油比价/);
   assert.match(html, /展开铜内外盘比价现货折线图/);
   assert.match(html, /title="cu00\.SF \/ CAD\.LME"/);
   assert.match(html, /科创50\/上证50/);
   assert.doesNotMatch(html, /菜油菜粕比/);
   assert.match(html, /展开科创50\/上证50现货折线图/);
   assert.match(html, /展开创业板\/沪深300现货折线图/);
-  assert.match(html, /国内 xtdata · LME与汇率 AKShare 补充/);
+  assert.match(html, /国内 xtdata · 已批准外部源补充/);
   assert.match(html, /LME三个月电子盘/);
   assert.match(html, /美元兑人民币中间价/);
-  assert.match(html, /商品默认 JQ00 持仓量加权，股指及内外盘国内腿使用 00 主连/);
+  assert.match(html, /国内商品默认 JQ00 持仓量加权，股指及铜铝锌内外盘国内腿使用 00 主连/);
   assert.doesNotMatch(html, /AkShare 补充校对/);
   assert.match(html, /近5年分位/);
   assert.doesNotMatch(html, /按类型排序/);
@@ -162,12 +166,12 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 30);
-  assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；现货指数收盘");
+  assert.equal(payload.rows.length, 34);
+  assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指与估值指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
-  assert.deepEqual(trendPairs, ["油粕比", "金银比"]);
+  assert.deepEqual(trendPairs, ["沪深300风险溢价", "美股风险溢价", "纳斯达克/标普500", "油粕比", "金银比"].sort());
   const crossMarketPairs = payload.rows.filter((row) => row.strategyType === "内外盘").map((row) => row.pair).sort();
-  assert.deepEqual(crossMarketPairs, ["铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
+  assert.deepEqual(crossMarketPairs, ["马盘棕榈油与豆油比价", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
   assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 25);
 
   const expectedSignal = (percentile) => {
@@ -536,13 +540,13 @@ test("IM term spread exposes down-quarter and skip-quarter observations without 
 test("each tradable leg has a valid futures term-structure classification", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   for (const row of payload.rows) {
-    if (row.pairType === "跨市场套利") {
+    if (row.pairType === "跨市场套利" && row.pair !== "马盘棕榈油与豆油比价") {
       assert.ok(row.leftStructure);
       assert.ok(["Contango", "Back"].includes(row.leftStructure.state));
       assert.equal(row.rightStructure, null);
       continue;
     }
-    if (["现货参考", "期限套利"].includes(row.pairType)) {
+    if (["现货参考", "期限套利"].includes(row.pairType) || row.pair === "马盘棕榈油与豆油比价") {
       assert.equal(row.leftStructure, null);
       assert.equal(row.rightStructure, null);
       continue;
@@ -560,7 +564,7 @@ test("each tradable leg has a valid futures term-structure classification", asyn
 test("xtdata-only integrity validation is internally consistent", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   const validation = payload.sourceValidation;
-  assert.match(payload.source, /xtdata.*AKShare\/新浪.*LME三个月电子盘/);
+  assert.match(payload.source, /xtdata.*用户批准/);
   assert.equal(validation.mode, "xtdata_only");
   assert.equal(validation.summary.total, 69);
   assert.equal(validation.checks.length, validation.summary.total);
@@ -608,10 +612,43 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assert.ok(row.mainHistoryChart.series[0].points.length >= 250);
   }
 
-  assert.equal(payload.externalSources.length, 4);
-  assert.ok(payload.externalSources.every((source) => source.endDate >= payload.dataDate));
+  assert.equal(payload.externalSources.length, 12);
+  assert.ok(payload.externalSources.every((source) => source.endDate <= new Date().toISOString().slice(0, 10)));
   assert.ok(payload.externalSources.every((source) => ["live", "cache"].includes(source.status)));
-  assert.match(payload.externalSourcePolicy, /直接除以外盘价格，不做汇率换算.*美元兑人民币中间价.*不参与比价计算/);
+  assert.match(payload.externalSourcePolicy, /国内主连÷LME三个月电子盘且不换汇.*风险溢价.*马盘棕榈油/);
+});
+
+test("approved external risk premiums, US index ratio, and Malaysia palm-soy ratio are auditable", async () => {
+  const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
+  const cnRisk = payload.rows.find((row) => row.pair === "沪深300风险溢价");
+  const usRisk = payload.rows.find((row) => row.pair === "美股风险溢价");
+  const nasdaqSp = payload.rows.find((row) => row.pair === "纳斯达克/标普500");
+  const palmSoy = payload.rows.find((row) => row.pair === "马盘棕榈油与豆油比价");
+
+  for (const row of [cnRisk, usRisk, nasdaqSp, palmSoy]) {
+    assert.ok(row);
+    assert.equal(row.seriesMode, "external");
+    assert.equal(row.sourceStatus, "外部补充");
+    assert.equal(row.contracts.length, 0);
+    assert.ok(row.mainHistoryChart);
+    assert.equal(row.mainHistoryChart.endDate, payload.dataDate);
+    assert.ok(row.mainHistoryChart.series[0].points.length >= 250);
+    assert.ok(row.mainHistoryChart.series[0].points.every((point) => point.date <= payload.dataDate));
+  }
+
+  assert.equal(cnRisk.current, `${((1 / cnRisk.priceEarningsRatio - cnRisk.bondYieldPct / 100) * 100).toFixed(2)}%`);
+  assert.equal(usRisk.current, `${((1 / usRisk.priceEarningsRatio - usRisk.bondYieldPct / 100) * 100).toFixed(2)}%`);
+  assert.ok(Math.abs(Number(nasdaqSp.current) - nasdaqSp.leftIndexLevel / nasdaqSp.rightIndexLevel) < 0.0001);
+  assert.ok(Math.abs(Number(palmSoy.current) - palmSoy.foreignPriceMyrPerTonne * palmSoy.fxCnyPerMyr / palmSoy.domesticPriceCnyPerTonne) < 0.0001);
+  assert.equal(cnRisk.mainHistoryChart.unit, "百分比");
+  assert.equal(usRisk.mainHistoryChart.unit, "百分比");
+  assert.equal(palmSoy.pairType, "跨市场套利");
+  assert.equal(palmSoy.marketCategory, "农产品");
+
+  const cnyMyr = payload.externalSources.find((source) => source.symbol === "CNYMYR_MID.SAFE");
+  assert.ok(cnyMyr);
+  assert.ok(Number.isFinite(cnyMyr.bnmRelativeDiffPct));
+  assert.ok(cnyMyr.bnmRelativeDiffPct < 2);
 });
 
 test("the six selected chart datasets are present in the requested order", async () => {

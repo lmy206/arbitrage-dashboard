@@ -13,7 +13,8 @@
 
 - 国内行情以 `xtdata` 为唯一主源，Python 优先使用 `D:\anaconda\python.exe`。
 - 共享数据根目录优先遵守 `E_SHARED_DATA_ROOT`，否则使用 `E:\data`。
-- 仅允许已经获用户批准的外部补充源：LME 铜、铝、锌三个月电子盘，以及国家外汇管理局美元兑人民币中间价。
+- 用户已批准本项目使用以下外部补充源：新浪 LME 铜/铝/锌三个月电子盘与马来西亚 FCPO、国家外汇管理局美元兑人民币和人民币兑林吉特中间价、BNM 最新人民币兑林吉特校对值、中证指数有限公司沪深300滚动市盈率、中国债券信息网中国10年期国债收益率、东方财富美国10年期国债收益率、新浪纳斯达克综合指数与标普500指数、Multpl 标普500月度市盈率。
+- 外部数据分别保存到共享根目录下的 `market\external\lme_sina`、`safe`、`csindex`、`chinabond`、`eastmoney`、`multpl`、`sina_us_index` 和 `sina_foreign_futures`；不得把已批准源静默替换成其他口径，若启用新源必须再次记录来源、覆盖范围、保存路径和校验结果。
 - 外部补充数据写入共享数据目录；不得自行增加或替换为其他网页、AkShare 接口或行情源。
 - 所有历史统计与回测必须检查未来数据风险。
 
@@ -21,7 +22,7 @@
 
 1. 运行 `D:\anaconda\python.exe scripts\update_xtdata.py`。
 2. 读取 `E:\data\reports\arbitrage_dashboard_integrity.json`。
-3. 只有在 `status=ok`、`pairCount=expectedPairCount=30`、`futureDataDetected=false`、`hierarchySorted=true` 且 `externalSourcesComplete=true` 时，才运行：
+3. 只有在 `status=ok`、`pairCount=expectedPairCount=34`、`futureDataDetected=false`、`hierarchySorted=true` 且 `externalSourcesComplete=true` 时，才运行：
    - 本地验证：`npm run build` 和 `node --test tests\rendered-html.test.mjs`
    - Cloudflare 静态发布验证：`npm run test:pages`
 4. `scripts/update-and-publish.ps1` 仅在数据日相对 `HEAD` 有更新、上述校验通过、当前分支为 `main`、本地与 `origin/main` 同步，且没有其他已跟踪文件修改时，才提交 `app/data/arbitrage.json` 并推送 `main`。

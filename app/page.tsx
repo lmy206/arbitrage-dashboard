@@ -816,7 +816,7 @@ export default function Home() {
             <div className="source-audit-title">
               <span className={`audit-dot ${dashboardData.sourceValidation.summary.review > 0 ? "warning" : dashboardData.sourceValidation.summary.contractMismatch > 0 ? "scope" : "ok"}`} aria-hidden="true" />
               <strong>数据源校验</strong>
-              <span>{hasExternalSources ? "国内 xtdata · LME与汇率 AKShare 补充" : xtdataOnly ? "仅使用 xtdata" : "xtdata 主值 · AkShare 补充校对"}</span>
+              <span>{hasExternalSources ? "国内 xtdata · 已批准外部源补充" : xtdataOnly ? "仅使用 xtdata" : "xtdata 主值 · AkShare 补充校对"}</span>
             </div>
             <div className="audit-summary">
               <span className="audit-count consistent">{xtdataOnly ? "完整" : "一致"} {dashboardData.sourceValidation.summary.consistent}</span>
@@ -829,7 +829,7 @@ export default function Home() {
             <p>{dashboardData.sourceValidation.policy}{!xtdataOnly && `；收盘价差异不超过 ${dashboardData.sourceValidation.thresholdPct}% 判为一致。`}</p>
             {hasExternalSources && (
               <div className="external-source-summary">
-                <strong>跨市场补充口径</strong>
+                <strong>外部补充口径</strong>
                 <span>{dashboardData.externalSourcePolicy}</span>
                 <div>
                   {externalSources.map((source) => (
@@ -1066,7 +1066,7 @@ export default function Home() {
         </div>
 
         <footer className="dashboard-footer">
-          <span>口径：商品默认 JQ00 持仓量加权，股指及内外盘国内腿使用 00 主连；内外盘使用 LME三个月电子盘价格，内盘直接除以外盘，不做汇率换算；汇率仅作图表参考。</span>
+          <span>口径：国内商品默认 JQ00 持仓量加权，股指及铜铝锌内外盘国内腿使用 00 主连；风险溢价、海外指数和马盘比价使用已批准外部源，跨日只向后匹配已公布数据。</span>
           <span>数据日：{dashboardData.dataDate} · 更新时间：每日 20:00</span>
         </footer>
       </section>
