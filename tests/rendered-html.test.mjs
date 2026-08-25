@@ -51,8 +51,8 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /铜内外盘比价/);
   assert.match(html, /铝内外盘比价/);
   assert.match(html, /锌内外盘比价/);
-  assert.match(html, /沪深300风险溢价/);
-  assert.match(html, /美股风险溢价/);
+  assert.match(html, /沪深300风险溢价指数/);
+  assert.match(html, /标普500风险溢价指数/);
   assert.match(html, /纳斯达克\/标普500/);
   assert.match(html, /马盘棕榈油与豆油比价/);
   assert.match(html, /展开铜内外盘比价现货折线图/);
@@ -94,10 +94,13 @@ test("server-renders the arbitrage dashboard", async () => {
 
 test("dashboard rows follow strategy, market and percentile hierarchy", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
+  const pinnedOrder = new Map([["沪深300风险溢价指数", 0], ["标普500风险溢价指数", 1]]);
   const strategyOrder = new Map([["回归", 0], ["趋势", 1], ["内外盘", 2]]);
   const marketOrder = new Map([["股指", 0], ["农产品", 1], ["工业品", 2]]);
   const expected = [...payload.rows].sort((a, b) => (
-    strategyOrder.get(a.strategyType) - strategyOrder.get(b.strategyType)
+    (pinnedOrder.has(a.pair) || pinnedOrder.has(b.pair))
+      ? (pinnedOrder.get(a.pair) ?? Number.MAX_SAFE_INTEGER) - (pinnedOrder.get(b.pair) ?? Number.MAX_SAFE_INTEGER)
+      : strategyOrder.get(a.strategyType) - strategyOrder.get(b.strategyType)
     || marketOrder.get(a.marketCategory) - marketOrder.get(b.marketCategory)
     || b.percentile - a.percentile
     || (a.pair < b.pair ? -1 : a.pair > b.pair ? 1 : 0)
@@ -107,15 +110,20 @@ test("dashboard rows follow strategy, market and percentile hierarchy", async ()
   assert.ok(payload.rows.every((row) => marketOrder.has(row.marketCategory)));
 });
 
-test("regression, trend and cross-market pairs stay in that order", async () => {
+test("pinned risk-premium indices stay first, followed by regression, trend and cross-market pairs", async () => {
   const response = await render();
   const html = await response.text();
   const tableBody = html.slice(html.indexOf("<tbody>"), html.indexOf("</tbody>"));
-  const lastRegression = tableBody.lastIndexOf('class="strategy-type regression">回归');
-  const firstTrend = tableBody.indexOf('class="strategy-type trend">趋势');
-  const lastTrend = tableBody.lastIndexOf('class="strategy-type trend">趋势');
-  const firstCrossMarket = tableBody.indexOf('class="strategy-type cross-market">内外盘');
+  const cnRisk = tableBody.indexOf("沪深300风险溢价指数");
+  const usRisk = tableBody.indexOf("标普500风险溢价指数");
+  const firstRegression = tableBody.indexOf('class="strategy-type regression">回归');
+  const remainingTableBody = tableBody.slice(firstRegression);
+  const lastRegression = remainingTableBody.lastIndexOf('class="strategy-type regression">回归');
+  const firstTrend = remainingTableBody.indexOf('class="strategy-type trend">趋势');
+  const lastTrend = remainingTableBody.lastIndexOf('class="strategy-type trend">趋势');
+  const firstCrossMarket = remainingTableBody.indexOf('class="strategy-type cross-market">内外盘');
 
+  assert.ok(cnRisk >= 0 && usRisk > cnRisk && firstRegression > usRisk);
   assert.ok(lastRegression >= 0);
   assert.ok(firstTrend > lastRegression, "trend pairs should stay below every regression pair");
   assert.ok(firstCrossMarket > lastTrend, "cross-market pairs should stay at the very bottom");
@@ -169,7 +177,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.length, 34);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指与估值指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
-  assert.deepEqual(trendPairs, ["沪深300风险溢价", "美股风险溢价", "纳斯达克/标普500", "油粕比", "金银比"].sort());
+  assert.deepEqual(trendPairs, ["沪深300风险溢价指数", "标普500风险溢价指数", "纳斯达克/标普500", "油粕比", "金银比"].sort());
   const crossMarketPairs = payload.rows.filter((row) => row.strategyType === "内外盘").map((row) => row.pair).sort();
   assert.deepEqual(crossMarketPairs, ["马盘棕榈油与豆油比价", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
   assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 25);
@@ -620,8 +628,8 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
 
 test("approved external risk premiums, US index ratio, and Malaysia palm-soy ratio are auditable", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  const cnRisk = payload.rows.find((row) => row.pair === "沪深300风险溢价");
-  const usRisk = payload.rows.find((row) => row.pair === "美股风险溢价");
+  const cnRisk = payload.rows.find((row) => row.pair === "沪深300风险溢价指数");
+  const usRisk = payload.rows.find((row) => row.pair === "标普500风险溢价指数");
   const nasdaqSp = payload.rows.find((row) => row.pair === "纳斯达克/标普500");
   const palmSoy = payload.rows.find((row) => row.pair === "马盘棕榈油与豆油比价");
 

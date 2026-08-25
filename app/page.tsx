@@ -200,6 +200,10 @@ function numericValue(row: PairRow, key: SortKey) {
 const strategyTypeOrder: Record<StrategyType, number> = { 回归: 0, 趋势: 1, 内外盘: 2 };
 const strategyTypeClass: Record<StrategyType, string> = { 回归: "regression", 趋势: "trend", 内外盘: "cross-market" };
 const marketCategoryOrder: Record<PairRow["marketCategory"], number> = { 股指: 0, 农产品: 1, 工业品: 2 };
+const pinnedPairOrder: Record<string, number> = {
+  沪深300风险溢价指数: 0,
+  标普500风险溢价指数: 1,
+};
 
 function pairFormula(
   row: Pick<PairRow, "formulaKind" | "leftSymbol" | "rightSymbol" | "formulaLabel">,
@@ -692,6 +696,13 @@ export default function Home() {
       },
     );
     return [...filtered].sort((a, b) => {
+      const aPinned = pinnedPairOrder[a.pair];
+      const bPinned = pinnedPairOrder[b.pair];
+      if (aPinned !== undefined || bPinned !== undefined) {
+        if (aPinned !== undefined && bPinned !== undefined) return aPinned - bPinned;
+        return aPinned !== undefined ? -1 : 1;
+      }
+
       const strategyPriority = strategyTypeOrder[a.strategyType] - strategyTypeOrder[b.strategyType];
       if (strategyPriority !== 0) return strategyPriority;
 

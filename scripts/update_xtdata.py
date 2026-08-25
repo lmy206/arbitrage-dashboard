@@ -172,6 +172,10 @@ AGRICULTURAL_PRODUCT_ROOTS = {
 }
 STRATEGY_TYPE_ORDER = {"回归": 0, "趋势": 1, "内外盘": 2}
 MARKET_CATEGORY_ORDER = {"股指": 0, "农产品": 1, "工业品": 2}
+PINNED_PAIR_ORDER = {
+    "沪深300风险溢价指数": 0,
+    "标普500风险溢价指数": 1,
+}
 
 
 def symbol_product_root(symbol: str) -> str:
@@ -197,12 +201,16 @@ def market_category_for_definition(definition: dict[str, Any]) -> str:
     return "工业品"
 
 
-def dashboard_row_sort_key(row: dict[str, Any]) -> tuple[int, int, float, str]:
+def dashboard_row_sort_key(row: dict[str, Any]) -> tuple[int, int, int, float, str]:
+    pair = row["pair"]
+    if pair in PINNED_PAIR_ORDER:
+        return (0, PINNED_PAIR_ORDER[pair], 0, 0.0, pair)
     return (
+        1,
         STRATEGY_TYPE_ORDER.get(row["strategyType"], len(STRATEGY_TYPE_ORDER)),
         MARKET_CATEGORY_ORDER.get(row["marketCategory"], len(MARKET_CATEGORY_ORDER)),
         -float(row["percentile"]),
-        row["pair"],
+        pair,
     )
 
 
@@ -278,8 +286,8 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
 ]
 
 ADDITIONAL_EXTERNAL_PAIRS = {
-    "沪深300风险溢价",
-    "美股风险溢价",
+    "沪深300风险溢价指数",
+    "标普500风险溢价指数",
     "纳斯达克/标普500",
     "马盘棕榈油与豆油比价",
 }
@@ -366,7 +374,7 @@ PAIRS: list[dict[str, Any]] = [
         "tradable": False,
     },
     {
-        "pair": "沪深300风险溢价",
+        "pair": "沪深300风险溢价指数",
         "left": CSI300_PE_SYMBOL,
         "right": CN10Y_SYMBOL,
         "formula": spread,
@@ -377,7 +385,7 @@ PAIRS: list[dict[str, Any]] = [
         "market_category": "股指",
     },
     {
-        "pair": "美股风险溢价",
+        "pair": "标普500风险溢价指数",
         "left": SP500_PE_SYMBOL,
         "right": US10Y_SYMBOL,
         "formula": spread,
