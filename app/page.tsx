@@ -143,7 +143,7 @@ type PairRow = {
   rightChangePct: number | null;
   denominatorSymbol?: string;
   seriesMode: "weighted" | "main" | "spot" | "term" | "external";
-  pairType: "期货套利" | "现货参考" | "期限套利" | "跨市场套利";
+  pairType: "期货套利" | "现货参考" | "期限套利" | "跨市场套利" | "外盘参考";
   formulaLabel?: string;
   rollRule?: string;
   sourceStatus: SourceStatus;
@@ -904,7 +904,7 @@ export default function Home() {
                 const hasContracts = baseRow.contracts.length > 0;
                 const hasTermObservations = (baseRow.termObservations?.length ?? 0) > 0;
                 const hasObservationPanel = hasContracts || hasTermObservations;
-                const standaloneHistoryChart = ["现货参考", "跨市场套利"].includes(baseRow.pairType)
+                const standaloneHistoryChart = ["现货参考", "跨市场套利", "外盘参考"].includes(baseRow.pairType)
                   ? baseRow.mainHistoryChart
                   : null;
                 const hasExpandableContent = hasObservationPanel || standaloneHistoryChart !== null;
@@ -922,7 +922,7 @@ export default function Home() {
                 const detailId = `contracts-${row.pair.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "-")}`;
                 return (
                   <Fragment key={row.pair}>
-                    <tr className={`pair-row ${isExpanded ? "expanded" : ""} ${selectedLabel ? "primary-observation" : ""} ${["现货参考", "跨市场套利"].includes(row.pairType) ? "reference" : ""}`} title={pairFormula(row)}>
+                    <tr className={`pair-row ${isExpanded ? "expanded" : ""} ${selectedLabel ? "primary-observation" : ""} ${["现货参考", "跨市场套利", "外盘参考"].includes(row.pairType) ? "reference" : ""}`} title={pairFormula(row)}>
                       <td><span className={`strategy-type ${strategyTypeClass[row.strategyType]}`}>{row.strategyType}</span></td>
                       <th scope="row">
                         <div className="pair-cell">
@@ -932,7 +932,7 @@ export default function Home() {
                               className="expand-button"
                               aria-expanded={isExpanded}
                               aria-controls={detailId}
-                              aria-label={`${isExpanded ? "收起" : "展开"}${row.pair}${hasContracts ? "合约月份" : hasTermObservations ? "观察口径" : "现货折线图"}`}
+                              aria-label={`${isExpanded ? "收起" : "展开"}${row.pair}${hasContracts ? "合约月份" : hasTermObservations ? "观察口径" : baseRow.pairType === "外盘参考" ? "外盘折线图" : "现货折线图"}`}
                               onClick={() => togglePair(row.pair)}
                             >
                               {isExpanded ? "−" : "+"}

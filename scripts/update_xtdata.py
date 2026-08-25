@@ -51,6 +51,8 @@ SP500_PE_SYMBOL = "SP500_PE.MULTPL"
 NASDAQ_SYMBOL = "IXIC.SINA"
 SP500_SYMBOL = "INX.SINA"
 FCPO_SYMBOL = "FCPO.SINA"
+US_SOYBEAN_OIL_SYMBOL = "BO.SINA"
+US_SOYBEAN_MEAL_SYMBOL = "SM.SINA"
 EXTERNAL_HISTORY_START = "20160825"
 
 
@@ -290,6 +292,7 @@ ADDITIONAL_EXTERNAL_PAIRS = {
     "ERP：标普500",
     "纳斯达克/标普500",
     "马盘棕榈油与豆油比价",
+    "美盘油粕比",
 }
 
 
@@ -417,6 +420,17 @@ PAIRS: list[dict[str, Any]] = [
         "strategy_type": "内外盘",
         "market_category": "农产品",
     },
+    {
+        "pair": "美盘油粕比",
+        "left": US_SOYBEAN_OIL_SYMBOL,
+        "right": US_SOYBEAN_MEAL_SYMBOL,
+        "formula": ratio,
+        "kind": "ratio",
+        "tradable": False,
+        "custom_builder": "us_soy_oil_meal_ratio",
+        "strategy_type": "趋势",
+        "market_category": "农产品",
+    },
 ]
 
 
@@ -449,6 +463,7 @@ def definition_xt_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
         "cn_equity_risk_premium",
         "us_equity_risk_premium",
         "external_ratio",
+        "us_soy_oil_meal_ratio",
     }:
         return ()
     return (definition["left"], definition["right"])
@@ -1220,6 +1235,30 @@ def fetch_external_market_history() -> tuple[
                 "normalize": lambda raw: normalize_akshare_frame(raw, "外盘期货"),
                 "maxLagDays": 7,
             },
+            {
+                "symbol": US_SOYBEAN_OIL_SYMBOL,
+                "name": "CBOT美豆油期货",
+                "provider": "AKShare/新浪",
+                "source": "akshare_sina",
+                "dataset_type": "foreign_futures",
+                "path": SINA_FUTURES_EXTERNAL_DIR / "BO.csv",
+                "fetch": (lambda: ak.futures_foreign_hist(symbol="BO")) if ak is not None else None,
+                "normalize": lambda raw: normalize_akshare_frame(raw, "外盘期货"),
+                "maxLagDays": 7,
+                "quoteUnit": "美分/磅",
+            },
+            {
+                "symbol": US_SOYBEAN_MEAL_SYMBOL,
+                "name": "CBOT美豆粕期货",
+                "provider": "AKShare/新浪",
+                "source": "akshare_sina",
+                "dataset_type": "foreign_futures",
+                "path": SINA_FUTURES_EXTERNAL_DIR / "SM.csv",
+                "fetch": (lambda: ak.futures_foreign_hist(symbol="SM")) if ak is not None else None,
+                "normalize": lambda raw: normalize_akshare_frame(raw, "外盘期货"),
+                "maxLagDays": 7,
+                "quoteUnit": "美元/短吨",
+            },
         ]
     )
     for specification in specifications:
@@ -1264,6 +1303,8 @@ def fetch_external_market_history() -> tuple[
                 "rows": len(frame),
                 "maxLagDays": int(specification["maxLagDays"]),
             }
+        if specification.get("quoteUnit"):
+            source_metadata["quoteUnit"] = specification["quoteUnit"]
         if symbol == CNY_MYR_MID_SYMBOL:
             bnm_latest = fetch_bnm_cnymyr_latest()
             if bnm_latest is not None:
@@ -1293,6 +1334,8 @@ def fetch_external_market_history() -> tuple[
         NASDAQ_SYMBOL,
         SP500_SYMBOL,
         FCPO_SYMBOL,
+        US_SOYBEAN_OIL_SYMBOL,
+        US_SOYBEAN_MEAL_SYMBOL,
     }
     missing = sorted(required.difference(histories))
     if missing:
@@ -2558,6 +2601,27 @@ def build_external_reference_row(
         formula_label = "马盘FCPO（林吉特/吨）× 人民币/林吉特 ÷ 国内豆油加权（人民币/吨）"
         source = "马盘FCPO：新浪；国内豆油：xtdata JQ00；汇率：国家外汇管理局，BNM最新值校对"
         pair_type = "跨市场套利"
+    elif builder == "us_soy_oil_meal_ratio":
+        meal = external_histories[US_SOYBEAN_MEAL_SYMBOL]
+        anchor = meal.index.union(external_anchor)
+        oil_aligned = align_external_asof(
+            anchor,
+            external_histories[US_SOYBEAN_OIL_SYMBOL],
+            7,
+        )
+        meal_aligned = align_external_asof(anchor, meal, 7)
+        aligned = pd.concat(
+            [oil_aligned.rename("left"), meal_aligned.rename("right")],
+            axis=1,
+            join="inner",
+        ).dropna()
+        # CBOT soybean oil is quoted in cents/lb while soybean meal is USD/short ton.
+        # Multiplying oil by 20 converts it to USD/short ton before taking the ratio.
+        values = aligned["left"] * 20 / aligned["right"]
+        formula_label = "美豆油（美分/磅）×20 ÷ 美豆粕（美元/短吨）"
+        source = "CBOT美豆油与美豆粕：新浪外盘期货（AKShare）；报价统一换算为美元/短吨"
+        pair_type = "外盘参考"
+        label = "外盘"
     else:
         raise RuntimeError(f"未知外部组合构建器: {builder}")
 
@@ -2598,7 +2662,11 @@ def build_external_reference_row(
             {"label": "3%", "value": 0.03},
             {"label": "6%", "value": 0.06},
         ]
-    chart["series"][0]["expiry"] = "现货" if pair_type == "现货参考" else "跨市场"
+    chart["series"][0]["expiry"] = {
+        "现货参考": "现货",
+        "跨市场套利": "跨市场",
+        "外盘参考": "外盘",
+    }[pair_type]
 
     percentage = definition["kind"] == "percentage"
     latest_components = aligned.loc[latest_date]
@@ -2618,6 +2686,15 @@ def build_external_reference_row(
             "foreignPriceMyrPerTonne": round(float(latest_components["left"]), 6),
             "fxCnyPerMyr": round(float(latest_components["fx"]), 6),
             "domesticPriceCnyPerTonne": round(float(latest_components["right"]), 6),
+        }
+    elif builder == "us_soy_oil_meal_ratio":
+        oil_cents_per_lb = float(latest_components["left"])
+        meal_usd_per_short_ton = float(latest_components["right"])
+        extra_fields = {
+            "soybeanOilCentsPerLb": round(oil_cents_per_lb, 6),
+            "soybeanMealUsdPerShortTon": round(meal_usd_per_short_ton, 6),
+            "soybeanOilUsdPerMetricTonne": round(oil_cents_per_lb * 22.0462262185, 6),
+            "soybeanMealUsdPerMetricTonne": round(meal_usd_per_short_ton * 1.1023113109, 6),
         }
     return (
         {
@@ -2720,6 +2797,7 @@ def build_rows(
             "us_equity_risk_premium",
             "external_ratio",
             "malaysia_palm_soy_ratio",
+            "us_soy_oil_meal_ratio",
         }:
             row, latest_date = build_external_reference_row(
                 definition,
@@ -2921,9 +2999,9 @@ def write_outputs(
         "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与BNM校对数据",
         "sourceValidation": source_validation,
         "externalSources": external_sources,
-        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；马盘棕榈油与豆油比价使用FCPO×人民币/林吉特÷国内豆油加权，外管局汇率以BNM最新值校对。所有跨日合并只向后匹配已公布值。",
+        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；马盘棕榈油与豆油比价使用FCPO×人民币/林吉特÷国内豆油加权，外管局汇率以BNM最新值校对；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
-        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指与估值指标使用各源公布值",
+        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值与CBOT油粕指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",
         "rows": rows,
         "charts": charts,
@@ -3012,12 +3090,12 @@ def write_outputs(
     spot_reference_history_charts = [
         row.get("mainHistoryChart")
         for row in rows
-        if row["pairType"] == "现货参考"
+        if row["pairType"] in {"现货参考", "外盘参考"}
     ]
     spot_reference_histories_complete = all(
         chart is not None
         and len(chart["series"]) == 1
-        and chart["series"][0]["expiry"] == "现货"
+        and chart["series"][0]["expiry"] in {"现货", "外盘"}
         and len(chart["series"][0]["points"]) >= 8
         for chart in spot_reference_history_charts
     )
@@ -3077,6 +3155,8 @@ def write_outputs(
         NASDAQ_SYMBOL,
         SP500_SYMBOL,
         FCPO_SYMBOL,
+        US_SOYBEAN_OIL_SYMBOL,
+        US_SOYBEAN_MEAL_SYMBOL,
     }
     external_sources_complete = (
         {source["symbol"] for source in external_sources} == expected_external_symbols

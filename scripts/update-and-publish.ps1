@@ -153,8 +153,8 @@ function Assert-IntegrityReport {
   $report = Read-Utf8Text -Path $reportPath | ConvertFrom-Json
   $checks = @(
     ($report.status -eq "ok")
-    ([int]$report.pairCount -eq 34)
-    ([int]$report.expectedPairCount -eq 34)
+    ([int]$report.pairCount -eq 35)
+    ([int]$report.expectedPairCount -eq 35)
     ([int]$report.pairCount -eq [int]$report.expectedPairCount)
     ($report.futureDataDetected -eq $false)
     ($report.hierarchySorted -eq $true)
