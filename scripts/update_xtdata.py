@@ -173,8 +173,8 @@ AGRICULTURAL_PRODUCT_ROOTS = {
 STRATEGY_TYPE_ORDER = {"回归": 0, "趋势": 1, "内外盘": 2}
 MARKET_CATEGORY_ORDER = {"股指": 0, "农产品": 1, "工业品": 2}
 PINNED_PAIR_ORDER = {
-    "沪深300风险溢价指数": 0,
-    "标普500风险溢价指数": 1,
+    "ERP：沪深300": 0,
+    "ERP：标普500": 1,
 }
 
 
@@ -286,8 +286,8 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
 ]
 
 ADDITIONAL_EXTERNAL_PAIRS = {
-    "沪深300风险溢价指数",
-    "标普500风险溢价指数",
+    "ERP：沪深300",
+    "ERP：标普500",
     "纳斯达克/标普500",
     "马盘棕榈油与豆油比价",
 }
@@ -374,25 +374,25 @@ PAIRS: list[dict[str, Any]] = [
         "tradable": False,
     },
     {
-        "pair": "沪深300风险溢价指数",
+        "pair": "ERP：沪深300",
         "left": CSI300_PE_SYMBOL,
         "right": CN10Y_SYMBOL,
         "formula": spread,
         "kind": "percentage",
         "tradable": False,
         "custom_builder": "cn_equity_risk_premium",
-        "strategy_type": "趋势",
+        "strategy_type": "回归",
         "market_category": "股指",
     },
     {
-        "pair": "标普500风险溢价指数",
+        "pair": "ERP：标普500",
         "left": SP500_PE_SYMBOL,
         "right": US10Y_SYMBOL,
         "formula": spread,
         "kind": "percentage",
         "tradable": False,
         "custom_builder": "us_equity_risk_premium",
-        "strategy_type": "趋势",
+        "strategy_type": "回归",
         "market_category": "股指",
     },
     {

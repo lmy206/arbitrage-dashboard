@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-25",
-  "updatedAt": "2026-08-25T20:10:51+08:00",
+  "updatedAt": "2026-08-25T21:33:52+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与BNM校对数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -91,8 +91,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "1994-10-18",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 7623,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 7624,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -111,8 +111,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2003-03-14",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5185,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5186,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -131,8 +131,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2007-06-08",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4670,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4671,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -151,8 +151,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2012-12-28",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3315,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3316,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -171,8 +171,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2009-03-26",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4233,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4234,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -191,8 +191,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2014-03-21",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3024,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3025,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -211,8 +211,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "1993-09-15",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 7944,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 7945,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -231,8 +231,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "1994-10-05",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 7693,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 7694,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -251,8 +251,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2007-03-26",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4720,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4721,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -271,8 +271,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2007-10-29",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4577,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4578,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -291,8 +291,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2019-12-06",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 1629,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 1630,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -311,8 +311,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2012-12-03",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3334,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3335,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -331,8 +331,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2011-04-15",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3734,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3735,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -351,8 +351,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2013-03-22",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3263,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3264,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -371,8 +371,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2000-07-17",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 6341,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 6342,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -391,8 +391,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2006-01-09",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5014,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5015,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -411,8 +411,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2013-10-18",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3128,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3129,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -431,8 +431,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2008-01-09",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4527,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4528,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -451,8 +451,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2012-05-10",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3475,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3476,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -471,8 +471,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-08-25",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4423,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4424,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -491,8 +491,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2013-10-09",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3130,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3131,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -511,8 +511,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2019-08-12",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 1707,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 1708,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -531,8 +531,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2023-07-28",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 746,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 747,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -551,8 +551,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2023-09-15",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 711,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 712,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -571,8 +571,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2015-03-27",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 2776,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 2777,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -591,8 +591,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2019-09-25",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 1676,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 1677,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -611,8 +611,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2007-07-31",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4624,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4625,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -631,8 +631,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2014-02-28",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3033,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3034,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -671,8 +671,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-09-22",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5328,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5329,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -691,8 +691,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-01-02",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5498,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5499,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -711,8 +711,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-12-22",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5252,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5253,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -731,8 +731,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2007-06-08",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4673,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4674,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -751,8 +751,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2012-12-28",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3315,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3316,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -771,8 +771,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2009-03-27",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4232,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4233,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -791,8 +791,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2014-03-21",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3024,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3025,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -811,8 +811,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-01-02",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5489,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5490,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -831,8 +831,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-01-02",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5490,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5491,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -851,8 +851,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2007-03-26",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4717,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4718,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -871,8 +871,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2007-10-29",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4583,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4584,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -891,8 +891,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2019-12-06",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 1629,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 1630,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -911,8 +911,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2012-12-03",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3334,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3335,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -931,8 +931,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2011-04-15",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3740,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3741,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -951,8 +951,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2013-03-22",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3263,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3264,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -971,8 +971,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-01-02",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5498,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5499,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -991,8 +991,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2006-01-09",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5014,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5015,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1011,8 +1011,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2013-10-18",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3134,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3135,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1031,8 +1031,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2008-01-10",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4523,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4524,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1051,8 +1051,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2012-05-10",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3476,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3477,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1071,8 +1071,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-08-25",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5150,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5151,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1091,8 +1091,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2013-10-09",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3135,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3136,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1111,8 +1111,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2019-08-12",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 1694,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 1695,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1131,8 +1131,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2023-07-28",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 746,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 747,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1151,8 +1151,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2023-09-15",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 711,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 712,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1171,8 +1171,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2015-03-27",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 2776,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 2777,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1191,8 +1191,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2019-09-25",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 1676,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 1677,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1211,8 +1211,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2007-07-31",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 4636,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 4637,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1231,8 +1231,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2014-02-28",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 3039,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 3040,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1271,8 +1271,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2004-09-22",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 5326,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 5327,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1542,8 +1542,8 @@
   "updateSchedule": "每日20:00 Asia/Shanghai",
   "rows": [
     {
-      "strategyType": "趋势",
-      "pair": "沪深300风险溢价指数",
+      "strategyType": "回归",
+      "pair": "ERP：沪深300",
       "current": "5.34%",
       "previous": "5.33%",
       "change": "+0.01%",
@@ -1568,7 +1568,7 @@
       "leftStructure": null,
       "rightStructure": null,
       "mainHistoryChart": {
-        "title": "沪深300风险溢价指数走势",
+        "title": "ERP：沪深300走势",
         "unit": "百分比",
         "month": "",
         "startDate": "2016-08-25",
@@ -3642,8 +3642,8 @@
       "marketCategory": "股指"
     },
     {
-      "strategyType": "趋势",
-      "pair": "标普500风险溢价指数",
+      "strategyType": "回归",
+      "pair": "ERP：标普500",
       "current": "-1.31%",
       "previous": "-1.31%",
       "change": "+0.00%",
@@ -3668,7 +3668,7 @@
       "leftStructure": null,
       "rightStructure": null,
       "mainHistoryChart": {
-        "title": "标普500风险溢价指数走势",
+        "title": "ERP：标普500走势",
         "unit": "百分比",
         "month": "",
         "startDate": "2016-08-25",
@@ -199036,13 +199036,13 @@
     {
       "strategyType": "内外盘",
       "pair": "铝内外盘比价",
-      "current": "7.4107",
+      "current": "7.3923",
       "previous": "7.3896",
-      "change": "+0.0211",
-      "changeValue": 0.02108593,
-      "allTime": "29.96%",
+      "change": "+0.0026",
+      "changeValue": 0.00263701,
+      "allTime": "29.20%",
       "allTimeRange": "5.8549 ~ 8.8167",
-      "percentile": 22.8,
+      "percentile": 22.03,
       "fiveYearRange": "6.1372 ~ 8.8167",
       "signal": "中性",
       "lots": "—",
@@ -199052,7 +199052,7 @@
       "leftSymbol": "al00.SF",
       "rightSymbol": "AHD.LME",
       "leftChangePct": -0.0421,
-      "rightChangePct": -0.3265,
+      "rightChangePct": -0.0777,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "al00.SF / AHD.LME",
@@ -201127,7 +201127,7 @@
               },
               {
                 "date": "2026-08-25",
-                "value": 7.4107
+                "value": 7.392251
               }
             ]
           }
@@ -203193,21 +203193,21 @@
       "contracts": [],
       "externalSourceDate": "2026-08-25",
       "domesticPrice": 23755.0,
-      "lmePriceUsdPerTonne": 3205.5,
+      "lmePriceUsdPerTonne": 3213.5,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "内外盘",
       "pair": "铜内外盘比价",
-      "current": "7.5439",
+      "current": "7.5786",
       "previous": "7.5944",
-      "change": "-0.0505",
-      "changeValue": -0.05046723,
-      "allTime": "18.50%",
+      "change": "-0.0158",
+      "changeValue": -0.01578677,
+      "allTime": "20.19%",
       "allTimeRange": "6.8790 ~ 8.5541",
-      "percentile": 14.92,
+      "percentile": 16.27,
       "fiveYearRange": "6.8790 ~ 8.5541",
-      "signal": "偏低",
+      "signal": "中性",
       "lots": "—",
       "deviation": "—",
       "notional": "—",
@@ -203215,7 +203215,7 @@
       "leftSymbol": "cu00.SF",
       "rightSymbol": "CAD.LME",
       "leftChangePct": -0.1202,
-      "rightChangePct": 0.5479,
+      "rightChangePct": 0.0878,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "cu00.SF / CAD.LME",
@@ -205290,7 +205290,7 @@
               },
               {
                 "date": "2026-08-25",
-                "value": 7.543927
+                "value": 7.578608
               }
             ]
           }
@@ -207356,19 +207356,19 @@
       "contracts": [],
       "externalSourceDate": "2026-08-25",
       "domesticPrice": 107980.0,
-      "lmePriceUsdPerTonne": 14313.5,
+      "lmePriceUsdPerTonne": 14248.0,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "内外盘",
       "pair": "锌内外盘比价",
-      "current": "6.7635",
+      "current": "6.7811",
       "previous": "6.7690",
-      "change": "-0.0055",
-      "changeValue": -0.00548651,
-      "allTime": "1.98%",
+      "change": "+0.0121",
+      "changeValue": 0.01210621,
+      "allTime": "2.15%",
       "allTimeRange": "6.1944 ~ 9.0651",
-      "percentile": 3.98,
+      "percentile": 4.32,
       "fiveYearRange": "6.1944 ~ 8.8800",
       "signal": "极度偏低",
       "lots": "—",
@@ -207378,7 +207378,7 @@
       "leftSymbol": "zn00.SF",
       "rightSymbol": "ZSD.LME",
       "leftChangePct": 0.6369,
-      "rightChangePct": 0.7186,
+      "rightChangePct": 0.4573,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "zn00.SF / ZSD.LME",
@@ -209453,7 +209453,7 @@
               },
               {
                 "date": "2026-08-25",
-                "value": 6.763523
+                "value": 6.781116
               }
             ]
           }
@@ -211519,7 +211519,7 @@
       "contracts": [],
       "externalSourceDate": "2026-08-25",
       "domesticPrice": 26070.0,
-      "lmePriceUsdPerTonne": 3854.5,
+      "lmePriceUsdPerTonne": 3844.5,
       "marketCategory": "工业品"
     }
   ],

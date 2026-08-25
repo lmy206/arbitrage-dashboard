@@ -51,8 +51,8 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /铜内外盘比价/);
   assert.match(html, /铝内外盘比价/);
   assert.match(html, /锌内外盘比价/);
-  assert.match(html, /沪深300风险溢价指数/);
-  assert.match(html, /标普500风险溢价指数/);
+  assert.match(html, /ERP：沪深300/);
+  assert.match(html, /ERP：标普500/);
   assert.match(html, /纳斯达克\/标普500/);
   assert.match(html, /马盘棕榈油与豆油比价/);
   assert.match(html, /展开铜内外盘比价现货折线图/);
@@ -94,7 +94,7 @@ test("server-renders the arbitrage dashboard", async () => {
 
 test("dashboard rows follow strategy, market and percentile hierarchy", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  const pinnedOrder = new Map([["沪深300风险溢价指数", 0], ["标普500风险溢价指数", 1]]);
+  const pinnedOrder = new Map([["ERP：沪深300", 0], ["ERP：标普500", 1]]);
   const strategyOrder = new Map([["回归", 0], ["趋势", 1], ["内外盘", 2]]);
   const marketOrder = new Map([["股指", 0], ["农产品", 1], ["工业品", 2]]);
   const expected = [...payload.rows].sort((a, b) => (
@@ -114,8 +114,8 @@ test("pinned risk-premium indices stay first, followed by regression, trend and 
   const response = await render();
   const html = await response.text();
   const tableBody = html.slice(html.indexOf("<tbody>"), html.indexOf("</tbody>"));
-  const cnRisk = tableBody.indexOf("沪深300风险溢价指数");
-  const usRisk = tableBody.indexOf("标普500风险溢价指数");
+  const cnRisk = tableBody.indexOf("ERP：沪深300");
+  const usRisk = tableBody.indexOf("ERP：标普500");
   const firstRegression = tableBody.indexOf('class="strategy-type regression">回归');
   const remainingTableBody = tableBody.slice(firstRegression);
   const lastRegression = remainingTableBody.lastIndexOf('class="strategy-type regression">回归');
@@ -123,7 +123,7 @@ test("pinned risk-premium indices stay first, followed by regression, trend and 
   const lastTrend = remainingTableBody.lastIndexOf('class="strategy-type trend">趋势');
   const firstCrossMarket = remainingTableBody.indexOf('class="strategy-type cross-market">内外盘');
 
-  assert.ok(cnRisk >= 0 && usRisk > cnRisk && firstRegression > usRisk);
+  assert.ok(firstRegression >= 0 && cnRisk > firstRegression && usRisk > cnRisk);
   assert.ok(lastRegression >= 0);
   assert.ok(firstTrend > lastRegression, "trend pairs should stay below every regression pair");
   assert.ok(firstCrossMarket > lastTrend, "cross-market pairs should stay at the very bottom");
@@ -177,10 +177,11 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.length, 34);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指与估值指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
-  assert.deepEqual(trendPairs, ["沪深300风险溢价指数", "标普500风险溢价指数", "纳斯达克/标普500", "油粕比", "金银比"].sort());
+  assert.deepEqual(trendPairs, ["纳斯达克/标普500", "油粕比", "金银比"].sort());
   const crossMarketPairs = payload.rows.filter((row) => row.strategyType === "内外盘").map((row) => row.pair).sort();
   assert.deepEqual(crossMarketPairs, ["马盘棕榈油与豆油比价", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 25);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
+  assert.ok(payload.rows.slice(0, 2).every((row) => row.strategyType === "回归"));
 
   const expectedSignal = (percentile) => {
     if (percentile >= 95) return "极度偏高";
@@ -628,8 +629,8 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
 
 test("approved external risk premiums, US index ratio, and Malaysia palm-soy ratio are auditable", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  const cnRisk = payload.rows.find((row) => row.pair === "沪深300风险溢价指数");
-  const usRisk = payload.rows.find((row) => row.pair === "标普500风险溢价指数");
+  const cnRisk = payload.rows.find((row) => row.pair === "ERP：沪深300");
+  const usRisk = payload.rows.find((row) => row.pair === "ERP：标普500");
   const nasdaqSp = payload.rows.find((row) => row.pair === "纳斯达克/标普500");
   const palmSoy = payload.rows.find((row) => row.pair === "马盘棕榈油与豆油比价");
 

@@ -201,8 +201,8 @@ const strategyTypeOrder: Record<StrategyType, number> = { 回归: 0, 趋势: 1, 
 const strategyTypeClass: Record<StrategyType, string> = { 回归: "regression", 趋势: "trend", 内外盘: "cross-market" };
 const marketCategoryOrder: Record<PairRow["marketCategory"], number> = { 股指: 0, 农产品: 1, 工业品: 2 };
 const pinnedPairOrder: Record<string, number> = {
-  沪深300风险溢价指数: 0,
-  标普500风险溢价指数: 1,
+  "ERP：沪深300": 0,
+  "ERP：标普500": 1,
 };
 
 function pairFormula(
