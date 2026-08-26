@@ -379,6 +379,7 @@ PAIRS: list[dict[str, Any]] = [
         "right": "MAJQ00.ZF",
         "formula": mto_screen_margin,
         "kind": "spread",
+        "fixed_lots": (2, 3),
         "formula_label": "聚丙烯 − 3 × 甲醇（未扣加工费等）",
     },
     {
@@ -387,6 +388,7 @@ PAIRS: list[dict[str, Any]] = [
         "right": "PXJQ00.ZF",
         "formula": pta_processing_fee,
         "kind": "spread",
+        "fixed_lots": (20, 13),
         "formula_label": "PTA − 0.655 × PX（未扣其他成本）",
     },
     {"pair": "猪肉/玉米比价", "left": "lhJQ00.DF", "right": "cJQ00.DF", "formula": ratio, "kind": "ratio"},
@@ -1761,10 +1763,13 @@ def balance_metrics(
     left_price: float,
     right_price: float,
     force_one_to_one: bool = False,
+    fixed_lots: tuple[int, int] | None = None,
 ) -> tuple[str, str, str, str]:
     left_contract = CONTRACTS[main_continuous_symbol(left)]
     right_contract = CONTRACTS[main_continuous_symbol(right)]
-    if force_one_to_one:
+    if fixed_lots is not None:
+        left_lots, right_lots = fixed_lots
+    elif force_one_to_one:
         left_lots, right_lots = 1, 1
     else:
         candidates: list[tuple[float, int, int, int, int]] = []
@@ -2034,6 +2039,7 @@ def build_contract_rows(
             float(aligned.loc[latest_date, "leftClose"]),
             float(aligned.loc[latest_date, "rightClose"]),
             force_one_to_one=definition["kind"] == "spread",
+            fixed_lots=definition.get("fixed_lots"),
         )
 
         results.append(
@@ -2191,6 +2197,7 @@ def build_spot_observation(
         float(aligned.loc[latest_date, left]),
         float(aligned.loc[latest_date, right]),
         force_one_to_one=definition["kind"] == "spread",
+        fixed_lots=definition.get("fixed_lots"),
     )
     return {
         "key": "spot",
@@ -2258,6 +2265,7 @@ def build_main_continuous_observation(
         float(aligned.loc[latest_date, left]),
         float(aligned.loc[latest_date, right]),
         force_one_to_one=definition["kind"] == "spread",
+        fixed_lots=definition.get("fixed_lots"),
     )
     main_definition = {**definition, "left": left, "right": right}
     return {
@@ -3003,6 +3011,7 @@ def build_rows(
                 left_price,
                 right_price,
                 force_one_to_one=definition["kind"] == "spread",
+                fixed_lots=definition.get("fixed_lots"),
             )
         else:
             lots = deviation = notional = margin = "—"

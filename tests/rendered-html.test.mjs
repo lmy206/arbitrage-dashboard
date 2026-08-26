@@ -414,16 +414,18 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚丙烯比价"), false);
 
   const replacementSpreads = new Map([
-    ["聚乙烯-聚丙烯价差", ["lJQ00.DF", "ppJQ00.DF", "聚乙烯 − 聚丙烯"]],
-    ["MTO盘面利润", ["ppJQ00.DF", "MAJQ00.ZF", "聚丙烯 − 3 × 甲醇（未扣加工费等）"]],
-    ["PTA盘面加工费", ["TAJQ00.ZF", "PXJQ00.ZF", "PTA − 0.655 × PX（未扣其他成本）"]],
+    ["聚乙烯-聚丙烯价差", ["lJQ00.DF", "ppJQ00.DF", "聚乙烯 − 聚丙烯", "1:1"]],
+    ["MTO盘面利润", ["ppJQ00.DF", "MAJQ00.ZF", "聚丙烯 − 3 × 甲醇（未扣加工费等）", "2:3"]],
+    ["PTA盘面加工费", ["TAJQ00.ZF", "PXJQ00.ZF", "PTA − 0.655 × PX（未扣其他成本）", "20:13"]],
   ]);
-  for (const [pair, [leftSymbol, rightSymbol, formulaLabel]] of replacementSpreads) {
+  for (const [pair, [leftSymbol, rightSymbol, formulaLabel, expectedLots]] of replacementSpreads) {
     const row = payload.rows.find((item) => item.pair === pair);
     assert.ok(row, `${pair} should be present`);
     assert.equal(row.leftSymbol, leftSymbol);
     assert.equal(row.rightSymbol, rightSymbol);
     assert.equal(row.formulaLabel, formulaLabel);
+    assert.equal(row.lots, expectedLots);
+    assert.ok(row.contracts.every((contract) => contract.lots === expectedLots));
     assert.match(row.current, /^-?\d+$/);
     assert.ok(row.mainHistoryChart, `${pair} should include a weighted-index chart`);
   }
