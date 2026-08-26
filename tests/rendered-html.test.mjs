@@ -125,7 +125,7 @@ test("server-renders the arbitrage dashboard", async () => {
 test("dashboard rows follow strategy, market and percentile hierarchy", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   const pinnedOrder = new Map([["ERP：沪深300", 0], ["ERP：标普500", 1]]);
-  const strategyOrder = new Map([["回归", 0], ["趋势", 1], ["内外盘", 2]]);
+  const strategyOrder = new Map([["回归", 0], ["趋势", 1], ["外盘监控", 2]]);
   const marketOrder = new Map([["股指", 0], ["农产品", 1], ["工业品", 2]]);
   const expected = [...payload.rows].sort((a, b) => (
     (pinnedOrder.has(a.pair) || pinnedOrder.has(b.pair))
@@ -140,7 +140,7 @@ test("dashboard rows follow strategy, market and percentile hierarchy", async ()
   assert.ok(payload.rows.every((row) => marketOrder.has(row.marketCategory)));
 });
 
-test("pinned risk-premium indices stay first, followed by regression, trend and cross-market pairs", async () => {
+test("pinned risk-premium indices stay first, followed by regression, trend and external-monitor pairs", async () => {
   const response = await render();
   const html = await response.text();
   const tableBody = html.slice(html.indexOf("<tbody>"), html.indexOf("</tbody>"));
@@ -151,12 +151,12 @@ test("pinned risk-premium indices stay first, followed by regression, trend and 
   const lastRegression = remainingTableBody.lastIndexOf('class="strategy-type regression">回归');
   const firstTrend = remainingTableBody.indexOf('class="strategy-type trend">趋势');
   const lastTrend = remainingTableBody.lastIndexOf('class="strategy-type trend">趋势');
-  const firstCrossMarket = remainingTableBody.indexOf('class="strategy-type cross-market">内外盘');
+  const firstExternalMonitor = remainingTableBody.indexOf('class="strategy-type external-monitor">外盘监控');
 
   assert.ok(firstRegression >= 0 && cnRisk > firstRegression && usRisk > cnRisk);
   assert.ok(lastRegression >= 0);
   assert.ok(firstTrend > lastRegression, "trend pairs should stay below every regression pair");
-  assert.ok(firstCrossMarket > lastTrend, "cross-market pairs should stay at the very bottom");
+  assert.ok(firstExternalMonitor > lastTrend, "external-monitor pairs should stay at the very bottom");
 });
 
 test("expanded contract lists omit the extra main-continuous observation", async () => {
@@ -210,9 +210,9 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.length, 35);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
-  assert.deepEqual(trendPairs, ["油粕比", "美盘油粕比", "金银比"].sort());
-  const crossMarketPairs = payload.rows.filter((row) => row.strategyType === "内外盘").map((row) => row.pair).sort();
-  assert.deepEqual(crossMarketPairs, ["马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
+  assert.deepEqual(trendPairs, ["油粕比", "金银比"].sort());
+  const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
+  assert.deepEqual(externalMonitorPairs, ["美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
   assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
   assert.ok(payload.rows.slice(0, 2).every((row) => row.strategyType === "回归"));
 
@@ -724,7 +724,7 @@ test("approved external risk premiums, US index ratio, Malaysia palm-US soybean 
   assert.equal(palmSoy.pairType, "跨市场套利");
   assert.equal(palmSoy.marketCategory, "农产品");
   assert.equal(usOilMeal.pairType, "外盘参考");
-  assert.equal(usOilMeal.strategyType, "趋势");
+  assert.equal(usOilMeal.strategyType, "外盘监控");
   assert.equal(usOilMeal.marketCategory, "农产品");
   assert.equal(usOilMeal.leftSymbol, "BO.SINA");
   assert.equal(usOilMeal.rightSymbol, "SM.SINA");

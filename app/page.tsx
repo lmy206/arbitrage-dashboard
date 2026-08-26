@@ -5,7 +5,7 @@ import dashboardData from "./data/arbitrage.json";
 
 type Signal = "极度偏高" | "偏高" | "中性" | "偏低" | "极度偏低";
 type SourceStatus = "双源一致" | "口径不同" | "仅xtdata" | "需复核" | "待校验" | "外部补充";
-type StrategyType = "回归" | "趋势" | "内外盘";
+type StrategyType = "回归" | "趋势" | "外盘监控";
 
 type TermStructure = {
   state: "Contango" | "Back";
@@ -198,8 +198,8 @@ function numericValue(row: PairRow, key: SortKey) {
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
 }
 
-const strategyTypeOrder: Record<StrategyType, number> = { 回归: 0, 趋势: 1, 内外盘: 2 };
-const strategyTypeClass: Record<StrategyType, string> = { 回归: "regression", 趋势: "trend", 内外盘: "cross-market" };
+const strategyTypeOrder: Record<StrategyType, number> = { 回归: 0, 趋势: 1, 外盘监控: 2 };
+const strategyTypeClass: Record<StrategyType, string> = { 回归: "regression", 趋势: "trend", 外盘监控: "external-monitor" };
 const marketCategoryOrder: Record<PairRow["marketCategory"], number> = { 股指: 0, 农产品: 1, 工业品: 2 };
 const pinnedPairOrder: Record<string, number> = {
   "ERP：沪深300": 0,

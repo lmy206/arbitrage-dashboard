@@ -174,7 +174,7 @@ AGRICULTURAL_PRODUCT_ROOTS = {
     "sr",
     "y",
 }
-STRATEGY_TYPE_ORDER = {"回归": 0, "趋势": 1, "内外盘": 2}
+STRATEGY_TYPE_ORDER = {"回归": 0, "趋势": 1, "外盘监控": 2}
 MARKET_CATEGORY_ORDER = {"股指": 0, "农产品": 1, "工业品": 2}
 PINNED_PAIR_ORDER = {
     "ERP：沪深300": 0,
@@ -269,7 +269,7 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
         "right": "CAD.LME",
         "lme_symbol": "CAD",
         "lme_name": "LME铜3个月",
-        "strategy_type": "内外盘",
+        "strategy_type": "外盘监控",
     },
     {
         "pair": "铝内外盘比价",
@@ -277,7 +277,7 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
         "right": "AHD.LME",
         "lme_symbol": "AHD",
         "lme_name": "LME铝3个月",
-        "strategy_type": "内外盘",
+        "strategy_type": "外盘监控",
     },
     {
         "pair": "锌内外盘比价",
@@ -285,7 +285,7 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
         "right": "ZSD.LME",
         "lme_symbol": "ZSD",
         "lme_name": "LME锌3个月",
-        "strategy_type": "内外盘",
+        "strategy_type": "外盘监控",
     },
 ]
 
@@ -419,7 +419,7 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "ratio",
         "tradable": False,
         "custom_builder": "malaysia_palm_us_soy_oil_ratio",
-        "strategy_type": "内外盘",
+        "strategy_type": "外盘监控",
         "market_category": "农产品",
     },
     {
@@ -430,7 +430,7 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "ratio",
         "tradable": False,
         "custom_builder": "us_soy_oil_meal_ratio",
-        "strategy_type": "趋势",
+        "strategy_type": "外盘监控",
         "market_category": "农产品",
     },
 ]
