@@ -10,7 +10,7 @@ test("Cloudflare Pages output contains a complete static entry document", async 
   const html = await readFile(path.join(clientDirectory, "index.html"), "utf8");
   assert.match(html, /<title>套利监测看板<\/title>/i);
   assert.match(html, /<main class="dashboard-shell">/);
-  assert.match(html, /35<!-- --> 组/);
+  assert.match(html, /36<!-- --> 组/);
 
   const assetPaths = new Set(
     [...html.matchAll(/(?:src|href)="(\/_next\/[^"?#]+)[^" ]*"/g)].map((match) => match[1]),

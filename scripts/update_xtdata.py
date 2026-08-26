@@ -31,6 +31,7 @@ EASTMONEY_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "eastmoney"
 MULTPL_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "multpl"
 SINA_INDEX_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "sina_us_index"
 SINA_FUTURES_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "sina_foreign_futures"
+NYFED_EXTERNAL_DIR = SHARED_ROOT / "market" / "external" / "newyorkfed"
 REPORT_DIR = SHARED_ROOT / "reports"
 CATALOG_PATH = SHARED_ROOT / "catalog.sqlite"
 MANIFEST_PATH = SHARED_ROOT / "manifest.jsonl"
@@ -55,6 +56,8 @@ SP500_SYMBOL = "INX.SINA"
 FCPO_SYMBOL = "FCPO.SINA"
 US_SOYBEAN_OIL_SYMBOL = "BO.SINA"
 US_SOYBEAN_MEAL_SYMBOL = "SM.SINA"
+SOFR_SYMBOL = "SOFR.NYFED"
+OBFR_SYMBOL = "OBFR.NYFED"
 EXTERNAL_HISTORY_START = "20160825"
 
 
@@ -179,6 +182,7 @@ MARKET_CATEGORY_ORDER = {"股指": 0, "农产品": 1, "工业品": 2}
 PINNED_PAIR_ORDER = {
     "ERP：沪深300": 0,
     "ERP：标普500": 1,
+    "美元资金压力（SOFR−OBFR）": 2,
 }
 
 
@@ -401,6 +405,17 @@ PAIRS: list[dict[str, Any]] = [
         "market_category": "股指",
     },
     {
+        "pair": "美元资金压力（SOFR−OBFR）",
+        "left": SOFR_SYMBOL,
+        "right": OBFR_SYMBOL,
+        "formula": spread,
+        "kind": "basis_points",
+        "tradable": False,
+        "custom_builder": "usd_funding_pressure",
+        "strategy_type": "外盘监控",
+        "market_category": "股指",
+    },
+    {
         "pair": "纳斯达克/标普500",
         "left": NASDAQ_SYMBOL,
         "right": SP500_SYMBOL,
@@ -463,6 +478,7 @@ def definition_xt_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
         "cn_equity_risk_premium",
         "us_equity_risk_premium",
         "external_ratio",
+        "usd_funding_pressure",
         "malaysia_palm_us_soy_oil_ratio",
         "us_soy_oil_meal_ratio",
     }:
@@ -1027,6 +1043,26 @@ def fetch_multpl_sp500_pe() -> pd.DataFrame:
     return normalize_value_frame(table, str(date_column), str(value_column))
 
 
+def fetch_new_york_fed_reference_rate(rate: str, market: str) -> pd.DataFrame:
+    """Fetch an official New York Fed daily reference-rate history."""
+    import requests
+
+    end_date = pd.Timestamp.now(tz=SHANGHAI).strftime("%Y-%m-%d")
+    response = requests.get(
+        f"https://markets.newyorkfed.org/api/rates/{market}/{rate.lower()}/search.json",
+        params={
+            "startDate": pd.Timestamp(EXTERNAL_HISTORY_START).strftime("%Y-%m-%d"),
+            "endDate": end_date,
+            "type": "rate",
+        },
+        headers={"User-Agent": "arbitrage-dashboard/1.0"},
+        timeout=35,
+    )
+    response.raise_for_status()
+    frame = pd.DataFrame(response.json().get("refRates", []))
+    return normalize_value_frame(frame, "effectiveDate", "percentRate")
+
+
 def fetch_bnm_cnymyr_latest() -> tuple[str, float] | None:
     """Return BNM's latest CNY/MYR cross-check as CNY per MYR."""
     import requests
@@ -1260,6 +1296,30 @@ def fetch_external_market_history() -> tuple[
                 "maxLagDays": 7,
                 "quoteUnit": "美元/短吨",
             },
+            {
+                "symbol": SOFR_SYMBOL,
+                "name": "担保隔夜融资利率（SOFR）",
+                "provider": "Federal Reserve Bank of New York",
+                "source": "newyorkfed",
+                "dataset_type": "usd_reference_rate",
+                "path": NYFED_EXTERNAL_DIR / "SOFR.csv",
+                "fetch": lambda: fetch_new_york_fed_reference_rate("SOFR", "secured"),
+                "normalize": lambda raw: raw,
+                "maxLagDays": 7,
+                "quoteUnit": "%",
+            },
+            {
+                "symbol": OBFR_SYMBOL,
+                "name": "隔夜银行融资利率（OBFR）",
+                "provider": "Federal Reserve Bank of New York",
+                "source": "newyorkfed",
+                "dataset_type": "usd_reference_rate",
+                "path": NYFED_EXTERNAL_DIR / "OBFR.csv",
+                "fetch": lambda: fetch_new_york_fed_reference_rate("OBFR", "unsecured"),
+                "normalize": lambda raw: raw,
+                "maxLagDays": 7,
+                "quoteUnit": "%",
+            },
         ]
     )
     for specification in specifications:
@@ -1337,6 +1397,8 @@ def fetch_external_market_history() -> tuple[
         FCPO_SYMBOL,
         US_SOYBEAN_OIL_SYMBOL,
         US_SOYBEAN_MEAL_SYMBOL,
+        SOFR_SYMBOL,
+        OBFR_SYMBOL,
     }
     missing = sorted(required.difference(histories))
     if missing:
@@ -1621,6 +1683,18 @@ def display_percentage_change(value: float) -> str:
 
 def display_percentage_range(series: pd.Series) -> str:
     return f"{display_percentage(float(series.min()))} ~ {display_percentage(float(series.max()))}"
+
+
+def display_basis_points(value: float) -> str:
+    return f"{value:.2f}bp"
+
+
+def display_basis_points_change(value: float) -> str:
+    return f"{value:+.2f}bp"
+
+
+def display_basis_points_range(series: pd.Series) -> str:
+    return f"{display_basis_points(float(series.min()))} ~ {display_basis_points(float(series.max()))}"
 
 
 def latest_leg_change_pct(series: pd.Series, latest_date: pd.Timestamp) -> float | None:
@@ -2582,6 +2656,24 @@ def build_external_reference_row(
         formula_label = "100 / 标普500市盈率 − 美国10年期国债收益率"
         source = "Multpl标普500月度市盈率；东方财富美国10年期国债收益率"
         unit = "百分比"
+    elif builder == "usd_funding_pressure":
+        sofr = external_histories[SOFR_SYMBOL]
+        anchor = sofr.index.union(external_anchor)
+        sofr_aligned = align_external_asof(anchor, sofr, 7)
+        obfr_aligned = align_external_asof(anchor, external_histories[OBFR_SYMBOL], 7)
+        aligned = pd.concat(
+            [sofr_aligned.rename("left"), obfr_aligned.rename("right")],
+            axis=1,
+            join="inner",
+        ).dropna()
+        # Both rates are quoted in percentage points. Multiplying their
+        # difference by 100 converts the financing premium into basis points.
+        values = (aligned["left"] - aligned["right"]) * 100
+        formula_label = "（SOFR − OBFR）× 100 基点"
+        source = "纽约联储官方日度参考利率；SOFR为美债回购融资，OBFR含部分Eurodollar与离岸分支美元借款"
+        unit = "基点"
+        pair_type = "外盘参考"
+        label = "外盘"
     elif builder == "external_ratio":
         sp500 = external_histories[SP500_SYMBOL]
         anchor = sp500.index.union(external_anchor)
@@ -2689,6 +2781,7 @@ def build_external_reference_row(
     }[pair_type]
 
     percentage = definition["kind"] == "percentage"
+    basis_points = definition["kind"] == "basis_points"
     latest_components = aligned.loc[latest_date]
     extra_fields: dict[str, Any] = {}
     if builder in {"cn_equity_risk_premium", "us_equity_risk_premium"}:
@@ -2700,6 +2793,13 @@ def build_external_reference_row(
         extra_fields = {
             "leftIndexLevel": round(float(latest_components["left"]), 6),
             "rightIndexLevel": round(float(latest_components["right"]), 6),
+        }
+    elif builder == "usd_funding_pressure":
+        extra_fields = {
+            "sofrPct": round(float(latest_components["left"]), 6),
+            "obfrPct": round(float(latest_components["right"]), 6),
+            "fundingSpreadBp": round(current, 6),
+            "interpretation": "利差上冲表示美债回购融资相对广义无担保美元融资变贵，是资金压力确认项，不等同于完整离岸美元流动性指数",
         }
     elif builder == "malaysia_palm_us_soy_oil_ratio":
         palm_myr_per_tonne = float(latest_components["left"])
@@ -2730,14 +2830,14 @@ def build_external_reference_row(
         {
             "strategyType": definition["strategy_type"],
             "pair": definition["pair"],
-            "current": display_percentage(current) if percentage else display_number(current, "ratio"),
-            "previous": display_percentage(previous) if percentage else display_number(previous, "ratio"),
-            "change": display_percentage_change(change) if percentage else display_change(change, "ratio"),
+            "current": display_percentage(current) if percentage else (display_basis_points(current) if basis_points else display_number(current, "ratio")),
+            "previous": display_percentage(previous) if percentage else (display_basis_points(previous) if basis_points else display_number(previous, "ratio")),
+            "change": display_percentage_change(change) if percentage else (display_basis_points_change(change) if basis_points else display_change(change, "ratio")),
             "changeValue": round(change, 8),
             "allTime": f"{percentile(values):.2f}%",
-            "allTimeRange": display_percentage_range(values) if percentage else display_range(values, "ratio"),
+            "allTimeRange": display_percentage_range(values) if percentage else (display_basis_points_range(values) if basis_points else display_range(values, "ratio")),
             "percentile": five_year_percentile,
-            "fiveYearRange": display_percentage_range(five_year) if percentage else display_range(five_year, "ratio"),
+            "fiveYearRange": display_percentage_range(five_year) if percentage else (display_basis_points_range(five_year) if basis_points else display_range(five_year, "ratio")),
             "signal": signal_for(five_year_percentile),
             "lots": "—",
             "deviation": "—",
@@ -2745,8 +2845,8 @@ def build_external_reference_row(
             "margin": "—",
             "leftSymbol": definition["left"],
             "rightSymbol": definition["right"],
-            "leftChangePct": latest_leg_change_pct(aligned["left"], latest_date),
-            "rightChangePct": latest_leg_change_pct(aligned["right"], latest_date),
+            "leftChangePct": None if basis_points else latest_leg_change_pct(aligned["left"], latest_date),
+            "rightChangePct": None if basis_points else latest_leg_change_pct(aligned["right"], latest_date),
             "seriesMode": "external",
             "pairType": pair_type,
             "formulaLabel": formula_label,
@@ -2826,6 +2926,7 @@ def build_rows(
             "cn_equity_risk_premium",
             "us_equity_risk_premium",
             "external_ratio",
+            "usd_funding_pressure",
             "malaysia_palm_us_soy_oil_ratio",
             "us_soy_oil_meal_ratio",
         }:
@@ -3029,12 +3130,12 @@ def write_outputs(
     payload = {
         "dataDate": data_date,
         "updatedAt": now.isoformat(timespec="seconds"),
-        "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与BNM校对数据",
+        "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、BNM校对与纽约联储官方数据",
         "sourceValidation": source_validation,
         "externalSources": external_sources,
-        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；马盘棕榈油/美盘豆油使用外管局中间价交叉推导马币/美元，把CBOT美豆油换算为马币/公吨后与FCPO直接比较，并以BNM最新值校对；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
+        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元资金压力使用纽约联储SOFR减OBFR并换算为基点，只作为回购相对广义无担保美元融资的确认项；马盘棕榈油/美盘豆油使用外管局中间价交叉推导马币/美元，把CBOT美豆油换算为马币/公吨后与FCPO直接比较，并以BNM最新值校对；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
-        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值与CBOT油粕指标使用各源公布值",
+        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",
         "rows": rows,
         "charts": charts,
@@ -3190,6 +3291,8 @@ def write_outputs(
         FCPO_SYMBOL,
         US_SOYBEAN_OIL_SYMBOL,
         US_SOYBEAN_MEAL_SYMBOL,
+        SOFR_SYMBOL,
+        OBFR_SYMBOL,
     }
     external_sources_complete = (
         {source["symbol"] for source in external_sources} == expected_external_symbols
@@ -3379,7 +3482,9 @@ def main() -> int:
             external_sources,
             external_errors,
         )
-        print(json.dumps(report, ensure_ascii=False, indent=2))
+        # Keep scheduled-task console output safe on Windows hosts whose
+        # default code page cannot encode mathematical symbols such as U+2212.
+        print(json.dumps(report, ensure_ascii=True, indent=2))
         return 0 if report["status"] == "ok" else 2
     except Exception as error:
         record_failure(error)

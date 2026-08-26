@@ -81,6 +81,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /锌内外盘比价/);
   assert.match(html, /ERP：沪深300/);
   assert.match(html, /ERP：标普500/);
+  assert.match(html, /美元资金压力（SOFR−OBFR）/);
   assert.match(html, /纳斯达克\/标普500/);
   assert.match(html, /马盘棕榈油\/美盘豆油/);
   assert.match(html, /展开铜内外盘比价现货折线图/);
@@ -124,7 +125,7 @@ test("server-renders the arbitrage dashboard", async () => {
 
 test("dashboard rows follow strategy, market and percentile hierarchy", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  const pinnedOrder = new Map([["ERP：沪深300", 0], ["ERP：标普500", 1]]);
+  const pinnedOrder = new Map([["ERP：沪深300", 0], ["ERP：标普500", 1], ["美元资金压力（SOFR−OBFR）", 2]]);
   const strategyOrder = new Map([["回归", 0], ["趋势", 1], ["外盘监控", 2]]);
   const marketOrder = new Map([["股指", 0], ["农产品", 1], ["工业品", 2]]);
   const expected = [...payload.rows].sort((a, b) => (
@@ -140,20 +141,22 @@ test("dashboard rows follow strategy, market and percentile hierarchy", async ()
   assert.ok(payload.rows.every((row) => marketOrder.has(row.marketCategory)));
 });
 
-test("pinned risk-premium indices stay first, followed by regression, trend and external-monitor pairs", async () => {
+test("pinned risk and dollar-funding indicators stay first, followed by regression, trend and external-monitor pairs", async () => {
   const response = await render();
   const html = await response.text();
   const tableBody = html.slice(html.indexOf("<tbody>"), html.indexOf("</tbody>"));
   const cnRisk = tableBody.indexOf("ERP：沪深300");
   const usRisk = tableBody.indexOf("ERP：标普500");
-  const firstRegression = tableBody.indexOf('class="strategy-type regression">回归');
-  const remainingTableBody = tableBody.slice(firstRegression);
+  const usdFunding = tableBody.indexOf("美元资金压力（SOFR−OBFR）");
+  const remainingTableBody = tableBody.slice(usdFunding + "美元资金压力（SOFR−OBFR）".length);
+  const firstRegression = remainingTableBody.indexOf('class="strategy-type regression">回归');
   const lastRegression = remainingTableBody.lastIndexOf('class="strategy-type regression">回归');
   const firstTrend = remainingTableBody.indexOf('class="strategy-type trend">趋势');
   const lastTrend = remainingTableBody.lastIndexOf('class="strategy-type trend">趋势');
   const firstExternalMonitor = remainingTableBody.indexOf('class="strategy-type external-monitor">外盘监控');
 
-  assert.ok(firstRegression >= 0 && cnRisk > firstRegression && usRisk > cnRisk);
+  assert.ok(cnRisk >= 0 && usRisk > cnRisk && usdFunding > usRisk);
+  assert.ok(firstRegression >= 0);
   assert.ok(lastRegression >= 0);
   assert.ok(firstTrend > lastRegression, "trend pairs should stay below every regression pair");
   assert.ok(firstExternalMonitor > lastTrend, "external-monitor pairs should stay at the very bottom");
@@ -207,14 +210,14 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 35);
-  assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值与CBOT油粕指标使用各源公布值");
+  assert.equal(payload.rows.length, 36);
+  assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油粕比", "金银比"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
-  assert.deepEqual(externalMonitorPairs, ["美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
+  assert.deepEqual(externalMonitorPairs, ["美元资金压力（SOFR−OBFR）", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
   assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
-  assert.ok(payload.rows.slice(0, 2).every((row) => row.strategyType === "回归"));
+  assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元资金压力（SOFR−OBFR）"]);
 
   const expectedSignal = (percentile) => {
     if (percentile >= 95) return "极度偏高";
@@ -668,21 +671,22 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
   }
 
-  assert.equal(payload.externalSources.length, 14);
+  assert.equal(payload.externalSources.length, 16);
   assert.ok(payload.externalSources.every((source) => source.endDate <= new Date().toISOString().slice(0, 10)));
   assert.ok(payload.externalSources.every((source) => ["live", "cache"].includes(source.status)));
-  assert.match(payload.externalSourcePolicy, /国内主连÷LME三个月电子盘且不换汇.*风险溢价.*马盘棕榈油.*美盘油粕比/);
+  assert.match(payload.externalSourcePolicy, /国内主连÷LME三个月电子盘且不换汇.*风险溢价.*SOFR.*OBFR.*马盘棕榈油.*美盘油粕比/);
 });
 
-test("approved external risk premiums, US index ratio, Malaysia palm-US soybean oil ratio, and US oil-meal ratio are auditable", async () => {
+test("approved external risk premiums, dollar funding pressure, and cross-market ratios are auditable", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   const cnRisk = payload.rows.find((row) => row.pair === "ERP：沪深300");
   const usRisk = payload.rows.find((row) => row.pair === "ERP：标普500");
+  const dollarFunding = payload.rows.find((row) => row.pair === "美元资金压力（SOFR−OBFR）");
   const nasdaqSp = payload.rows.find((row) => row.pair === "纳斯达克/标普500");
   const palmSoy = payload.rows.find((row) => row.pair === "马盘棕榈油/美盘豆油");
   const usOilMeal = payload.rows.find((row) => row.pair === "美盘油粕比");
 
-  for (const row of [cnRisk, usRisk, nasdaqSp, palmSoy, usOilMeal]) {
+  for (const row of [cnRisk, usRisk, dollarFunding, nasdaqSp, palmSoy, usOilMeal]) {
     assert.ok(row);
     assert.equal(row.seriesMode, "external");
     assert.equal(row.sourceStatus, "外部补充");
@@ -697,6 +701,14 @@ test("approved external risk premiums, US index ratio, Malaysia palm-US soybean 
 
   assert.equal(cnRisk.current, `${((1 / cnRisk.priceEarningsRatio - cnRisk.bondYieldPct / 100) * 100).toFixed(2)}%`);
   assert.equal(usRisk.current, `${((1 / usRisk.priceEarningsRatio - usRisk.bondYieldPct / 100) * 100).toFixed(2)}%`);
+  assert.equal(dollarFunding.current, `${dollarFunding.fundingSpreadBp.toFixed(2)}bp`);
+  assert.ok(Math.abs(dollarFunding.fundingSpreadBp - (dollarFunding.sofrPct - dollarFunding.obfrPct) * 100) < 0.000001);
+  assert.equal(dollarFunding.formulaLabel, "（SOFR − OBFR）× 100 基点");
+  assert.equal(dollarFunding.mainHistoryChart.unit, "基点");
+  assert.equal(dollarFunding.mainHistoryChart.series[0].expiry, "外盘");
+  assert.equal(dollarFunding.pairType, "外盘参考");
+  assert.equal(dollarFunding.strategyType, "外盘监控");
+  assert.match(dollarFunding.interpretation, /资金压力确认项.*不等同于完整离岸美元流动性指数/);
   assert.ok(Math.abs(Number(nasdaqSp.current) - nasdaqSp.leftIndexLevel / nasdaqSp.rightIndexLevel) < 0.0001);
   assert.equal(nasdaqSp.strategyType, "回归");
   assert.equal(nasdaqSp.marketCategory, "股指");
@@ -735,10 +747,18 @@ test("approved external risk premiums, US index ratio, Malaysia palm-US soybean 
 
   const soybeanOil = payload.externalSources.find((source) => source.symbol === "BO.SINA");
   const soybeanMeal = payload.externalSources.find((source) => source.symbol === "SM.SINA");
+  const sofr = payload.externalSources.find((source) => source.symbol === "SOFR.NYFED");
+  const obfr = payload.externalSources.find((source) => source.symbol === "OBFR.NYFED");
   assert.equal(soybeanOil.quoteUnit, "美分/磅");
   assert.equal(soybeanMeal.quoteUnit, "美元/短吨");
   assert.match(soybeanOil.path, /sina_foreign_futures[\\/]BO\.csv$/);
   assert.match(soybeanMeal.path, /sina_foreign_futures[\\/]SM\.csv$/);
+  assert.equal(sofr.provider, "Federal Reserve Bank of New York");
+  assert.equal(obfr.provider, "Federal Reserve Bank of New York");
+  assert.equal(sofr.quoteUnit, "%");
+  assert.equal(obfr.quoteUnit, "%");
+  assert.match(sofr.path, /newyorkfed[\\/]SOFR\.csv$/);
+  assert.match(obfr.path, /newyorkfed[\\/]OBFR\.csv$/);
 
   const cnyMyr = payload.externalSources.find((source) => source.symbol === "CNYMYR_MID.SAFE");
   assert.ok(cnyMyr);
