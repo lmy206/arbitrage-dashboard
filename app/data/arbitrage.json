@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-25",
-  "updatedAt": "2026-08-26T09:01:23+08:00",
+  "updatedAt": "2026-08-26T09:18:58+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与BNM校对数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -651,8 +651,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2021-01-08",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 1364,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 1365,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1251,8 +1251,8 @@
         "matchedContract": null,
         "matchedContractClose": null,
         "xtStartDate": "2021-01-08",
-        "xtEndDate": "2026-08-25",
-        "xtRows": 1364,
+        "xtEndDate": "2026-08-26",
+        "xtRows": 1365,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -1560,7 +1560,7 @@
       "quoteUnit": "美元/短吨"
     }
   ],
-  "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；马盘棕榈油/美盘豆油将FCPO与CBOT美豆油统一换算为人民币/公吨后相除，外管局人民币/林吉特以BNM最新值校对；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
+  "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；马盘棕榈油/美盘豆油使用外管局中间价交叉推导马币/美元，把CBOT美豆油换算为马币/公吨后与FCPO直接比较，并以BNM最新值校对；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
   "period": "1d",
   "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值与CBOT油粕指标使用各源公布值",
   "updateSchedule": "每日20:00 Asia/Shanghai",
@@ -243082,7 +243082,7 @@
       "rightChangePct": 0.6238,
       "seriesMode": "external",
       "pairType": "跨市场套利",
-      "formulaLabel": "马盘棕榈油（折人民币/公吨）÷ 美盘豆油（折人民币/公吨）",
+      "formulaLabel": "马盘棕榈油（马币/公吨）÷ 美盘豆油（美元/公吨 × 马币/美元）",
       "sourceStatus": "外部补充",
       "leftStructure": null,
       "rightStructure": null,
@@ -243092,7 +243092,7 @@
         "month": "",
         "startDate": "2016-08-25",
         "endDate": "2026-08-25",
-        "source": "马盘FCPO与CBOT美豆油：新浪外盘期货（AKShare）；汇率：国家外汇管理局，人民币/林吉特以BNM最新值校对；两腿统一为人民币/公吨",
+        "source": "马盘FCPO与CBOT美豆油：新浪外盘期货（AKShare）；马币/美元：外管局中间价标准化为人民币/美元与人民币/马币后交叉推导，BNM最新值校对；两腿统一为马币/公吨",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 仅向后匹配已公布数据",
         "series": [
           {
@@ -244561,12 +244561,11 @@
       "contracts": [],
       "externalSourceDate": "2026-08-25",
       "palmOilMyrPerMetricTonne": 4945.0,
-      "palmOilCnyPerMetricTonne": 8276.012117,
       "soybeanOilCentsPerLb": 67.75,
       "soybeanOilUsdPerMetricTonne": 1493.631826,
-      "soybeanOilCnyPerMetricTonne": 10134.590668,
-      "fxCnyPerMyr": 1.673612,
-      "fxCnyPerUsd": 6.7852,
+      "soybeanOilMyrPerMetricTonne": 6055.51927,
+      "fxMyrPerUsd": 4.054225,
+      "fxCrossMethod": "人民币/美元 ÷ 人民币/马币（CNY/USD ÷ CNY/MYR）",
       "marketCategory": "农产品"
     },
     {

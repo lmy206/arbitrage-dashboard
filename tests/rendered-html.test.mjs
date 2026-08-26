@@ -706,10 +706,14 @@ test("approved external risk premiums, US index ratio, Malaysia palm-US soybean 
   );
   assert.equal(palmSoy.leftSymbol, "FCPO.SINA");
   assert.equal(palmSoy.rightSymbol, "BO.SINA");
-  assert.equal(palmSoy.formulaLabel, "马盘棕榈油（折人民币/公吨）÷ 美盘豆油（折人民币/公吨）");
-  assert.ok(Math.abs(Number(palmSoy.current) - palmSoy.palmOilCnyPerMetricTonne / palmSoy.soybeanOilCnyPerMetricTonne) < 0.0001);
-  assert.ok(Math.abs(palmSoy.palmOilCnyPerMetricTonne - palmSoy.palmOilMyrPerMetricTonne * palmSoy.fxCnyPerMyr) < 0.001);
-  assert.ok(Math.abs(palmSoy.soybeanOilCnyPerMetricTonne - palmSoy.soybeanOilCentsPerLb * 22.0462262185 * palmSoy.fxCnyPerUsd) < 0.001);
+  assert.equal(palmSoy.formulaLabel, "马盘棕榈油（马币/公吨）÷ 美盘豆油（美元/公吨 × 马币/美元）");
+  assert.ok(Math.abs(Number(palmSoy.current) - palmSoy.palmOilMyrPerMetricTonne / palmSoy.soybeanOilMyrPerMetricTonne) < 0.0001);
+  assert.ok(Math.abs(palmSoy.soybeanOilUsdPerMetricTonne - palmSoy.soybeanOilCentsPerLb * 22.0462262185) < 0.001);
+  assert.ok(Math.abs(palmSoy.soybeanOilMyrPerMetricTonne - palmSoy.soybeanOilUsdPerMetricTonne * palmSoy.fxMyrPerUsd) < 0.001);
+  assert.ok(palmSoy.fxMyrPerUsd > 3 && palmSoy.fxMyrPerUsd < 6);
+  assert.equal(palmSoy.fxCrossMethod, "人民币/美元 ÷ 人民币/马币（CNY/USD ÷ CNY/MYR）");
+  assert.equal(palmSoy.palmOilCnyPerMetricTonne, undefined);
+  assert.equal(palmSoy.soybeanOilCnyPerMetricTonne, undefined);
   assert.equal(cnRisk.mainHistoryChart.unit, "百分比");
   assert.equal(usRisk.mainHistoryChart.unit, "百分比");
   assert.deepEqual(cnRisk.mainHistoryChart.fixedThresholds, [
