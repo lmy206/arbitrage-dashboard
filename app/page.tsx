@@ -161,7 +161,11 @@ const rows: PairRow[] = dashboardData.rows.map((row) => ({
   ...row,
   signal: row.signal as Signal,
   sourceStatus: row.sourceStatus as SourceStatus,
-  formulaKind: row.pair.includes("差") ? "spread" : "ratio",
+  formulaKind: (
+    row.pair.includes("差")
+    || row.pair.includes("利润")
+    || row.pair.includes("加工费")
+  ) ? "spread" : "ratio",
 }));
 const xtdataOnly = dashboardData.sourceValidation.mode === "xtdata_only";
 const externalSources = dashboardData.externalSources ?? [];
@@ -339,6 +343,7 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
     ...row.contracts.map((contract) => ({
       key: contract.expiry,
       label: contract.expiry,
+      detail: row.formulaLabel,
       current: contract.current,
       percentile: contract.percentile,
       signal: contract.signal,
@@ -421,6 +426,9 @@ const contractRootNames: Record<string, string> = {
   SS: "不锈钢",
   L: "聚乙烯",
   PP: "聚丙烯",
+  MA: "甲醇",
+  TA: "PTA",
+  PX: "PX",
   IF: "沪深300",
   IC: "中证500",
   IM: "中证1000",

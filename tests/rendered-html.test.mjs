@@ -70,8 +70,14 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /20号胶\/BR橡胶比价/);
   assert.match(html, /烧碱\/玻璃比价/);
   assert.match(html, /镍\/不锈钢比价/);
-  assert.match(html, /玻璃\/聚乙烯比价/);
-  assert.match(html, /玻璃\/聚丙烯比价/);
+  assert.doesNotMatch(html, /玻璃\/聚乙烯比价/);
+  assert.doesNotMatch(html, /玻璃\/聚丙烯比价/);
+  assert.match(html, /聚乙烯-聚丙烯价差/);
+  assert.match(html, /MTO盘面利润/);
+  assert.match(html, /PTA盘面加工费/);
+  assert.match(html, /title="聚乙烯 − 聚丙烯"/);
+  assert.match(html, /title="聚丙烯 − 3 × 甲醇（未扣加工费等）"/);
+  assert.match(html, /title="PTA − 0.655 × PX（未扣其他成本）"/);
   assert.match(html, /猪肉\/玉米比价/);
   assert.match(html, /卷螺价差/);
   assert.doesNotMatch(html, /螺卷差/);
@@ -210,13 +216,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 36);
+  assert.equal(payload.rows.length, 37);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油粕比", "金银比"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["美元资金压力（SOFR−OBFR）", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 29);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元资金压力（SOFR−OBFR）"]);
 
   const expectedSignal = (percentile) => {
@@ -393,8 +399,6 @@ test("monthly contract details contain only current values and liquidity", async
     ["20号胶/BR橡胶比价", ["nrJQ00.INE", "brJQ00.SF"]],
     ["烧碱/玻璃比价", ["SHJQ00.ZF", "FGJQ00.ZF"]],
     ["镍/不锈钢比价", ["niJQ00.SF", "ssJQ00.SF"]],
-    ["玻璃/聚乙烯比价", ["FGJQ00.ZF", "lJQ00.DF"]],
-    ["玻璃/聚丙烯比价", ["FGJQ00.ZF", "ppJQ00.DF"]],
     ["猪肉/玉米比价", ["lhJQ00.DF", "cJQ00.DF"]],
   ]);
   for (const [pair, [leftSymbol, rightSymbol]] of addedRatios) {
@@ -404,6 +408,24 @@ test("monthly contract details contain only current values and liquidity", async
     assert.equal(row.leftSymbol, leftSymbol);
     assert.equal(row.rightSymbol, rightSymbol);
     assert.equal(row.current, Number(row.current).toFixed(4));
+  }
+
+  assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚乙烯比价"), false);
+  assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚丙烯比价"), false);
+
+  const replacementSpreads = new Map([
+    ["聚乙烯-聚丙烯价差", ["lJQ00.DF", "ppJQ00.DF", "聚乙烯 − 聚丙烯"]],
+    ["MTO盘面利润", ["ppJQ00.DF", "MAJQ00.ZF", "聚丙烯 − 3 × 甲醇（未扣加工费等）"]],
+    ["PTA盘面加工费", ["TAJQ00.ZF", "PXJQ00.ZF", "PTA − 0.655 × PX（未扣其他成本）"]],
+  ]);
+  for (const [pair, [leftSymbol, rightSymbol, formulaLabel]] of replacementSpreads) {
+    const row = payload.rows.find((item) => item.pair === pair);
+    assert.ok(row, `${pair} should be present`);
+    assert.equal(row.leftSymbol, leftSymbol);
+    assert.equal(row.rightSymbol, rightSymbol);
+    assert.equal(row.formulaLabel, formulaLabel);
+    assert.match(row.current, /^-?\d+$/);
+    assert.ok(row.mainHistoryChart, `${pair} should include a weighted-index chart`);
   }
 
   for (const row of payload.rows.filter((item) => item.pairType === "期货套利")) {
@@ -622,7 +644,7 @@ test("xtdata-only integrity validation is internally consistent", async () => {
   const validation = payload.sourceValidation;
   assert.match(payload.source, /xtdata.*用户批准/);
   assert.equal(validation.mode, "xtdata_only");
-  assert.equal(validation.summary.total, 69);
+  assert.equal(validation.summary.total, 75);
   assert.equal(validation.checks.length, validation.summary.total);
   assert.equal(validation.summary.consistent, validation.summary.total);
   assert.equal(validation.summary.review, 0);

@@ -107,6 +107,9 @@ CONTRACTS: dict[str, dict[str, float]] = {
     "ss00.SF": {"multiplier": 5, "margin_rate": 0.10},
     "l00.DF": {"multiplier": 5, "margin_rate": 0.11},
     "pp00.DF": {"multiplier": 5, "margin_rate": 0.11},
+    "MA00.ZF": {"multiplier": 10, "margin_rate": 0.10},
+    "TA00.ZF": {"multiplier": 5, "margin_rate": 0.09},
+    "PX00.ZF": {"multiplier": 5, "margin_rate": 0.10},
     "lh00.DF": {"multiplier": 16, "margin_rate": 0.08},
     "c00.DF": {"multiplier": 10, "margin_rate": 0.07},
 }
@@ -263,6 +266,16 @@ def gold_silver(left: pd.Series, right: pd.Series) -> pd.Series:
     return left * 1000 / right
 
 
+def mto_screen_margin(polypropylene: pd.Series, methanol: pd.Series) -> pd.Series:
+    """Simplified PP-route MTO screen margin before processing and by-product items."""
+    return polypropylene - 3 * methanol
+
+
+def pta_processing_fee(pta: pd.Series, paraxylene: pd.Series) -> pd.Series:
+    """PTA screen processing fee using the common 0.655 PX consumption factor."""
+    return pta - 0.655 * paraxylene
+
+
 OILSEED_CONTRACT_MONTHS = {1, 5, 9}
 
 
@@ -352,8 +365,30 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "20号胶/BR橡胶比价", "left": "nrJQ00.INE", "right": "brJQ00.SF", "formula": ratio, "kind": "ratio"},
     {"pair": "烧碱/玻璃比价", "left": "SHJQ00.ZF", "right": "FGJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {"pair": "镍/不锈钢比价", "left": "niJQ00.SF", "right": "ssJQ00.SF", "formula": ratio, "kind": "ratio"},
-    {"pair": "玻璃/聚乙烯比价", "left": "FGJQ00.ZF", "right": "lJQ00.DF", "formula": ratio, "kind": "ratio"},
-    {"pair": "玻璃/聚丙烯比价", "left": "FGJQ00.ZF", "right": "ppJQ00.DF", "formula": ratio, "kind": "ratio"},
+    {
+        "pair": "聚乙烯-聚丙烯价差",
+        "left": "lJQ00.DF",
+        "right": "ppJQ00.DF",
+        "formula": spread,
+        "kind": "spread",
+        "formula_label": "聚乙烯 − 聚丙烯",
+    },
+    {
+        "pair": "MTO盘面利润",
+        "left": "ppJQ00.DF",
+        "right": "MAJQ00.ZF",
+        "formula": mto_screen_margin,
+        "kind": "spread",
+        "formula_label": "聚丙烯 − 3 × 甲醇（未扣加工费等）",
+    },
+    {
+        "pair": "PTA盘面加工费",
+        "left": "TAJQ00.ZF",
+        "right": "PXJQ00.ZF",
+        "formula": pta_processing_fee,
+        "kind": "spread",
+        "formula_label": "PTA − 0.655 × PX（未扣其他成本）",
+    },
     {"pair": "猪肉/玉米比价", "left": "lhJQ00.DF", "right": "cJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "豆粕价差", "left": "mJQ00.DF", "right": "aJQ00.DF", "formula": spread, "kind": "spread", "contract_months": OILSEED_CONTRACT_MONTHS},
     {
@@ -2991,6 +3026,7 @@ def build_rows(
                 "margin": margin,
                 "leftSymbol": left,
                 "rightSymbol": right,
+                "formulaLabel": definition.get("formula_label"),
                 "leftChangePct": latest_leg_change_pct(aligned[left], latest_date),
                 "rightChangePct": latest_leg_change_pct(aligned[right], latest_date),
                 "seriesMode": (
