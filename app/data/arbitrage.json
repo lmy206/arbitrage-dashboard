@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-25",
-  "updatedAt": "2026-08-26T08:27:03+08:00",
+  "updatedAt": "2026-08-26T08:42:21+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与BNM校对数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -1407,8 +1407,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\lme_sina\\CAD.csv",
       "startDate": "2016-08-26",
-      "endDate": "2026-08-25",
-      "rows": 2536,
+      "endDate": "2026-08-26",
+      "rows": 2537,
       "maxLagDays": 5
     },
     {
@@ -1418,8 +1418,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\lme_sina\\AHD.csv",
       "startDate": "2016-08-26",
-      "endDate": "2026-08-25",
-      "rows": 2536,
+      "endDate": "2026-08-26",
+      "rows": 2537,
       "maxLagDays": 5
     },
     {
@@ -1429,8 +1429,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\lme_sina\\ZSD.csv",
       "startDate": "2016-08-26",
-      "endDate": "2026-08-25",
-      "rows": 2536,
+      "endDate": "2026-08-26",
+      "rows": 2537,
       "maxLagDays": 5
     },
     {
@@ -1554,8 +1554,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\sina_foreign_futures\\SM.csv",
       "startDate": "2016-08-26",
-      "endDate": "2026-08-25",
-      "rows": 2540,
+      "endDate": "2026-08-26",
+      "rows": 2541,
       "maxLagDays": 7,
       "quoteUnit": "美元/短吨"
     }

@@ -621,7 +621,9 @@ function ContractHistoryChart({ chart }: { chart: ContractHistoryChartData }) {
             y={y(threshold.value) - 5}
             textAnchor="end"
           >
-            {threshold.label}阈值 {formatContractHistoryValue(threshold.value, chart.unit)}
+            {chart.fixedThresholds
+              ? threshold.label
+              : `${threshold.label}阈值 ${formatContractHistoryValue(threshold.value, chart.unit)}`}
           </text>
         ))}
         {hovered && (

@@ -178,6 +178,7 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /chart\.fixedThresholds \?\?/);
   assert.match(pageSource, /thresholds\.map\(\(threshold\) => threshold\.label\)\.join\(" \/ "\)/);
   assert.match(pageSource, /3%\/97%阈值按图内全部历史值/);
+  assert.match(pageSource, /chart\.fixedThresholds\s*\? threshold\.label\s*:\s*`\$\{threshold\.label\}阈值/);
   assert.match(pageSource, /historyChart: row\.spotObservation\.historyChart/);
   assert.match(pageSource, /historyChart: row\.mainHistoryChart/);
   assert.match(pageSource, /row\.termObservations\?\.length/);
