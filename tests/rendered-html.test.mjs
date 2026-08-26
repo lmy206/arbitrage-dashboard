@@ -209,10 +209,10 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.length, 35);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
-  assert.deepEqual(trendPairs, ["纳斯达克/标普500", "油粕比", "美盘油粕比", "金银比"].sort());
+  assert.deepEqual(trendPairs, ["油粕比", "美盘油粕比", "金银比"].sort());
   const crossMarketPairs = payload.rows.filter((row) => row.strategyType === "内外盘").map((row) => row.pair).sort();
   assert.deepEqual(crossMarketPairs, ["马盘棕榈油与豆油比价", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
   assert.ok(payload.rows.slice(0, 2).every((row) => row.strategyType === "回归"));
 
   const expectedSignal = (percentile) => {
@@ -697,6 +697,12 @@ test("approved external risk premiums, US index ratio, Malaysia palm-soy ratio, 
   assert.equal(cnRisk.current, `${((1 / cnRisk.priceEarningsRatio - cnRisk.bondYieldPct / 100) * 100).toFixed(2)}%`);
   assert.equal(usRisk.current, `${((1 / usRisk.priceEarningsRatio - usRisk.bondYieldPct / 100) * 100).toFixed(2)}%`);
   assert.ok(Math.abs(Number(nasdaqSp.current) - nasdaqSp.leftIndexLevel / nasdaqSp.rightIndexLevel) < 0.0001);
+  assert.equal(nasdaqSp.strategyType, "回归");
+  assert.equal(nasdaqSp.marketCategory, "股指");
+  assert.ok(
+    payload.rows.indexOf(nasdaqSp)
+      < payload.rows.findIndex((row) => row.strategyType === "回归" && row.marketCategory === "农产品"),
+  );
   assert.ok(Math.abs(Number(palmSoy.current) - palmSoy.foreignPriceMyrPerTonne * palmSoy.fxCnyPerMyr / palmSoy.domesticPriceCnyPerTonne) < 0.0001);
   assert.equal(cnRisk.mainHistoryChart.unit, "百分比");
   assert.equal(usRisk.mainHistoryChart.unit, "百分比");

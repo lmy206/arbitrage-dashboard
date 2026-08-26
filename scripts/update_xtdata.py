@@ -408,7 +408,7 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "ratio",
         "tradable": False,
         "custom_builder": "external_ratio",
-        "strategy_type": "趋势",
+        "strategy_type": "回归",
         "market_category": "股指",
     },
     {
