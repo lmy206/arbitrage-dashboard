@@ -293,7 +293,7 @@ ADDITIONAL_EXTERNAL_PAIRS = {
     "ERP：沪深300",
     "ERP：标普500",
     "纳斯达克/标普500",
-    "马盘棕榈油和美盘豆油的比价",
+    "马盘棕榈油/美盘豆油",
     "美盘油粕比",
 }
 
@@ -412,7 +412,7 @@ PAIRS: list[dict[str, Any]] = [
         "market_category": "股指",
     },
     {
-        "pair": "马盘棕榈油和美盘豆油的比价",
+        "pair": "马盘棕榈油/美盘豆油",
         "left": FCPO_SYMBOL,
         "right": US_SOYBEAN_OIL_SYMBOL,
         "formula": ratio,
@@ -3028,7 +3028,7 @@ def write_outputs(
         "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与BNM校对数据",
         "sourceValidation": source_validation,
         "externalSources": external_sources,
-        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；马盘棕榈油和美盘豆油的比价将FCPO与CBOT美豆油统一换算为人民币/公吨后相除，外管局人民币/林吉特以BNM最新值校对；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
+        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；马盘棕榈油/美盘豆油将FCPO与CBOT美豆油统一换算为人民币/公吨后相除，外管局人民币/林吉特以BNM最新值校对；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
         "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值与CBOT油粕指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",

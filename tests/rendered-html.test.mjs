@@ -82,7 +82,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /ERP：沪深300/);
   assert.match(html, /ERP：标普500/);
   assert.match(html, /纳斯达克\/标普500/);
-  assert.match(html, /马盘棕榈油和美盘豆油的比价/);
+  assert.match(html, /马盘棕榈油\/美盘豆油/);
   assert.match(html, /展开铜内外盘比价现货折线图/);
   assert.match(html, /title="cu00\.SF \/ CAD\.LME"/);
   assert.match(html, /科创50\/上证50/);
@@ -212,7 +212,7 @@ test("monthly contract details contain only current values and liquidity", async
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油粕比", "美盘油粕比", "金银比"].sort());
   const crossMarketPairs = payload.rows.filter((row) => row.strategyType === "内外盘").map((row) => row.pair).sort();
-  assert.deepEqual(crossMarketPairs, ["马盘棕榈油和美盘豆油的比价", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
+  assert.deepEqual(crossMarketPairs, ["马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
   assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
   assert.ok(payload.rows.slice(0, 2).every((row) => row.strategyType === "回归"));
 
@@ -593,13 +593,13 @@ test("IM term spread exposes down-quarter and skip-quarter observations without 
 test("each tradable leg has a valid futures term-structure classification", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   for (const row of payload.rows) {
-    if (row.pairType === "跨市场套利" && row.pair !== "马盘棕榈油和美盘豆油的比价") {
+    if (row.pairType === "跨市场套利" && row.pair !== "马盘棕榈油/美盘豆油") {
       assert.ok(row.leftStructure);
       assert.ok(["Contango", "Back"].includes(row.leftStructure.state));
       assert.equal(row.rightStructure, null);
       continue;
     }
-    if (["现货参考", "期限套利", "外盘参考"].includes(row.pairType) || row.pair === "马盘棕榈油和美盘豆油的比价") {
+    if (["现货参考", "期限套利", "外盘参考"].includes(row.pairType) || row.pair === "马盘棕榈油/美盘豆油") {
       assert.equal(row.leftStructure, null);
       assert.equal(row.rightStructure, null);
       continue;
@@ -679,7 +679,7 @@ test("approved external risk premiums, US index ratio, Malaysia palm-US soybean 
   const cnRisk = payload.rows.find((row) => row.pair === "ERP：沪深300");
   const usRisk = payload.rows.find((row) => row.pair === "ERP：标普500");
   const nasdaqSp = payload.rows.find((row) => row.pair === "纳斯达克/标普500");
-  const palmSoy = payload.rows.find((row) => row.pair === "马盘棕榈油和美盘豆油的比价");
+  const palmSoy = payload.rows.find((row) => row.pair === "马盘棕榈油/美盘豆油");
   const usOilMeal = payload.rows.find((row) => row.pair === "美盘油粕比");
 
   for (const row of [cnRisk, usRisk, nasdaqSp, palmSoy, usOilMeal]) {
