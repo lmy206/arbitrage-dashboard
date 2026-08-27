@@ -75,9 +75,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /聚乙烯-聚丙烯价差/);
   assert.match(html, /MTO盘面利润/);
   assert.match(html, /PTA盘面加工费/);
-  assert.match(html, /title="聚乙烯 − 聚丙烯"/);
-  assert.match(html, /title="聚丙烯 − 3 × 甲醇（未扣加工费等）"/);
-  assert.match(html, /title="PTA − 0.655 × PX（未扣其他成本）"/);
+  assert.match(html, /title="lJQ00\.DF − ppJQ00\.DF"/);
+  assert.match(html, /title="ppJQ00\.DF − 3 × MAJQ00\.ZF"/);
+  assert.match(html, /title="TAJQ00\.ZF − 0\.655 × PXJQ00\.ZF"/);
   assert.match(html, /猪肉\/玉米比价/);
   assert.match(html, /卷螺价差/);
   assert.doesNotMatch(html, /螺卷差/);

@@ -211,22 +211,6 @@ const pinnedPairOrder: Record<string, number> = {
   "美元资金压力（SOFR−OBFR）": 2,
 };
 
-function pairFormula(
-  row: Pick<PairRow, "formulaKind" | "leftSymbol" | "rightSymbol" | "formulaLabel">,
-  leftSymbol = row.leftSymbol,
-  rightSymbol = row.rightSymbol,
-) {
-  if (
-    row.formulaLabel
-    && leftSymbol === row.leftSymbol
-    && rightSymbol === row.rightSymbol
-  ) {
-    return row.formulaLabel;
-  }
-  const operator = row.formulaKind === "spread" ? "−" : "/";
-  return `${leftSymbol} ${operator} ${rightSymbol}`;
-}
-
 function pairCodeFormula(
   row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol">,
   leftSymbol = row.leftSymbol,
@@ -240,6 +224,21 @@ function pairCodeFormula(
   }
   const operator = row.formulaKind === "spread" ? "−" : "/";
   return `${leftSymbol} ${operator} ${rightSymbol}`;
+}
+
+const codeOnlyFormulaPairs = new Set([
+  "聚乙烯-聚丙烯价差",
+  "MTO盘面利润",
+  "PTA盘面加工费",
+]);
+
+function pairHoverFormula(
+  row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol" | "formulaLabel">,
+) {
+  if (row.formulaLabel && !codeOnlyFormulaPairs.has(row.pair)) {
+    return row.formulaLabel;
+  }
+  return pairCodeFormula(row);
 }
 
 function historyToggleLabel(pair: string, optionLabel: string, expanded: boolean) {
@@ -950,7 +949,7 @@ export default function Home() {
                 const detailId = `contracts-${row.pair.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "-")}`;
                 return (
                   <Fragment key={row.pair}>
-                    <tr className={`pair-row ${isExpanded ? "expanded" : ""} ${selectedLabel ? "primary-observation" : ""} ${["现货参考", "跨市场套利", "外盘参考"].includes(row.pairType) ? "reference" : ""}`} title={pairFormula(row)}>
+                    <tr className={`pair-row ${isExpanded ? "expanded" : ""} ${selectedLabel ? "primary-observation" : ""} ${["现货参考", "跨市场套利", "外盘参考"].includes(row.pairType) ? "reference" : ""}`} title={pairHoverFormula(row)}>
                       <td><span className={`strategy-type ${strategyTypeClass[row.strategyType]}`}>{row.strategyType}</span></td>
                       <th scope="row">
                         <div className="pair-cell">
