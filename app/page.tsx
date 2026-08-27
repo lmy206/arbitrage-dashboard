@@ -227,6 +227,21 @@ function pairFormula(
   return `${leftSymbol} ${operator} ${rightSymbol}`;
 }
 
+function pairCodeFormula(
+  row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol">,
+  leftSymbol = row.leftSymbol,
+  rightSymbol = row.rightSymbol,
+) {
+  if (row.pair === "MTO盘面利润") {
+    return `${leftSymbol} − 3 × ${rightSymbol}`;
+  }
+  if (row.pair === "PTA盘面加工费") {
+    return `${leftSymbol} − 0.655 × ${rightSymbol}`;
+  }
+  const operator = row.formulaKind === "spread" ? "−" : "/";
+  return `${leftSymbol} ${operator} ${rightSymbol}`;
+}
+
 function historyToggleLabel(pair: string, optionLabel: string, expanded: boolean) {
   const action = expanded ? "收起" : "展开";
   return /^\d{4}$/.test(optionLabel)
@@ -322,7 +337,7 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
   pinned.push({
     key: "default",
     label: row.seriesMode === "weighted" ? "加权" : row.seriesMode === "term" ? "期限套" : "主连",
-    detail: pairFormula(row),
+    detail: pairCodeFormula(row),
     current: row.current,
     percentile: row.percentile,
     signal: row.signal,
@@ -343,7 +358,7 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
     ...row.contracts.map((contract) => ({
       key: contract.expiry,
       label: contract.expiry,
-      detail: row.formulaLabel,
+      detail: pairCodeFormula(row, contract.leftSymbol, contract.rightSymbol),
       current: contract.current,
       percentile: contract.percentile,
       signal: contract.signal,
@@ -1024,7 +1039,7 @@ export default function Home() {
                               return (
                                 <Fragment key={`${row.pair}-${option.key}`}>
                                   <div className={`contract-grid ${option.pinned ? "pinned" : ""} ${option.spot ? "spot" : ""} ${isPrimaryObservation ? "primary" : ""}`}>
-                                    <span className="observation-label" title={option.detail ?? pairFormula(baseRow, option.leftSymbol, option.rightSymbol)}>
+                                    <span className="observation-label" title={option.detail ?? pairCodeFormula(baseRow, option.leftSymbol, option.rightSymbol)}>
                                       <span className="observation-title">
                                         {option.historyChart && (
                                           <button
