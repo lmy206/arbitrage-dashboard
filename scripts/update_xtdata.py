@@ -46,7 +46,6 @@ HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘"
 IM_TERM_START_DATE = pd.Timestamp("2022-07-22")
 IM_TERM_SPOT_SYMBOL = "000852.SH"
 USD_CNY_MID_SYMBOL = "USDCNY_MID.SAFE"
-CNY_MYR_MID_SYMBOL = "CNYMYR_MID.SAFE"
 CSI300_PE_SYMBOL = "CSI300_PE_TTM.CSINDEX"
 CN10Y_SYMBOL = "CN10Y.CHINABOND"
 US10Y_SYMBOL = "US10Y.EASTMONEY"
@@ -995,30 +994,6 @@ def normalize_safe_usdcny(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def normalize_safe_cnymyr(frame: pd.DataFrame) -> pd.DataFrame:
-    """Convert SAFE's MYR per 100 CNY midpoint into CNY per MYR."""
-    if frame.empty or "日期" not in frame.columns or "林吉特" not in frame.columns:
-        return pd.DataFrame(columns=["close", "volume"])
-    result = frame[["日期", "林吉特"]].copy().rename(
-        columns={"日期": "date", "林吉特": "myr_per_100_cny"}
-    )
-    result["date"] = pd.to_datetime(result["date"], errors="coerce")
-    result["myr_per_100_cny"] = pd.to_numeric(
-        result["myr_per_100_cny"], errors="coerce"
-    )
-    result["close"] = 100 / result["myr_per_100_cny"]
-    result["volume"] = 0
-    result = result.dropna(subset=["date", "close"])
-    result = result[result["close"].between(1, 3)]
-    result["date"] = result["date"].dt.normalize()
-    return (
-        result[["date", "close", "volume"]]
-        .drop_duplicates(subset=["date"], keep="last")
-        .set_index("date")
-        .sort_index()
-    )
-
-
 def normalize_value_frame(
     frame: pd.DataFrame,
     date_column: str,
@@ -1098,30 +1073,6 @@ def fetch_new_york_fed_reference_rate(rate: str, market: str) -> pd.DataFrame:
     response.raise_for_status()
     frame = pd.DataFrame(response.json().get("refRates", []))
     return normalize_value_frame(frame, "effectiveDate", "percentRate")
-
-
-def fetch_bnm_cnymyr_latest() -> tuple[str, float] | None:
-    """Return BNM's latest CNY/MYR cross-check as CNY per MYR."""
-    import requests
-
-    try:
-        response = requests.get(
-            "https://api.bnm.gov.my/public/exchange-rate",
-            headers={
-                "Accept": "application/vnd.BNM.API.v1+json",
-                "User-Agent": "Mozilla/5.0",
-            },
-            timeout=20,
-        )
-        response.raise_for_status()
-        item = next(
-            entry
-            for entry in response.json()["data"]
-            if entry["currency_code"] == "CNY"
-        )
-        return item["rate"]["date"], 1 / float(item["rate"]["middle_rate"])
-    except Exception:
-        return None
 
 
 def persist_external_frame(
@@ -1215,17 +1166,6 @@ def fetch_external_market_history() -> tuple[
     )
     specifications.extend(
         [
-            {
-                "symbol": CNY_MYR_MID_SYMBOL,
-                "name": "人民币兑林吉特中间价",
-                "provider": "AKShare/国家外汇管理局；BNM最新值校对",
-                "source": "akshare_safe",
-                "dataset_type": "fx_midpoint",
-                "path": FX_EXTERNAL_DIR / "CNYMYR_MID.csv",
-                "fetch": fetch_safe_raw if ak is not None else None,
-                "normalize": normalize_safe_cnymyr,
-                "maxLagDays": 5,
-            },
             {
                 "symbol": CSI300_PE_SYMBOL,
                 "name": "沪深300滚动市盈率",
@@ -1403,28 +1343,11 @@ def fetch_external_market_history() -> tuple[
             }
         if specification.get("quoteUnit"):
             source_metadata["quoteUnit"] = specification["quoteUnit"]
-        if symbol == CNY_MYR_MID_SYMBOL:
-            bnm_latest = fetch_bnm_cnymyr_latest()
-            if bnm_latest is not None:
-                bnm_date, bnm_value = bnm_latest
-                safe_asof = frame[frame.index <= pd.Timestamp(bnm_date)]
-                if not safe_asof.empty:
-                    safe_value = float(safe_asof["close"].iloc[-1])
-                    source_metadata.update(
-                        {
-                            "bnmCrossCheckDate": bnm_date,
-                            "bnmCnyPerMyr": round(bnm_value, 6),
-                            "bnmRelativeDiffPct": round(
-                                abs(safe_value / bnm_value - 1) * 100, 4
-                            ),
-                        }
-                    )
         metadata.append(source_metadata)
 
     required = {
         *(definition["lme_symbol"] for definition in LME_CROSS_MARKET_PAIRS),
         USD_CNY_MID_SYMBOL,
-        CNY_MYR_MID_SYMBOL,
         CSI300_PE_SYMBOL,
         CN10Y_SYMBOL,
         US10Y_SYMBOL,
@@ -2734,27 +2657,20 @@ def build_external_reference_row(
         soy_oil = external_histories[US_SOYBEAN_OIL_SYMBOL]
         anchor = soy_oil.index.union(external_anchor)
         palm_aligned = align_external_asof(anchor, external_histories[FCPO_SYMBOL], 7)
-        cny_myr_aligned = align_external_asof(anchor, external_histories[CNY_MYR_MID_SYMBOL], 7)
-        usd_cny_aligned = align_external_asof(anchor, external_histories[USD_CNY_MID_SYMBOL], 7)
         soy_oil_aligned = align_external_asof(anchor, soy_oil, 7)
         aligned = pd.concat(
             [
                 palm_aligned.rename("left"),
                 soy_oil_aligned.rename("right"),
-                cny_myr_aligned.rename("cny_myr"),
-                usd_cny_aligned.rename("usd_cny"),
             ],
             axis=1,
             join="inner",
         ).dropna()
-        # Build the direct MYR/USD cross rate first instead of converting both
-        # legs to CNY. SAFE quotes provide CNY/USD and CNY/MYR, so their ratio
-        # is MYR/USD. The final comparison is therefore entirely in MYR/tonne.
-        myr_per_usd = aligned["usd_cny"] / aligned["cny_myr"]
-        soy_oil_myr_per_tonne = aligned["right"] * 22.0462262185 * myr_per_usd
-        values = aligned["left"] / soy_oil_myr_per_tonne
-        formula_label = "马盘棕榈油（马币/公吨）÷ 美盘豆油（美元/公吨 × 马币/美元）"
-        source = "马盘FCPO与CBOT美豆油：新浪外盘期货（AKShare）；马币/美元：外管局中间价标准化为人民币/美元与人民币/马币后交叉推导，BNM最新值校对；两腿统一为马币/公吨"
+        # This is intentionally a native-price ratio. It compares the two
+        # quoted prices directly and does not apply an FX or unit conversion.
+        values = aligned["left"] / aligned["right"]
+        formula_label = "马盘棕榈油报价（马币/公吨）÷ 美盘豆油报价（美分/磅）"
+        source = "马盘FCPO与CBOT美豆油：新浪外盘期货（AKShare）；直接使用两市场原始报价相除，不做单位或汇率换算"
         pair_type = "跨市场套利"
     elif builder == "us_soy_oil_meal_ratio":
         meal = external_histories[US_SOYBEAN_MEAL_SYMBOL]
@@ -2847,18 +2763,9 @@ def build_external_reference_row(
     elif builder == "malaysia_palm_us_soy_oil_ratio":
         palm_myr_per_tonne = float(latest_components["left"])
         soy_oil_cents_per_lb = float(latest_components["right"])
-        cny_per_myr = float(latest_components["cny_myr"])
-        cny_per_usd = float(latest_components["usd_cny"])
-        myr_per_usd = cny_per_usd / cny_per_myr
-        soy_oil_usd_per_tonne = soy_oil_cents_per_lb * 22.0462262185
-        soy_oil_myr_per_tonne = soy_oil_usd_per_tonne * myr_per_usd
         extra_fields = {
             "palmOilMyrPerMetricTonne": round(palm_myr_per_tonne, 6),
             "soybeanOilCentsPerLb": round(soy_oil_cents_per_lb, 6),
-            "soybeanOilUsdPerMetricTonne": round(soy_oil_usd_per_tonne, 6),
-            "soybeanOilMyrPerMetricTonne": round(soy_oil_myr_per_tonne, 6),
-            "fxMyrPerUsd": round(myr_per_usd, 6),
-            "fxCrossMethod": "人民币/美元 ÷ 人民币/马币（CNY/USD ÷ CNY/MYR）",
         }
     elif builder == "us_soy_oil_meal_ratio":
         oil_cents_per_lb = float(latest_components["left"])
@@ -3175,10 +3082,10 @@ def write_outputs(
     payload = {
         "dataDate": data_date,
         "updatedAt": now.isoformat(timespec="seconds"),
-        "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、BNM校对与纽约联储官方数据",
+        "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局与纽约联储官方数据",
         "sourceValidation": source_validation,
         "externalSources": external_sources,
-        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元资金压力使用纽约联储SOFR减OBFR并换算为基点，只作为回购相对广义无担保美元融资的确认项；马盘棕榈油/美盘豆油使用外管局中间价交叉推导马币/美元，把CBOT美豆油换算为马币/公吨后与FCPO直接比较，并以BNM最新值校对；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
+        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元资金压力使用纽约联储SOFR减OBFR并换算为基点，只作为回购相对广义无担保美元融资的确认项；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
         "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",
@@ -3326,7 +3233,6 @@ def write_outputs(
     expected_external_symbols = {
         *(definition["lme_symbol"] for definition in LME_CROSS_MARKET_PAIRS),
         USD_CNY_MID_SYMBOL,
-        CNY_MYR_MID_SYMBOL,
         CSI300_PE_SYMBOL,
         CN10Y_SYMBOL,
         US10Y_SYMBOL,

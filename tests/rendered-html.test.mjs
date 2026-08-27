@@ -695,7 +695,7 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
   }
 
-  assert.equal(payload.externalSources.length, 16);
+  assert.equal(payload.externalSources.length, 15);
   assert.ok(payload.externalSources.every((source) => source.endDate <= new Date().toISOString().slice(0, 10)));
   assert.ok(payload.externalSources.every((source) => ["live", "cache"].includes(source.status)));
   assert.match(payload.externalSourcePolicy, /国内主连÷LME三个月电子盘且不换汇.*风险溢价.*SOFR.*OBFR.*马盘棕榈油.*美盘油粕比/);
@@ -744,12 +744,15 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   );
   assert.equal(palmSoy.leftSymbol, "FCPO.SINA");
   assert.equal(palmSoy.rightSymbol, "BO.SINA");
-  assert.equal(palmSoy.formulaLabel, "马盘棕榈油（马币/公吨）÷ 美盘豆油（美元/公吨 × 马币/美元）");
-  assert.ok(Math.abs(Number(palmSoy.current) - palmSoy.palmOilMyrPerMetricTonne / palmSoy.soybeanOilMyrPerMetricTonne) < 0.0001);
-  assert.ok(Math.abs(palmSoy.soybeanOilUsdPerMetricTonne - palmSoy.soybeanOilCentsPerLb * 22.0462262185) < 0.001);
-  assert.ok(Math.abs(palmSoy.soybeanOilMyrPerMetricTonne - palmSoy.soybeanOilUsdPerMetricTonne * palmSoy.fxMyrPerUsd) < 0.001);
-  assert.ok(palmSoy.fxMyrPerUsd > 3 && palmSoy.fxMyrPerUsd < 6);
-  assert.equal(palmSoy.fxCrossMethod, "人民币/美元 ÷ 人民币/马币（CNY/USD ÷ CNY/MYR）");
+  assert.equal(palmSoy.formulaLabel, "马盘棕榈油报价（马币/公吨）÷ 美盘豆油报价（美分/磅）");
+  assert.equal(
+    palmSoy.current,
+    (palmSoy.palmOilMyrPerMetricTonne / palmSoy.soybeanOilCentsPerLb).toFixed(2),
+  );
+  assert.equal(palmSoy.soybeanOilUsdPerMetricTonne, undefined);
+  assert.equal(palmSoy.soybeanOilMyrPerMetricTonne, undefined);
+  assert.equal(palmSoy.fxMyrPerUsd, undefined);
+  assert.equal(palmSoy.fxCrossMethod, undefined);
   assert.equal(palmSoy.palmOilCnyPerMetricTonne, undefined);
   assert.equal(palmSoy.soybeanOilCnyPerMetricTonne, undefined);
   assert.equal(cnRisk.mainHistoryChart.unit, "百分比");
@@ -787,9 +790,7 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.match(obfr.path, /newyorkfed[\\/]OBFR\.csv$/);
 
   const cnyMyr = payload.externalSources.find((source) => source.symbol === "CNYMYR_MID.SAFE");
-  assert.ok(cnyMyr);
-  assert.ok(Number.isFinite(cnyMyr.bnmRelativeDiffPct));
-  assert.ok(cnyMyr.bnmRelativeDiffPct < 2);
+  assert.equal(cnyMyr, undefined);
 });
 
 test("the six selected chart datasets are present in the requested order", async () => {
