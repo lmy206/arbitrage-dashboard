@@ -438,7 +438,7 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "percentage",
         "tradable": False,
         "custom_builder": "us_equity_risk_premium",
-        "strategy_type": "回归",
+        "strategy_type": "外盘监控",
         "market_category": "股指",
     },
     {

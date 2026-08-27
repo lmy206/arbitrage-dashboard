@@ -221,8 +221,8 @@ test("monthly contract details contain only current values and liquidity", async
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油粕比", "金银比"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
-  assert.deepEqual(externalMonitorPairs, ["美元资金压力（SOFR−OBFR）", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 29);
+  assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元资金压力（SOFR−OBFR）", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元资金压力（SOFR−OBFR）"]);
 
   const expectedSignal = (percentile) => {
@@ -725,6 +725,8 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
 
   assert.equal(cnRisk.current, `${((1 / cnRisk.priceEarningsRatio - cnRisk.bondYieldPct / 100) * 100).toFixed(2)}%`);
   assert.equal(usRisk.current, `${((1 / usRisk.priceEarningsRatio - usRisk.bondYieldPct / 100) * 100).toFixed(2)}%`);
+  assert.equal(cnRisk.strategyType, "回归");
+  assert.equal(usRisk.strategyType, "外盘监控");
   assert.equal(dollarFunding.current, `${dollarFunding.fundingSpreadBp.toFixed(2)}bp`);
   assert.ok(Math.abs(dollarFunding.fundingSpreadBp - (dollarFunding.sofrPct - dollarFunding.obfrPct) * 100) < 0.000001);
   assert.equal(dollarFunding.formulaLabel, "（SOFR − OBFR）× 100 基点");
