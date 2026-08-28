@@ -208,7 +208,7 @@ const marketCategoryOrder: Record<PairRow["marketCategory"], number> = { 股指:
 const pinnedPairOrder: Record<string, number> = {
   "ERP：沪深300": 0,
   "ERP：标普500": 1,
-  "美元资金压力（SOFR−OBFR）": 2,
+  "美元银行融资压力代理": 2,
 };
 
 function pairCodeFormula(
@@ -1106,7 +1106,7 @@ export default function Home() {
         </div>
 
         <footer className="dashboard-footer">
-          <span>口径：国内商品默认 JQ00 持仓量加权，股指及铜铝锌内外盘国内腿使用 00 主连；风险溢价、美元资金压力、海外指数和马盘比价使用已批准外部源，跨日只向后匹配已公布数据。</span>
+          <span>口径：国内商品默认 JQ00 持仓量加权，股指及铜铝锌内外盘国内腿使用 00 主连；风险溢价、美元银行融资压力代理、海外指数和马盘比价使用已批准外部源，跨日只向后匹配已公布数据。</span>
           <span>数据日：{dashboardData.dataDate} · 更新时间：每日 20:00</span>
         </footer>
       </section>
