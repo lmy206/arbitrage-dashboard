@@ -193,7 +193,9 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /row\.termObservations\?\.length/);
   assert.match(pageSource, /hasTermObservations/);
   assert.match(pageSource, /option\.term \? option\.rightSymbol/);
-  assert.match(pageSource, /<ContractHistoryChart chart={option\.historyChart} \/>/);
+  assert.match(pageSource, /<ContractHistoryChart chart={option\.historyChart} formula={option\.detail} \/>/);
+  assert.match(pageSource, /<ContractHistoryChart chart={standaloneHistoryChart} formula={baseRow\.formulaLabel} \/>/);
+  assert.match(pageSource, /className="contract-history-formula">公式：{formula}/);
   assert.match(pageSource, /<span>近5年分位<\/span>/);
   assert.match(pageSource, /<span>判断<\/span>/);
   assert.match(pageSource, /当月涨跌幅/);

@@ -486,7 +486,7 @@ const seasonalSeriesStyles = [
   { color: "#c2417a", dash: "12 3 2 3" },
 ];
 
-function ContractHistoryChart({ chart }: { chart: ContractHistoryChartData }) {
+function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartData; formula?: string }) {
   const width = 920;
   const height = 270;
   const overlaySeries = chart.overlaySeries;
@@ -570,7 +570,10 @@ function ContractHistoryChart({ chart }: { chart: ContractHistoryChartData }) {
     <section className={`contract-history-chart ${chart.unit === "点差" ? "spread" : "ratio"}`}>
       <header>
         <div>
-          <h4>{chart.title}</h4>
+          <h4>
+            <span>{chart.title}</span>
+            {formula && <span className="contract-history-formula">公式：{formula}</span>}
+          </h4>
           <p>{chart.startDate}—{chart.endDate} · {chart.grain} · {thresholdSummary} · 断档处不连线 · {chart.source}</p>
         </div>
         <span>{isSeasonalHistory ? `${chart.series.length} 个历年合约` : chart.series.map((series) => series.expiry).join(" / ")}</span>
@@ -1078,7 +1081,7 @@ export default function Home() {
                                   </div>
                                   {isHistoryExpanded && option.historyChart && (
                                     <div className="contract-history-expanded" id={historyId}>
-                                      <ContractHistoryChart chart={option.historyChart} />
+                                      <ContractHistoryChart chart={option.historyChart} formula={option.detail} />
                                     </div>
                                   )}
                                 </Fragment>
@@ -1092,7 +1095,7 @@ export default function Home() {
                       <tr className="contract-detail-row reference-history-row">
                         <td colSpan={columns.length} id={detailId}>
                           <div className="contract-history-expanded">
-                            <ContractHistoryChart chart={standaloneHistoryChart} />
+                            <ContractHistoryChart chart={standaloneHistoryChart} formula={baseRow.formulaLabel} />
                           </div>
                         </td>
                       </tr>

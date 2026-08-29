@@ -728,9 +728,19 @@ tbody th {
 }
 
 .contract-history-chart h4 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   margin: 0;
   color: #1b2738;
   font-size: 13px;
+}
+
+.contract-history-formula {
+  color: #647184;
+  font-size: 10px;
+  font-weight: 500;
 }
 
 .contract-history-chart header p {
