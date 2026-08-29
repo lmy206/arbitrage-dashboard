@@ -346,7 +346,7 @@ PAIRS: list[dict[str, Any]] = [
     ],
     {"pair": "棕榈油菜油比", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
-    {"pair": "纯碱玻璃比", "left": "SAJQ00.ZF", "right": "FGJQ00.ZF", "formula": ratio, "kind": "ratio"},
+    {"pair": "玻璃纯碱比", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {
         "pair": "玻璃生产利润",
         "left": "FGJQ00.ZF",

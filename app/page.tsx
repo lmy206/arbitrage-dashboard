@@ -172,6 +172,9 @@ const externalSources = dashboardData.externalSources ?? [];
 const hasExternalSources = externalSources.length > 0;
 const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
 const favoriteStorageKey = "arbitrage-favorites-v1";
+const legacyPairNameByCurrent: Record<string, string> = {
+  "玻璃纯碱比": "纯碱玻璃比",
+};
 
 type SortKey = "pair" | "current" | "previous" | "change" | "allTime" | "percentile" | "lots" | "deviation" | "notional" | "margin";
 
@@ -702,7 +705,7 @@ export default function Home() {
       const parsed = stored ? JSON.parse(stored) as Record<string, unknown> : {};
       const validSelections: Record<string, string> = {};
       rows.forEach((row) => {
-        const expiry = parsed[row.pair];
+        const expiry = parsed[row.pair] ?? parsed[legacyPairNameByCurrent[row.pair]];
         if (
           typeof expiry === "string" &&
           (
@@ -733,7 +736,7 @@ export default function Home() {
       const parsed = stored ? JSON.parse(stored) as Record<string, unknown> : {};
       const validFavoriteTimes: Record<string, number> = {};
       rows.forEach((row) => {
-        const favoritedAt = parsed[row.pair];
+        const favoritedAt = parsed[row.pair] ?? parsed[legacyPairNameByCurrent[row.pair]];
         if (typeof favoritedAt === "number" && Number.isFinite(favoritedAt) && favoritedAt > 0) {
           validFavoriteTimes[row.pair] = favoritedAt;
         }

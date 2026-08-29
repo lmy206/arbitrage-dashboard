@@ -76,6 +76,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /MTO盘面利润/);
   assert.match(html, /PTA盘面加工费/);
   assert.match(html, /玻璃生产利润/);
+  assert.match(html, /玻璃纯碱比/);
+  assert.doesNotMatch(html, /纯碱玻璃比/);
+  assert.match(html, /title="FGJQ00\.ZF \/ SAJQ00\.ZF"/);
   assert.match(html, /title="FGJQ00\.ZF − 0\.2 × SAJQ00\.ZF"/);
   assert.doesNotMatch(html, /纯碱玻璃差/);
   assert.match(html, /title="lJQ00\.DF − ppJQ00\.DF"/);
@@ -177,6 +180,7 @@ test("pinned risk and dollar-funding indicators stay first, followed by regressi
 test("expanded contract lists omit the extra main-continuous observation", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /const favoriteStorageKey = "arbitrage-favorites-v1"/);
+  assert.match(pageSource, /"玻璃纯碱比": "纯碱玻璃比"/);
   assert.match(pageSource, /window\.localStorage\.getItem\(favoriteStorageKey\)/);
   assert.match(pageSource, /window\.localStorage\.setItem\(favoriteStorageKey, JSON\.stringify\(favoriteTimes\)\)/);
   assert.match(pageSource, /return bFavoriteTime - aFavoriteTime/);
@@ -426,6 +430,12 @@ test("monthly contract details contain only current values and liquidity", async
 
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚乙烯比价"), false);
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚丙烯比价"), false);
+  const glassSoda = payload.rows.find((row) => row.pair === "玻璃纯碱比");
+  assert.ok(glassSoda);
+  assert.equal(glassSoda.leftSymbol, "FGJQ00.ZF");
+  assert.equal(glassSoda.rightSymbol, "SAJQ00.ZF");
+  assert.equal(glassSoda.current, Number(glassSoda.current).toFixed(4));
+  assert.equal(payload.rows.some((row) => row.pair === "纯碱玻璃比"), false);
 
   const replacementSpreads = new Map([
     ["聚乙烯-聚丙烯价差", ["lJQ00.DF", "ppJQ00.DF", "聚乙烯 − 聚丙烯", "1:1"]],
