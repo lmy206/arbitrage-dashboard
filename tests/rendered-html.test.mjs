@@ -72,7 +72,8 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /镍\/不锈钢比价/);
   assert.doesNotMatch(html, /玻璃\/聚乙烯比价/);
   assert.doesNotMatch(html, /玻璃\/聚丙烯比价/);
-  assert.match(html, /聚乙烯-聚丙烯价差/);
+  assert.match(html, /塑料-聚丙烯价差/);
+  assert.doesNotMatch(html, /聚乙烯-聚丙烯价差/);
   assert.match(html, /MTO盘面利润/);
   assert.match(html, /PTA盘面加工费/);
   assert.match(html, /玻璃生产利润/);
@@ -181,6 +182,7 @@ test("expanded contract lists omit the extra main-continuous observation", async
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /const favoriteStorageKey = "arbitrage-favorites-v1"/);
   assert.match(pageSource, /"玻璃纯碱比": "纯碱玻璃比"/);
+  assert.match(pageSource, /"塑料-聚丙烯价差": "聚乙烯-聚丙烯价差"/);
   assert.match(pageSource, /window\.localStorage\.getItem\(favoriteStorageKey\)/);
   assert.match(pageSource, /window\.localStorage\.setItem\(favoriteStorageKey, JSON\.stringify\(favoriteTimes\)\)/);
   assert.match(pageSource, /return bFavoriteTime - aFavoriteTime/);
@@ -438,7 +440,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.some((row) => row.pair === "纯碱玻璃比"), false);
 
   const replacementSpreads = new Map([
-    ["聚乙烯-聚丙烯价差", ["lJQ00.DF", "ppJQ00.DF", "聚乙烯 − 聚丙烯", "1:1"]],
+    ["塑料-聚丙烯价差", ["lJQ00.DF", "ppJQ00.DF", "塑料 − 聚丙烯", "1:1"]],
     ["MTO盘面利润", ["ppJQ00.DF", "MAJQ00.ZF", "聚丙烯 − 3 × 甲醇（未扣加工费等）", "2:3"]],
     ["PTA盘面加工费", ["TAJQ00.ZF", "PXJQ00.ZF", "PTA − 0.655 × PX（未扣其他成本）", "20:13"]],
     ["玻璃生产利润", ["FGJQ00.ZF", "SAJQ00.ZF", "FG − 0.2 × SA（未扣燃料与其他成本）", "5:1"]],

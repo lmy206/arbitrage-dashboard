@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-28",
-  "updatedAt": "2026-08-29T21:01:47+08:00",
+  "updatedAt": "2026-08-29T21:10:49+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -202308,7 +202308,7 @@
     },
     {
       "strategyType": "回归",
-      "pair": "聚乙烯-聚丙烯价差",
+      "pair": "塑料-聚丙烯价差",
       "current": "-311",
       "previous": "-316",
       "change": "+5",
@@ -202324,7 +202324,7 @@
       "margin": "0.9万",
       "leftSymbol": "lJQ00.DF",
       "rightSymbol": "ppJQ00.DF",
-      "formulaLabel": "聚乙烯 − 聚丙烯",
+      "formulaLabel": "塑料 − 聚丙烯",
       "leftChangePct": 1.6626,
       "rightChangePct": 1.5346,
       "seriesMode": "weighted",
@@ -202349,7 +202349,7 @@
         "contractCount": 4
       },
       "mainHistoryChart": {
-        "title": "聚乙烯-聚丙烯价差加权走势",
+        "title": "塑料-聚丙烯价差加权走势",
         "unit": "点差",
         "month": "",
         "startDate": "2016-09-02",
@@ -204523,7 +204523,7 @@
           "rightVolume": 29118,
           "pairedVolume": 21079,
           "historyChart": {
-            "title": "聚乙烯-聚丙烯价差历年9月合约",
+            "title": "塑料-聚丙烯价差历年9月合约",
             "unit": "点差",
             "month": "09",
             "startDate": "2016-08-28",
@@ -207320,7 +207320,7 @@
           "rightVolume": 103020,
           "pairedVolume": 54838,
           "historyChart": {
-            "title": "聚乙烯-聚丙烯价差历年10月合约",
+            "title": "塑料-聚丙烯价差历年10月合约",
             "unit": "点差",
             "month": "10",
             "startDate": "2016-08-28",
@@ -210077,7 +210077,7 @@
           "rightVolume": 28953,
           "pairedVolume": 10317,
           "historyChart": {
-            "title": "聚乙烯-聚丙烯价差历年11月合约",
+            "title": "塑料-聚丙烯价差历年11月合约",
             "unit": "点差",
             "month": "11",
             "startDate": "2016-08-28",
@@ -212850,7 +212850,7 @@
           "rightVolume": 608273,
           "pairedVolume": 441018,
           "historyChart": {
-            "title": "聚乙烯-聚丙烯价差历年1月合约",
+            "title": "塑料-聚丙烯价差历年1月合约",
             "unit": "点差",
             "month": "01",
             "startDate": "2016-08-28",

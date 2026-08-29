@@ -174,6 +174,7 @@ const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
 const favoriteStorageKey = "arbitrage-favorites-v1";
 const legacyPairNameByCurrent: Record<string, string> = {
   "玻璃纯碱比": "纯碱玻璃比",
+  "塑料-聚丙烯价差": "聚乙烯-聚丙烯价差",
 };
 
 type SortKey = "pair" | "current" | "previous" | "change" | "allTime" | "percentile" | "lots" | "deviation" | "notional" | "margin";
@@ -235,7 +236,7 @@ function pairCodeFormula(
 }
 
 const codeOnlyFormulaPairs = new Set([
-  "聚乙烯-聚丙烯价差",
+  "塑料-聚丙烯价差",
   "MTO盘面利润",
   "PTA盘面加工费",
   "玻璃生产利润",

@@ -380,12 +380,12 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "烧碱/玻璃比价", "left": "SHJQ00.ZF", "right": "FGJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {"pair": "镍/不锈钢比价", "left": "niJQ00.SF", "right": "ssJQ00.SF", "formula": ratio, "kind": "ratio"},
     {
-        "pair": "聚乙烯-聚丙烯价差",
+        "pair": "塑料-聚丙烯价差",
         "left": "lJQ00.DF",
         "right": "ppJQ00.DF",
         "formula": spread,
         "kind": "spread",
-        "formula_label": "聚乙烯 − 聚丙烯",
+        "formula_label": "塑料 − 聚丙烯",
     },
     {
         "pair": "MTO盘面利润",
