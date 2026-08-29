@@ -423,6 +423,13 @@ PAIRS: list[dict[str, Any]] = [
         "formula_label": "聚丙烯 − 3 × 甲醇（未扣加工费等）",
     },
     {
+        "pair": "聚丙烯/甲醇比价",
+        "left": "ppJQ00.DF",
+        "right": "MAJQ00.ZF",
+        "formula": ratio,
+        "kind": "ratio",
+    },
+    {
         "pair": "PTA盘面加工费",
         "left": "TAJQ00.ZF",
         "right": "PXJQ00.ZF",
