@@ -171,10 +171,11 @@ const xtdataOnly = dashboardData.sourceValidation.mode === "xtdata_only";
 const externalSources = dashboardData.externalSources ?? [];
 const hasExternalSources = externalSources.length > 0;
 const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
+const favoriteStorageKey = "arbitrage-favorites-v1";
 
 type SortKey = "pair" | "current" | "previous" | "change" | "allTime" | "percentile" | "lots" | "deviation" | "notional" | "margin";
 
-const columns: { key: SortKey | "strategyType" | "bar" | "signal" | "leftStructure" | "rightStructure"; label: string }[] = [
+const columns: { key: SortKey | "strategyType" | "bar" | "signal" | "leftStructure" | "rightStructure" | "favorite"; label: string }[] = [
   { key: "strategyType", label: "类型" },
   { key: "pair", label: "品种对" },
   { key: "current", label: "当前值" },
@@ -190,6 +191,7 @@ const columns: { key: SortKey | "strategyType" | "bar" | "signal" | "leftStructu
   { key: "margin", label: "保证金" },
   { key: "leftStructure", label: "左腿结构" },
   { key: "rightStructure", label: "右腿结构" },
+  { key: "favorite", label: "收藏" },
 ];
 
 function numericValue(row: PairRow, key: SortKey) {
@@ -680,6 +682,8 @@ export default function Home() {
   const [expandedContractCharts, setExpandedContractCharts] = useState<Set<string>>(() => new Set());
   const [primaryObservations, setPrimaryObservations] = useState<Record<string, string>>({});
   const [primaryObservationsLoaded, setPrimaryObservationsLoaded] = useState(false);
+  const [favoriteTimes, setFavoriteTimes] = useState<Record<string, number>>({});
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
   const [manualUpdateStatus, setManualUpdateStatus] = useState<"idle" | "updating" | "error">("idle");
   const [manualUpdateMessage, setManualUpdateMessage] = useState("");
   const [manualUpdateAvailable, setManualUpdateAvailable] = useState(true);
@@ -719,6 +723,30 @@ export default function Home() {
     window.localStorage.setItem(primaryObservationStorageKey, JSON.stringify(primaryObservations));
   }, [primaryObservations, primaryObservationsLoaded]);
 
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(favoriteStorageKey);
+      const parsed = stored ? JSON.parse(stored) as Record<string, unknown> : {};
+      const validFavoriteTimes: Record<string, number> = {};
+      rows.forEach((row) => {
+        const favoritedAt = parsed[row.pair];
+        if (typeof favoritedAt === "number" && Number.isFinite(favoritedAt) && favoritedAt > 0) {
+          validFavoriteTimes[row.pair] = favoritedAt;
+        }
+      });
+      setFavoriteTimes(validFavoriteTimes);
+    } catch {
+      setFavoriteTimes({});
+    } finally {
+      setFavoritesLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!favoritesLoaded) return;
+    window.localStorage.setItem(favoriteStorageKey, JSON.stringify(favoriteTimes));
+  }, [favoriteTimes, favoritesLoaded]);
+
   const visibleRows = useMemo(() => {
     const observedRows = rows.map((row) => applyPrimaryObservation(row, primaryObservations[row.pair]));
     const filtered = observedRows.filter(
@@ -728,6 +756,15 @@ export default function Home() {
       },
     );
     return [...filtered].sort((a, b) => {
+      const aFavoriteTime = favoriteTimes[a.pair];
+      const bFavoriteTime = favoriteTimes[b.pair];
+      if (aFavoriteTime !== undefined || bFavoriteTime !== undefined) {
+        if (aFavoriteTime !== undefined && bFavoriteTime !== undefined) {
+          return bFavoriteTime - aFavoriteTime || a.pair.localeCompare(b.pair, "zh-CN");
+        }
+        return aFavoriteTime !== undefined ? -1 : 1;
+      }
+
       const aPinned = pinnedPairOrder[a.pair];
       const bPinned = pinnedPairOrder[b.pair];
       if (aPinned !== undefined || bPinned !== undefined) {
@@ -746,7 +783,7 @@ export default function Home() {
       const result = typeof av === "string" && typeof bv === "string" ? av.localeCompare(bv, "zh-CN") : Number(av) - Number(bv);
       return sortDirection === "asc" ? result : -result;
     });
-  }, [primaryObservations, query, sortDirection, sortKey]);
+  }, [favoriteTimes, primaryObservations, query, sortDirection, sortKey]);
 
   function updateSort(key: SortKey) {
     if (key === sortKey) setSortDirection((direction) => (direction === "desc" ? "asc" : "desc"));
@@ -783,6 +820,19 @@ export default function Home() {
         return next;
       }
       return { ...current, [pair]: selection };
+    });
+  }
+
+  function toggleFavorite(pair: string) {
+    setFavoriteTimes((current) => {
+      const next = { ...current };
+      if (next[pair] !== undefined) {
+        delete next[pair];
+      } else {
+        const latestExistingTime = Math.max(0, ...Object.values(current));
+        next[pair] = Math.max(Date.now(), latestExistingTime + 1);
+      }
+      return next;
     });
   }
 
@@ -913,7 +963,7 @@ export default function Home() {
               <tr>
                 {columns.map((column) => (
                   <th key={column.key} scope="col">
-                    {column.key === "strategyType" || column.key === "bar" || column.key === "signal" || column.key === "leftStructure" || column.key === "rightStructure" ? (
+                    {column.key === "strategyType" || column.key === "bar" || column.key === "signal" || column.key === "leftStructure" || column.key === "rightStructure" || column.key === "favorite" ? (
                       column.label
                     ) : (
                       <button type="button" onClick={() => updateSort(column.key)} aria-label={`按${column.label}排序`}>
@@ -950,6 +1000,7 @@ export default function Home() {
                     );
                 const observationOptions = observationOptionsFor(baseRow);
                 const detailId = `contracts-${row.pair.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "-")}`;
+                const isFavorite = favoriteTimes[row.pair] !== undefined;
                 return (
                   <Fragment key={row.pair}>
                     <tr className={`pair-row ${isExpanded ? "expanded" : ""} ${selectedLabel ? "primary-observation" : ""} ${["现货参考", "跨市场套利", "外盘参考"].includes(row.pairType) ? "reference" : ""}`} title={pairHoverFormula(row)}>
@@ -1013,6 +1064,18 @@ export default function Home() {
                             <strong>{row.rightStructure.state}</strong>
                           </span>
                         ) : <span className="muted">—</span>}
+                      </td>
+                      <td className="favorite-cell">
+                        <button
+                          type="button"
+                          className={`favorite-button ${isFavorite ? "active" : ""}`}
+                          aria-label={`${isFavorite ? "取消收藏" : "收藏"}${row.pair}`}
+                          aria-pressed={isFavorite}
+                          title={isFavorite ? "取消收藏" : "收藏并置顶"}
+                          onClick={() => toggleFavorite(row.pair)}
+                        >
+                          <span aria-hidden="true">★</span>
+                        </button>
                       </td>
                     </tr>
                     {isExpanded && hasObservationPanel && (

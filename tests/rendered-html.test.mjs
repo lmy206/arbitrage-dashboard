@@ -102,6 +102,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /国内商品默认 JQ00 持仓量加权，股指及铜铝锌内外盘国内腿使用 00 主连/);
   assert.doesNotMatch(html, /AkShare 补充校对/);
   assert.match(html, /近5年分位/);
+  assert.match(html, /<th scope="col">收藏<\/th>/);
+  assert.match(html, /aria-label="收藏ERP：沪深300"/);
+  assert.match(html, /class="favorite-button "/);
   assert.doesNotMatch(html, /按类型排序/);
   assert.match(html, /class="strategy-type regression">回归/);
   assert.match(html, /极度偏高/);
@@ -170,6 +173,12 @@ test("pinned risk and dollar-funding indicators stay first, followed by regressi
 
 test("expanded contract lists omit the extra main-continuous observation", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /const favoriteStorageKey = "arbitrage-favorites-v1"/);
+  assert.match(pageSource, /window\.localStorage\.getItem\(favoriteStorageKey\)/);
+  assert.match(pageSource, /window\.localStorage\.setItem\(favoriteStorageKey, JSON\.stringify\(favoriteTimes\)\)/);
+  assert.match(pageSource, /return bFavoriteTime - aFavoriteTime/);
+  assert.match(pageSource, /Math\.max\(Date\.now\(\), latestExistingTime \+ 1\)/);
+  assert.match(pageSource, /aria-pressed={isFavorite}/);
 
   assert.doesNotMatch(pageSource, /if \(row\.mainContinuousObservation\)\s*{\s*pinned\.push/);
   assert.doesNotMatch(pageSource, /expiry === "main"/);

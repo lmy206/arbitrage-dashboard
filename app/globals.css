@@ -413,7 +413,7 @@ h1 {
 
 table {
   width: 100%;
-  min-width: 1320px;
+  min-width: 1376px;
   border-collapse: collapse;
   table-layout: fixed;
   color: #111827;
@@ -478,6 +478,7 @@ thead th:nth-child(12) { width: 79px; }
 thead th:nth-child(13) { width: 82px; }
 thead th:nth-child(14),
 thead th:nth-child(15) { width: 90px; }
+thead th:nth-child(16) { width: 56px; }
 
 tbody tr { transition: background-color .12s ease; }
 tbody tr:hover { background: #f8fafc; }
@@ -902,6 +903,42 @@ tbody th {
 .signal.extreme-low { background: var(--purple); }
 
 .term-structure-cell { padding-inline: 5px; }
+
+.favorite-cell { padding-inline: 4px; }
+
+.favorite-button {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #a6aeba;
+  background: transparent;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .15s ease, background-color .15s ease, transform .15s ease;
+}
+
+.favorite-button:hover,
+.favorite-button:focus-visible {
+  color: #7f8997;
+  background: #f2f4f7;
+}
+
+.favorite-button.active {
+  color: #f4b400;
+}
+
+.favorite-button.active:hover,
+.favorite-button.active:focus-visible {
+  color: #d99b00;
+  background: #fff7dd;
+}
+
+.favorite-button:active { transform: scale(.9); }
 
 .term-structure-badge {
   display: inline-flex;
