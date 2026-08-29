@@ -281,6 +281,11 @@ def glass_production_profit(glass: pd.Series, soda_ash: pd.Series) -> pd.Series:
     return glass - 0.2 * soda_ash
 
 
+def coking_profit(coke: pd.Series, coking_coal: pd.Series) -> pd.Series:
+    """Simplified coking profit proxy before processing and other costs."""
+    return coke - 1.3 * coking_coal
+
+
 OILSEED_CONTRACT_MONTHS = {1, 5, 9}
 
 
@@ -363,6 +368,15 @@ PAIRS: list[dict[str, Any]] = [
         "formula": ratio,
         "kind": "ratio",
         "contract_months": {1, 5, 9},
+    },
+    {
+        "pair": "焦化利润",
+        "left": "jJQ00.DF",
+        "right": "jmJQ00.DF",
+        "formula": coking_profit,
+        "kind": "spread",
+        "fixed_lots": (6, 13),
+        "formula_label": "J − 1.3 × JM（未扣其他成本）",
     },
     {"pair": "油粕比", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio", "strategy_type": "趋势", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "豆油菜油比", "left": "yJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
