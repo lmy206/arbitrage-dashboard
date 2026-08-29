@@ -318,7 +318,7 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
 
 
 RELATED_OBSERVATIONS: dict[str, list[dict[str, Any]]] = {
-    "玻璃纯碱比": [
+    "玻璃/纯碱比": [
         {
             "key": "glass-production-profit",
             "pair": "玻璃生产利润",
@@ -331,7 +331,7 @@ RELATED_OBSERVATIONS: dict[str, list[dict[str, Any]]] = {
             "formula_label": "FG − 0.2 × SA（未扣燃料与其他成本）",
         }
     ],
-    "焦炭焦煤比": [
+    "焦炭/焦煤比": [
         {
             "key": "coking-profit",
             "pair": "焦化利润",
@@ -381,9 +381,9 @@ PAIRS: list[dict[str, Any]] = [
     ],
     {"pair": "棕榈油菜油比", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
-    {"pair": "玻璃纯碱比", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
+    {"pair": "玻璃/纯碱比", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {
-        "pair": "焦炭焦煤比",
+        "pair": "焦炭/焦煤比",
         "left": "jJQ00.DF",
         "right": "jmJQ00.DF",
         "formula": ratio,

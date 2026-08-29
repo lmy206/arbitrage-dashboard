@@ -180,13 +180,14 @@ const externalSources = dashboardData.externalSources ?? [];
 const hasExternalSources = externalSources.length > 0;
 const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
 const favoriteStorageKey = "arbitrage-favorites-v1";
-const legacyPairNameByCurrent: Record<string, string> = {
-  "玻璃纯碱比": "纯碱玻璃比",
-  "塑料-聚丙烯价差": "聚乙烯-聚丙烯价差",
+const legacyPairNamesByCurrent: Record<string, string[]> = {
+  "玻璃/纯碱比": ["玻璃纯碱比", "纯碱玻璃比"],
+  "焦炭/焦煤比": ["焦炭焦煤比"],
+  "塑料-聚丙烯价差": ["聚乙烯-聚丙烯价差"],
 };
 const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
-  "玻璃纯碱比": ["纯碱玻璃比", "玻璃生产利润"],
-  "焦炭焦煤比": ["焦化利润"],
+  "玻璃/纯碱比": ["玻璃纯碱比", "纯碱玻璃比", "玻璃生产利润"],
+  "焦炭/焦煤比": ["焦炭焦煤比", "焦化利润"],
   "塑料-聚丙烯价差": ["聚乙烯-聚丙烯价差"],
 };
 
@@ -353,7 +354,7 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
       historyChart: row.spotObservation.historyChart,
     });
   }
-  pinned.push({
+  const defaultObservation: ObservationOption = {
     key: "default",
     label: row.seriesMode === "weighted" ? "加权" : row.seriesMode === "term" ? "期限套" : "主连",
     detail: pairCodeFormula(row),
@@ -371,7 +372,7 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
     spot: false,
     term: false,
     historyChart: row.mainHistoryChart,
-  });
+  };
   const related = (row.relatedObservations ?? []).map((observation) => ({
     key: observation.key,
     label: observation.label,
@@ -394,6 +395,7 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
   return [
     ...pinned,
     ...related,
+    defaultObservation,
     ...row.contracts.map((contract) => ({
       key: contract.expiry,
       label: contract.expiry,
@@ -736,7 +738,9 @@ export default function Home() {
       const parsed = stored ? JSON.parse(stored) as Record<string, unknown> : {};
       const validSelections: Record<string, string> = {};
       rows.forEach((row) => {
-        const expiry = parsed[row.pair] ?? parsed[legacyPairNameByCurrent[row.pair]];
+        const expiry = [row.pair, ...(legacyPairNamesByCurrent[row.pair] ?? [])]
+          .map((pairName) => parsed[pairName])
+          .find((value) => typeof value === "string");
         if (
           typeof expiry === "string" &&
           (

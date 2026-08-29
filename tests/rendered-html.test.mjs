@@ -65,7 +65,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /豆粕价差/);
   assert.match(html, /蛋白质价差/);
   assert.doesNotMatch(html, /豆粕菜粕差/);
-  assert.match(html, /焦炭焦煤比/);
+  assert.match(html, /焦炭\/焦煤比/);
   assert.match(html, /燃料油\/沥青比价/);
   assert.match(html, /20号胶\/BR橡胶比价/);
   assert.match(html, /烧碱\/玻璃比价/);
@@ -80,7 +80,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /PTA盘面加工费/);
   assert.doesNotMatch(html, /玻璃生产利润/);
   assert.doesNotMatch(html, /焦化利润/);
-  assert.match(html, /玻璃纯碱比/);
+  assert.match(html, /玻璃\/纯碱比/);
   assert.doesNotMatch(html, /纯碱玻璃比/);
   assert.match(html, /title="FGJQ00\.ZF \/ SAJQ00\.ZF"/);
   assert.doesNotMatch(html, /纯碱玻璃差/);
@@ -183,12 +183,13 @@ test("pinned risk and dollar-funding indicators stay first, followed by regressi
 test("expanded contract lists omit the extra main-continuous observation", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /const favoriteStorageKey = "arbitrage-favorites-v1"/);
-  assert.match(pageSource, /"玻璃纯碱比": "纯碱玻璃比"/);
-  assert.match(pageSource, /"塑料-聚丙烯价差": "聚乙烯-聚丙烯价差"/);
-  assert.match(pageSource, /"玻璃纯碱比": \["纯碱玻璃比", "玻璃生产利润"\]/);
-  assert.match(pageSource, /"焦炭焦煤比": \["焦化利润"\]/);
+  assert.match(pageSource, /"玻璃\/纯碱比": \["玻璃纯碱比", "纯碱玻璃比"\]/);
+  assert.match(pageSource, /"焦炭\/焦煤比": \["焦炭焦煤比"\]/);
+  assert.match(pageSource, /"塑料-聚丙烯价差": \["聚乙烯-聚丙烯价差"\]/);
+  assert.match(pageSource, /"玻璃\/纯碱比": \["玻璃纯碱比", "纯碱玻璃比", "玻璃生产利润"\]/);
+  assert.match(pageSource, /"焦炭\/焦煤比": \["焦炭焦煤比", "焦化利润"\]/);
   assert.match(pageSource, /row\.relatedObservations\?\.find/);
-  assert.match(pageSource, /\.\.\.related/);
+  assert.match(pageSource, /\.\.\.related,\s*defaultObservation/);
   assert.match(pageSource, /window\.localStorage\.getItem\(favoriteStorageKey\)/);
   assert.match(pageSource, /window\.localStorage\.setItem\(favoriteStorageKey, JSON\.stringify\(favoriteTimes\)\)/);
   assert.match(pageSource, /return bFavoriteTime - aFavoriteTime/);
@@ -267,7 +268,7 @@ test("monthly contract details contain only current values and liquidity", async
     "蛋白质价差",
     "豆棕价差",
   ]);
-  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺矿比", "焦炭焦煤比"]);
+  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺矿比", "焦炭/焦煤比"]);
 
   for (const row of payload.rows) {
     const isEquityIndex = [row.leftSymbol, row.rightSymbol].some((symbol) => /^(IC|IM|IF)00\.IF$/.test(symbol));
@@ -403,15 +404,15 @@ test("monthly contract details contain only current values and liquidity", async
   );
   assert.equal(proteinJanuary.historyChart.title, "蛋白质价差历年1月合约");
 
-  const cokeCoal = payload.rows.find((row) => row.pair === "焦炭焦煤比");
-  assert.ok(cokeCoal, "焦炭焦煤比 should be present");
+  const cokeCoal = payload.rows.find((row) => row.pair === "焦炭/焦煤比");
+  assert.ok(cokeCoal, "焦炭/焦煤比 should be present");
   assert.equal(cokeCoal.leftSymbol, "jJQ00.DF");
   assert.equal(cokeCoal.rightSymbol, "jmJQ00.DF");
   assert.equal(cokeCoal.current, (Number(cokeCoal.current)).toFixed(4));
   assert.ok(cokeCoal.contracts.length > 0 && cokeCoal.contracts.length <= 4);
   assert.ok(
     cokeCoal.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))),
-    "焦炭焦煤比 should only show weighted and 1/5/9 contract observations",
+    "焦炭/焦煤比 should only show weighted and 1/5/9 contract observations",
   );
 
   const oilMeal = payload.rows.find((row) => row.pair === "油粕比");
@@ -439,7 +440,7 @@ test("monthly contract details contain only current values and liquidity", async
 
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚乙烯比价"), false);
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚丙烯比价"), false);
-  const glassSoda = payload.rows.find((row) => row.pair === "玻璃纯碱比");
+  const glassSoda = payload.rows.find((row) => row.pair === "玻璃/纯碱比");
   assert.ok(glassSoda);
   assert.equal(glassSoda.leftSymbol, "FGJQ00.ZF");
   assert.equal(glassSoda.rightSymbol, "SAJQ00.ZF");
@@ -447,8 +448,8 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.some((row) => row.pair === "纯碱玻璃比"), false);
 
   const relatedObservations = new Map([
-    ["玻璃纯碱比", ["glass-production-profit", "玻璃生产利润", "FGJQ00.ZF", "SAJQ00.ZF", "FG − 0.2 × SA（未扣燃料与其他成本）", "5:1"]],
-    ["焦炭焦煤比", ["coking-profit", "焦化利润", "jJQ00.DF", "jmJQ00.DF", "J − 1.3 × JM（未扣其他成本）", "6:13"]],
+    ["玻璃/纯碱比", ["glass-production-profit", "玻璃生产利润", "FGJQ00.ZF", "SAJQ00.ZF", "FG − 0.2 × SA（未扣燃料与其他成本）", "5:1"]],
+    ["焦炭/焦煤比", ["coking-profit", "焦化利润", "jJQ00.DF", "jmJQ00.DF", "J − 1.3 × JM（未扣其他成本）", "6:13"]],
   ]);
   for (const [parentPair, [key, label, leftSymbol, rightSymbol, formulaLabel, lots]] of relatedObservations) {
     const parent = payload.rows.find((row) => row.pair === parentPair);

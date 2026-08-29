@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-28",
-  "updatedAt": "2026-08-29T22:56:03+08:00",
+  "updatedAt": "2026-08-29T23:20:01+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -134922,7 +134922,7 @@
     },
     {
       "strategyType": "回归",
-      "pair": "玻璃纯碱比",
+      "pair": "玻璃/纯碱比",
       "current": "0.8857",
       "previous": "0.8997",
       "change": "-0.0140",
@@ -134963,7 +134963,7 @@
         "contractCount": 4
       },
       "mainHistoryChart": {
-        "title": "玻璃纯碱比加权走势",
+        "title": "玻璃/纯碱比加权走势",
         "unit": "比值",
         "month": "",
         "startDate": "2019-12-06",
@@ -137960,7 +137960,7 @@
           "rightVolume": 86186,
           "pairedVolume": 86186,
           "historyChart": {
-            "title": "玻璃纯碱比历年9月合约",
+            "title": "玻璃/纯碱比历年9月合约",
             "unit": "比值",
             "month": "09",
             "startDate": "2016-08-28",
@@ -139888,7 +139888,7 @@
           "rightVolume": 310692,
           "pairedVolume": 301626,
           "historyChart": {
-            "title": "玻璃纯碱比历年11月合约",
+            "title": "玻璃/纯碱比历年11月合约",
             "unit": "比值",
             "month": "11",
             "startDate": "2016-08-28",
@@ -141812,7 +141812,7 @@
           "rightVolume": 182621,
           "pairedVolume": 182621,
           "historyChart": {
-            "title": "玻璃纯碱比历年12月合约",
+            "title": "玻璃/纯碱比历年12月合约",
             "unit": "比值",
             "month": "12",
             "startDate": "2016-08-28",
@@ -143732,7 +143732,7 @@
           "rightVolume": 1902641,
           "pairedVolume": 1513705,
           "historyChart": {
-            "title": "玻璃纯碱比历年1月合约",
+            "title": "玻璃/纯碱比历年1月合约",
             "unit": "比值",
             "month": "01",
             "startDate": "2016-08-28",
@@ -197361,7 +197361,7 @@
     },
     {
       "strategyType": "回归",
-      "pair": "焦炭焦煤比",
+      "pair": "焦炭/焦煤比",
       "current": "1.3079",
       "previous": "1.3198",
       "change": "-0.0118",
@@ -197402,7 +197402,7 @@
         "contractCount": 4
       },
       "mainHistoryChart": {
-        "title": "焦炭焦煤比加权走势",
+        "title": "焦炭/焦煤比加权走势",
         "unit": "比值",
         "month": "",
         "startDate": "2016-09-02",
@@ -201727,7 +201727,7 @@
           "rightVolume": 157404,
           "pairedVolume": 2863,
           "historyChart": {
-            "title": "焦炭焦煤比历年9月合约",
+            "title": "焦炭/焦煤比历年9月合约",
             "unit": "比值",
             "month": "09",
             "startDate": "2016-08-28",
@@ -204524,7 +204524,7 @@
           "rightVolume": 1039129,
           "pairedVolume": 61160,
           "historyChart": {
-            "title": "焦炭焦煤比历年1月合约",
+            "title": "焦炭/焦煤比历年1月合约",
             "unit": "比值",
             "month": "01",
             "startDate": "2016-08-28",
@@ -207245,7 +207245,7 @@
           "rightVolume": 39248,
           "pairedVolume": 398,
           "historyChart": {
-            "title": "焦炭焦煤比历年5月合约",
+            "title": "焦炭/焦煤比历年5月合约",
             "unit": "比值",
             "month": "05",
             "startDate": "2016-08-28",
