@@ -224,6 +224,9 @@ function pairCodeFormula(
   if (row.pair === "PTA盘面加工费") {
     return `${leftSymbol} − 0.655 × ${rightSymbol}`;
   }
+  if (row.pair === "玻璃生产利润") {
+    return `${leftSymbol} − 0.2 × ${rightSymbol}`;
+  }
   const operator = row.formulaKind === "spread" ? "−" : "/";
   return `${leftSymbol} ${operator} ${rightSymbol}`;
 }
@@ -232,6 +235,7 @@ const codeOnlyFormulaPairs = new Set([
   "聚乙烯-聚丙烯价差",
   "MTO盘面利润",
   "PTA盘面加工费",
+  "玻璃生产利润",
 ]);
 
 function pairHoverFormula(

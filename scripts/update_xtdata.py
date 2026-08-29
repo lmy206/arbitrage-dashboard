@@ -276,6 +276,11 @@ def pta_processing_fee(pta: pd.Series, paraxylene: pd.Series) -> pd.Series:
     return pta - 0.655 * paraxylene
 
 
+def glass_production_profit(glass: pd.Series, soda_ash: pd.Series) -> pd.Series:
+    """Simplified glass production profit proxy before fuel and other costs."""
+    return glass - 0.2 * soda_ash
+
+
 OILSEED_CONTRACT_MONTHS = {1, 5, 9}
 
 
@@ -342,6 +347,15 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "棕榈油菜油比", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"pair": "纯碱玻璃比", "left": "SAJQ00.ZF", "right": "FGJQ00.ZF", "formula": ratio, "kind": "ratio"},
+    {
+        "pair": "玻璃生产利润",
+        "left": "FGJQ00.ZF",
+        "right": "SAJQ00.ZF",
+        "formula": glass_production_profit,
+        "kind": "spread",
+        "fixed_lots": (5, 1),
+        "formula_label": "FG − 0.2 × SA（未扣燃料与其他成本）",
+    },
     {
         "pair": "焦炭焦煤比",
         "left": "jJQ00.DF",
