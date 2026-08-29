@@ -57,7 +57,7 @@ FCPO_SYMBOL = "FCPO.SINA"
 US_SOYBEAN_OIL_SYMBOL = "BO.SINA"
 US_SOYBEAN_MEAL_SYMBOL = "SM.SINA"
 OBFR_SYMBOL = "OBFR.NYFED"
-IORB_SYMBOL = "IORB.FED"
+RESERVE_ADMINISTERED_RATE_SYMBOL = "IORB_IOER.FED"
 EXTERNAL_HISTORY_START = "20160825"
 
 
@@ -444,7 +444,7 @@ PAIRS: list[dict[str, Any]] = [
     {
         "pair": "美元银行融资压力代理",
         "left": OBFR_SYMBOL,
-        "right": IORB_SYMBOL,
+        "right": RESERVE_ADMINISTERED_RATE_SYMBOL,
         "formula": spread,
         "kind": "basis_points",
         "tradable": False,
@@ -1076,8 +1076,8 @@ def fetch_new_york_fed_reference_rate(rate: str, market: str) -> pd.DataFrame:
     return normalize_value_frame(frame, "effectiveDate", "percentRate")
 
 
-def fetch_federal_reserve_iorb() -> pd.DataFrame:
-    """Fetch the official Federal Reserve Board daily IORB history."""
+def fetch_federal_reserve_administered_reserve_rate() -> pd.DataFrame:
+    """Fetch IOER through 2021-07-28 and IORB from 2021-07-29 onward."""
     import requests
 
     response = requests.get(
@@ -1098,7 +1098,21 @@ def fetch_federal_reserve_iorb() -> pd.DataFrame:
     )
     response.raise_for_status()
     frame = pd.read_csv(StringIO(response.text), skiprows=5)
-    return normalize_value_frame(frame, "Time Period", "RESBM_N.D")
+    ioer = normalize_value_frame(frame, "Time Period", "RESBME_N.D")
+    iorb = normalize_value_frame(frame, "Time Period", "RESBM_N.D")
+    transition_date = pd.Timestamp("2021-07-29")
+    combined = (
+        pd.concat(
+            [
+                ioer[ioer.index < transition_date],
+                iorb[iorb.index >= transition_date],
+            ]
+        )
+        .sort_index()
+        .loc[lambda value: ~value.index.duplicated(keep="last")]
+    )
+    current_date = pd.Timestamp.now(tz=SHANGHAI).tz_localize(None).normalize()
+    return combined[combined.index <= current_date]
 
 
 def persist_external_frame(
@@ -1312,13 +1326,13 @@ def fetch_external_market_history() -> tuple[
                 "quoteUnit": "%",
             },
             {
-                "symbol": IORB_SYMBOL,
-                "name": "准备金余额利率（IORB）",
+                "symbol": RESERVE_ADMINISTERED_RATE_SYMBOL,
+                "name": "准备金管理利率（IOER/IORB）",
                 "provider": "Board of Governors of the Federal Reserve System",
                 "source": "federalreserve_ddp",
                 "dataset_type": "usd_administered_rate",
-                "path": FEDERAL_RESERVE_EXTERNAL_DIR / "IORB.csv",
-                "fetch": fetch_federal_reserve_iorb,
+                "path": FEDERAL_RESERVE_EXTERNAL_DIR / "IORB_IOER.csv",
+                "fetch": fetch_federal_reserve_administered_reserve_rate,
                 "normalize": lambda raw: raw,
                 "maxLagDays": 7,
                 "quoteUnit": "%",
@@ -1384,7 +1398,7 @@ def fetch_external_market_history() -> tuple[
         US_SOYBEAN_OIL_SYMBOL,
         US_SOYBEAN_MEAL_SYMBOL,
         OBFR_SYMBOL,
-        IORB_SYMBOL,
+        RESERVE_ADMINISTERED_RATE_SYMBOL,
     }
     missing = sorted(required.difference(histories))
     if missing:
@@ -2652,17 +2666,21 @@ def build_external_reference_row(
         obfr = external_histories[OBFR_SYMBOL]
         anchor = obfr.index.union(external_anchor)
         obfr_aligned = align_external_asof(anchor, obfr, 7)
-        iorb_aligned = align_external_asof(anchor, external_histories[IORB_SYMBOL], 7)
+        reserve_rate_aligned = align_external_asof(
+            anchor,
+            external_histories[RESERVE_ADMINISTERED_RATE_SYMBOL],
+            7,
+        )
         aligned = pd.concat(
-            [obfr_aligned.rename("left"), iorb_aligned.rename("right")],
+            [obfr_aligned.rename("left"), reserve_rate_aligned.rename("right")],
             axis=1,
             join="inner",
         ).dropna()
         # Both rates are quoted in percentage points. Multiplying their
         # difference by 100 converts the financing premium into basis points.
         values = (aligned["left"] - aligned["right"]) * 100
-        formula_label = "（OBFR − IORB）× 100 基点"
-        source = "纽约联储官方日度OBFR；美联储理事会官方日度IORB。OBFR为广义无担保隔夜银行融资利率，IORB为准备金余额管理利率"
+        formula_label = "（OBFR − IORB/IOER）× 100 基点"
+        source = "纽约联储官方日度OBFR；美联储理事会官方准备金管理利率，2021-07-29起使用IORB、此前使用IOER"
         unit = "基点"
         pair_type = "外盘参考"
         label = "外盘"
@@ -2782,9 +2800,10 @@ def build_external_reference_row(
     elif builder == "usd_funding_pressure":
         extra_fields = {
             "obfrPct": round(float(latest_components["left"]), 6),
-            "iorbPct": round(float(latest_components["right"]), 6),
+            "reserveRatePct": round(float(latest_components["right"]), 6),
+            "reserveRateCode": "IORB",
             "fundingSpreadBp": round(current, 6),
-            "interpretation": "利差上冲表示银行广义无担保隔夜融资成本相对准备金余额管理利率变贵，是美元银行融资压力代理，不等同于完整离岸美元流动性指数",
+            "interpretation": "利差上冲表示银行广义无担保隔夜融资成本相对准备金管理利率变贵；2021-07-29前使用IOER、此后使用IORB，是美元银行融资压力代理，不等同于完整离岸美元流动性指数",
         }
     elif builder == "malaysia_palm_us_soy_oil_ratio":
         palm_myr_per_tonne = float(latest_components["left"])
@@ -3111,7 +3130,7 @@ def write_outputs(
         "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
         "sourceValidation": source_validation,
         "externalSources": external_sources,
-        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元银行融资压力代理使用纽约联储OBFR减美联储理事会IORB并换算为基点，只作为银行广义无担保隔夜融资相对准备金余额管理利率的压力代理；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
+        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元银行融资压力代理使用纽约联储OBFR减美联储理事会准备金管理利率并换算为基点，2021-07-29起使用IORB、此前使用IOER，只作为银行广义无担保隔夜融资相对准备金管理利率的压力代理；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
         "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",
@@ -3269,7 +3288,7 @@ def write_outputs(
         US_SOYBEAN_OIL_SYMBOL,
         US_SOYBEAN_MEAL_SYMBOL,
         OBFR_SYMBOL,
-        IORB_SYMBOL,
+        RESERVE_ADMINISTERED_RATE_SYMBOL,
     }
     external_sources_complete = (
         {source["symbol"] for source in external_sources} == expected_external_symbols

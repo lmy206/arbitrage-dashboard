@@ -13,8 +13,8 @@
 
 - 国内行情以 `xtdata` 为唯一主源，Python 优先使用 `D:\anaconda\python.exe`。
 - 共享数据根目录优先遵守 `E_SHARED_DATA_ROOT`，否则使用 `E:\data`。
-- 用户已批准本项目使用以下外部补充源：新浪 LME 铜/铝/锌三个月电子盘、马来西亚 FCPO、CBOT 美豆油与美豆粕期货，国家外汇管理局美元兑人民币和人民币兑林吉特中间价、BNM 最新人民币兑林吉特校对值、中证指数有限公司沪深300滚动市盈率、中国债券信息网中国10年期国债收益率、东方财富美国10年期国债收益率、新浪纳斯达克综合指数与标普500指数、Multpl 标普500月度市盈率、纽约联储官方日度 OBFR 参考利率，以及美联储理事会官方日度 IORB 管理利率。
-- 外部数据分别保存到共享根目录下的 `market\external\lme_sina`、`safe`、`csindex`、`chinabond`、`eastmoney`、`multpl`、`sina_us_index`、`sina_foreign_futures`、`newyorkfed` 和 `federalreserve`；OBFR 从纽约联储官方 Markets Data API 获取，覆盖 2016-08-25 至当前可得交易日；IORB 从美联储理事会 Data Download Program 获取，官方日度序列自 2021-07-29 起。`（OBFR−IORB）×100` 仅作为银行广义无担保隔夜融资相对准备金余额管理利率的压力代理，不得冒充完整的离岸美元流动性指数。不得把已批准源静默替换成其他口径，若启用新源必须再次记录来源、覆盖范围、保存路径和校验结果。
+- 用户已批准本项目使用以下外部补充源：新浪 LME 铜/铝/锌三个月电子盘、马来西亚 FCPO、CBOT 美豆油与美豆粕期货，国家外汇管理局美元兑人民币和人民币兑林吉特中间价、BNM 最新人民币兑林吉特校对值、中证指数有限公司沪深300滚动市盈率、中国债券信息网中国10年期国债收益率、东方财富美国10年期国债收益率、新浪纳斯达克综合指数与标普500指数、Multpl 标普500月度市盈率、纽约联储官方日度 OBFR 参考利率，以及美联储理事会官方日度 IOER 与 IORB 管理利率。
+- 外部数据分别保存到共享根目录下的 `market\external\lme_sina`、`safe`、`csindex`、`chinabond`、`eastmoney`、`multpl`、`sina_us_index`、`sina_foreign_futures`、`newyorkfed` 和 `federalreserve`；OBFR 从纽约联储官方 Markets Data API 获取，覆盖 2016-08-25 至当前可得交易日；准备金管理利率从美联储理事会 Data Download Program 获取，2021-07-29 起使用 IORB，此前使用官方前身 IOER，组合序列自 2008-10-09 起，保存到 `market\external\federalreserve\IORB_IOER.csv`。`（OBFR−准备金管理利率）×100` 仅作为银行广义无担保隔夜融资相对准备金管理利率的压力代理，不得冒充完整的离岸美元流动性指数。不得把已批准源静默替换成其他口径，若启用新源必须再次记录来源、覆盖范围、保存路径和校验结果。
 - 外部补充数据写入共享数据目录；不得自行增加或替换为其他网页、AkShare 接口或行情源。
 - 所有历史统计与回测必须检查未来数据风险。
 

@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-28",
-  "updatedAt": "2026-08-28T23:41:54+08:00",
+  "updatedAt": "2026-08-29T09:16:42+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -1593,8 +1593,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\eastmoney\\US10Y.csv",
       "startDate": "2016-08-25",
-      "endDate": "2026-08-27",
-      "rows": 2504,
+      "endDate": "2026-08-28",
+      "rows": 2505,
       "maxLagDays": 7
     },
     {
@@ -1604,7 +1604,7 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\multpl\\SP500_PE.csv",
       "startDate": "1871-01-01",
-      "endDate": "2026-08-27",
+      "endDate": "2026-08-28",
       "rows": 1868,
       "maxLagDays": 45
     },
@@ -1615,8 +1615,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\sina_us_index\\IXIC.csv",
       "startDate": "2004-01-02",
-      "endDate": "2026-08-27",
-      "rows": 5699,
+      "endDate": "2026-08-28",
+      "rows": 5700,
       "maxLagDays": 7
     },
     {
@@ -1626,8 +1626,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\sina_us_index\\INX.csv",
       "startDate": "2004-01-02",
-      "endDate": "2026-08-27",
-      "rows": 5702,
+      "endDate": "2026-08-28",
+      "rows": 5703,
       "maxLagDays": 7
     },
     {
@@ -1678,19 +1678,19 @@
       "quoteUnit": "%"
     },
     {
-      "symbol": "IORB.FED",
-      "name": "准备金余额利率（IORB）",
+      "symbol": "IORB_IOER.FED",
+      "name": "准备金管理利率（IOER/IORB）",
       "provider": "Board of Governors of the Federal Reserve System",
       "status": "live",
-      "path": "E:\\data\\market\\external\\federalreserve\\IORB.csv",
-      "startDate": "2021-07-29",
-      "endDate": "2026-08-28",
-      "rows": 1857,
+      "path": "E:\\data\\market\\external\\federalreserve\\IORB_IOER.csv",
+      "startDate": "2008-10-09",
+      "endDate": "2026-08-29",
+      "rows": 6534,
       "maxLagDays": 7,
       "quoteUnit": "%"
     }
   ],
-  "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元银行融资压力代理使用纽约联储OBFR减美联储理事会IORB并换算为基点，只作为银行广义无担保隔夜融资相对准备金余额管理利率的压力代理；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
+  "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元银行融资压力代理使用纽约联储OBFR减美联储理事会准备金管理利率并换算为基点，2021-07-29起使用IORB、此前使用IOER，只作为银行广义无担保隔夜融资相对准备金管理利率的压力代理；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
   "period": "1d",
   "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
   "updateSchedule": "每日20:00 Asia/Shanghai",
@@ -3868,14 +3868,14 @@
     {
       "strategyType": "外盘监控",
       "pair": "ERP：标普500",
-      "current": "-1.31%",
-      "previous": "-1.31%",
-      "change": "+0.00%",
-      "changeValue": 0.0,
-      "allTime": "0.08%",
-      "allTimeRange": "-1.31% ~ 3.85%",
-      "percentile": 0.16,
-      "fiveYearRange": "-1.31% ~ 2.88%",
+      "current": "-1.37%",
+      "previous": "-1.20%",
+      "change": "-0.17%",
+      "changeValue": -0.00168369,
+      "allTime": "0.04%",
+      "allTimeRange": "-1.37% ~ 3.85%",
+      "percentile": 0.08,
+      "fiveYearRange": "-1.37% ~ 2.88%",
       "signal": "极度偏低",
       "lots": "—",
       "deviation": "—",
@@ -3883,8 +3883,8 @@
       "margin": "—",
       "leftSymbol": "SP500_PE.MULTPL",
       "rightSymbol": "US10Y.EASTMONEY",
-      "leftChangePct": 0.0,
-      "rightChangePct": 0.0,
+      "leftChangePct": 3.5179,
+      "rightChangePct": 1.0684,
       "seriesMode": "external",
       "pairType": "现货参考",
       "formulaLabel": "100 / 标普500市盈率 − 美国10年期国债收益率",
@@ -5970,6 +5970,10 @@
                 "value": -0.010669
               },
               {
+                "date": "2026-07-20",
+                "value": -0.011169
+              },
+              {
                 "date": "2026-07-21",
                 "value": -0.011469
               },
@@ -6046,12 +6050,8 @@
                 "value": -0.011969
               },
               {
-                "date": "2026-08-27",
-                "value": -0.013132
-              },
-              {
                 "date": "2026-08-28",
-                "value": -0.013132
+                "value": -0.013653
               }
             ]
           }
@@ -6061,8 +6061,8 @@
       "mainContinuousObservation": null,
       "contracts": [],
       "externalSourceDate": "2026-08-28",
-      "priceEarningsRatio": 29.79,
-      "bondYieldPct": 4.67,
+      "priceEarningsRatio": 29.72,
+      "bondYieldPct": 4.73,
       "marketCategory": "股指"
     },
     {
@@ -6072,8 +6072,8 @@
       "previous": "-2.00bp",
       "change": "+0.00bp",
       "changeValue": 0.0,
-      "allTime": "94.75%",
-      "allTimeRange": "-10.00bp ~ 0.00bp",
+      "allTime": "77.91%",
+      "allTimeRange": "-21.00bp ~ 15.00bp",
       "percentile": 94.66,
       "fiveYearRange": "-10.00bp ~ 0.00bp",
       "signal": "偏高",
@@ -6082,12 +6082,12 @@
       "notional": "—",
       "margin": "—",
       "leftSymbol": "OBFR.NYFED",
-      "rightSymbol": "IORB.FED",
+      "rightSymbol": "IORB_IOER.FED",
       "leftChangePct": null,
       "rightChangePct": null,
       "seriesMode": "external",
       "pairType": "外盘参考",
-      "formulaLabel": "（OBFR − IORB）× 100 基点",
+      "formulaLabel": "（OBFR − IORB/IOER）× 100 基点",
       "sourceStatus": "外部补充",
       "leftStructure": null,
       "rightStructure": null,
@@ -6095,16 +6095,1040 @@
         "title": "美元银行融资压力代理走势",
         "unit": "基点",
         "month": "",
-        "startDate": "2021-07-30",
+        "startDate": "2016-09-02",
         "endDate": "2026-08-28",
-        "source": "纽约联储官方日度OBFR；美联储理事会官方日度IORB。OBFR为广义无担保隔夜银行融资利率，IORB为准备金余额管理利率",
+        "source": "纽约联储官方日度OBFR；美联储理事会官方准备金管理利率，2021-07-29起使用IORB、此前使用IOER",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 仅向后匹配已公布数据",
         "series": [
           {
             "expiry": "外盘",
             "leftSymbol": "OBFR.NYFED",
-            "rightSymbol": "IORB.FED",
+            "rightSymbol": "IORB_IOER.FED",
             "points": [
+              {
+                "date": "2016-09-02",
+                "value": -10.0
+              },
+              {
+                "date": "2016-09-09",
+                "value": -10.0
+              },
+              {
+                "date": "2016-09-16",
+                "value": -10.0
+              },
+              {
+                "date": "2016-09-23",
+                "value": -10.0
+              },
+              {
+                "date": "2016-09-30",
+                "value": -21.0
+              },
+              {
+                "date": "2016-10-07",
+                "value": -9.0
+              },
+              {
+                "date": "2016-10-14",
+                "value": -9.0
+              },
+              {
+                "date": "2016-10-21",
+                "value": -9.0
+              },
+              {
+                "date": "2016-10-28",
+                "value": -9.0
+              },
+              {
+                "date": "2016-11-04",
+                "value": -9.0
+              },
+              {
+                "date": "2016-11-10",
+                "value": -9.0
+              },
+              {
+                "date": "2016-11-18",
+                "value": -9.0
+              },
+              {
+                "date": "2016-11-25",
+                "value": -9.0
+              },
+              {
+                "date": "2016-12-02",
+                "value": -9.0
+              },
+              {
+                "date": "2016-12-09",
+                "value": -9.0
+              },
+              {
+                "date": "2016-12-16",
+                "value": -9.0
+              },
+              {
+                "date": "2016-12-23",
+                "value": -9.0
+              },
+              {
+                "date": "2016-12-30",
+                "value": -20.0
+              },
+              {
+                "date": "2017-01-06",
+                "value": -9.0
+              },
+              {
+                "date": "2017-01-13",
+                "value": -9.0
+              },
+              {
+                "date": "2017-01-20",
+                "value": -9.0
+              },
+              {
+                "date": "2017-01-27",
+                "value": -9.0
+              },
+              {
+                "date": "2017-02-03",
+                "value": -9.0
+              },
+              {
+                "date": "2017-02-10",
+                "value": -9.0
+              },
+              {
+                "date": "2017-02-17",
+                "value": -9.0
+              },
+              {
+                "date": "2017-02-24",
+                "value": -9.0
+              },
+              {
+                "date": "2017-03-03",
+                "value": -9.0
+              },
+              {
+                "date": "2017-03-10",
+                "value": -9.0
+              },
+              {
+                "date": "2017-03-17",
+                "value": -9.0
+              },
+              {
+                "date": "2017-03-24",
+                "value": -9.0
+              },
+              {
+                "date": "2017-03-31",
+                "value": -18.0
+              },
+              {
+                "date": "2017-04-07",
+                "value": -9.0
+              },
+              {
+                "date": "2017-04-14",
+                "value": -9.0
+              },
+              {
+                "date": "2017-04-21",
+                "value": -9.0
+              },
+              {
+                "date": "2017-04-28",
+                "value": -17.0
+              },
+              {
+                "date": "2017-05-05",
+                "value": -9.0
+              },
+              {
+                "date": "2017-05-12",
+                "value": -9.0
+              },
+              {
+                "date": "2017-05-19",
+                "value": -9.0
+              },
+              {
+                "date": "2017-05-26",
+                "value": -9.0
+              },
+              {
+                "date": "2017-06-02",
+                "value": -9.0
+              },
+              {
+                "date": "2017-06-09",
+                "value": -9.0
+              },
+              {
+                "date": "2017-06-16",
+                "value": -9.0
+              },
+              {
+                "date": "2017-06-23",
+                "value": -9.0
+              },
+              {
+                "date": "2017-06-30",
+                "value": -19.0
+              },
+              {
+                "date": "2017-07-07",
+                "value": -9.0
+              },
+              {
+                "date": "2017-07-14",
+                "value": -9.0
+              },
+              {
+                "date": "2017-07-21",
+                "value": -9.0
+              },
+              {
+                "date": "2017-07-28",
+                "value": -9.0
+              },
+              {
+                "date": "2017-08-04",
+                "value": -9.0
+              },
+              {
+                "date": "2017-08-11",
+                "value": -9.0
+              },
+              {
+                "date": "2017-08-18",
+                "value": -9.0
+              },
+              {
+                "date": "2017-08-25",
+                "value": -9.0
+              },
+              {
+                "date": "2017-09-01",
+                "value": -9.0
+              },
+              {
+                "date": "2017-09-08",
+                "value": -9.0
+              },
+              {
+                "date": "2017-09-15",
+                "value": -9.0
+              },
+              {
+                "date": "2017-09-22",
+                "value": -9.0
+              },
+              {
+                "date": "2017-09-29",
+                "value": -19.0
+              },
+              {
+                "date": "2017-10-06",
+                "value": -9.0
+              },
+              {
+                "date": "2017-10-13",
+                "value": -9.0
+              },
+              {
+                "date": "2017-10-20",
+                "value": -9.0
+              },
+              {
+                "date": "2017-10-27",
+                "value": -9.0
+              },
+              {
+                "date": "2017-11-03",
+                "value": -9.0
+              },
+              {
+                "date": "2017-11-10",
+                "value": -9.0
+              },
+              {
+                "date": "2017-11-17",
+                "value": -9.0
+              },
+              {
+                "date": "2017-11-24",
+                "value": -9.0
+              },
+              {
+                "date": "2017-12-01",
+                "value": -9.0
+              },
+              {
+                "date": "2017-12-08",
+                "value": -9.0
+              },
+              {
+                "date": "2017-12-15",
+                "value": -9.0
+              },
+              {
+                "date": "2017-12-22",
+                "value": -8.0
+              },
+              {
+                "date": "2017-12-29",
+                "value": -17.0
+              },
+              {
+                "date": "2018-01-05",
+                "value": -8.0
+              },
+              {
+                "date": "2018-01-12",
+                "value": -8.0
+              },
+              {
+                "date": "2018-01-19",
+                "value": -8.0
+              },
+              {
+                "date": "2018-01-26",
+                "value": -8.0
+              },
+              {
+                "date": "2018-02-02",
+                "value": -8.0
+              },
+              {
+                "date": "2018-02-09",
+                "value": -8.0
+              },
+              {
+                "date": "2018-02-16",
+                "value": -8.0
+              },
+              {
+                "date": "2018-02-23",
+                "value": -8.0
+              },
+              {
+                "date": "2018-03-02",
+                "value": -8.0
+              },
+              {
+                "date": "2018-03-09",
+                "value": -8.0
+              },
+              {
+                "date": "2018-03-16",
+                "value": -7.0
+              },
+              {
+                "date": "2018-03-23",
+                "value": -7.0
+              },
+              {
+                "date": "2018-03-30",
+                "value": -8.0
+              },
+              {
+                "date": "2018-04-06",
+                "value": -6.0
+              },
+              {
+                "date": "2018-04-13",
+                "value": -6.0
+              },
+              {
+                "date": "2018-04-20",
+                "value": -6.0
+              },
+              {
+                "date": "2018-04-27",
+                "value": -6.0
+              },
+              {
+                "date": "2018-05-04",
+                "value": -5.0
+              },
+              {
+                "date": "2018-05-11",
+                "value": -5.0
+              },
+              {
+                "date": "2018-05-18",
+                "value": -5.0
+              },
+              {
+                "date": "2018-05-25",
+                "value": -5.0
+              },
+              {
+                "date": "2018-06-01",
+                "value": -5.0
+              },
+              {
+                "date": "2018-06-08",
+                "value": -5.0
+              },
+              {
+                "date": "2018-06-15",
+                "value": -5.0
+              },
+              {
+                "date": "2018-06-22",
+                "value": -4.0
+              },
+              {
+                "date": "2018-06-29",
+                "value": -5.0
+              },
+              {
+                "date": "2018-07-06",
+                "value": -4.0
+              },
+              {
+                "date": "2018-07-13",
+                "value": -4.0
+              },
+              {
+                "date": "2018-07-20",
+                "value": -4.0
+              },
+              {
+                "date": "2018-07-27",
+                "value": -4.0
+              },
+              {
+                "date": "2018-08-03",
+                "value": -5.0
+              },
+              {
+                "date": "2018-08-10",
+                "value": -4.0
+              },
+              {
+                "date": "2018-08-17",
+                "value": -4.0
+              },
+              {
+                "date": "2018-08-24",
+                "value": -4.0
+              },
+              {
+                "date": "2018-08-31",
+                "value": -4.0
+              },
+              {
+                "date": "2018-09-07",
+                "value": -4.0
+              },
+              {
+                "date": "2018-09-14",
+                "value": -4.0
+              },
+              {
+                "date": "2018-09-21",
+                "value": -3.0
+              },
+              {
+                "date": "2018-09-28",
+                "value": -3.0
+              },
+              {
+                "date": "2018-10-05",
+                "value": -2.0
+              },
+              {
+                "date": "2018-10-12",
+                "value": -2.0
+              },
+              {
+                "date": "2018-10-19",
+                "value": -2.0
+              },
+              {
+                "date": "2018-10-26",
+                "value": -1.0
+              },
+              {
+                "date": "2018-11-02",
+                "value": -1.0
+              },
+              {
+                "date": "2018-11-09",
+                "value": -1.0
+              },
+              {
+                "date": "2018-11-16",
+                "value": -1.0
+              },
+              {
+                "date": "2018-11-23",
+                "value": -1.0
+              },
+              {
+                "date": "2018-11-30",
+                "value": -1.0
+              },
+              {
+                "date": "2018-12-07",
+                "value": -1.0
+              },
+              {
+                "date": "2018-12-14",
+                "value": -1.0
+              },
+              {
+                "date": "2018-12-21",
+                "value": 0.0
+              },
+              {
+                "date": "2018-12-28",
+                "value": -1.0
+              },
+              {
+                "date": "2019-01-04",
+                "value": 0.0
+              },
+              {
+                "date": "2019-01-11",
+                "value": -1.0
+              },
+              {
+                "date": "2019-01-18",
+                "value": 0.0
+              },
+              {
+                "date": "2019-01-25",
+                "value": -1.0
+              },
+              {
+                "date": "2019-02-01",
+                "value": 0.0
+              },
+              {
+                "date": "2019-02-08",
+                "value": -1.0
+              },
+              {
+                "date": "2019-02-15",
+                "value": 0.0
+              },
+              {
+                "date": "2019-02-22",
+                "value": 0.0
+              },
+              {
+                "date": "2019-03-01",
+                "value": 0.0
+              },
+              {
+                "date": "2019-03-08",
+                "value": 0.0
+              },
+              {
+                "date": "2019-03-15",
+                "value": 0.0
+              },
+              {
+                "date": "2019-03-22",
+                "value": 0.0
+              },
+              {
+                "date": "2019-03-29",
+                "value": 1.0
+              },
+              {
+                "date": "2019-04-05",
+                "value": 0.0
+              },
+              {
+                "date": "2019-04-12",
+                "value": 0.0
+              },
+              {
+                "date": "2019-04-19",
+                "value": 3.0
+              },
+              {
+                "date": "2019-04-26",
+                "value": 3.0
+              },
+              {
+                "date": "2019-05-03",
+                "value": 5.0
+              },
+              {
+                "date": "2019-05-10",
+                "value": 2.0
+              },
+              {
+                "date": "2019-05-17",
+                "value": 2.0
+              },
+              {
+                "date": "2019-05-24",
+                "value": 2.0
+              },
+              {
+                "date": "2019-05-31",
+                "value": 3.0
+              },
+              {
+                "date": "2019-06-07",
+                "value": 1.0
+              },
+              {
+                "date": "2019-06-14",
+                "value": 0.0
+              },
+              {
+                "date": "2019-06-21",
+                "value": 2.0
+              },
+              {
+                "date": "2019-06-28",
+                "value": 3.0
+              },
+              {
+                "date": "2019-07-05",
+                "value": 5.0
+              },
+              {
+                "date": "2019-07-12",
+                "value": 2.0
+              },
+              {
+                "date": "2019-07-19",
+                "value": 5.0
+              },
+              {
+                "date": "2019-07-26",
+                "value": 2.0
+              },
+              {
+                "date": "2019-08-02",
+                "value": 0.0
+              },
+              {
+                "date": "2019-08-09",
+                "value": 0.0
+              },
+              {
+                "date": "2019-08-16",
+                "value": 1.0
+              },
+              {
+                "date": "2019-08-23",
+                "value": 0.0
+              },
+              {
+                "date": "2019-08-30",
+                "value": 1.0
+              },
+              {
+                "date": "2019-09-06",
+                "value": 1.0
+              },
+              {
+                "date": "2019-09-13",
+                "value": 4.0
+              },
+              {
+                "date": "2019-09-20",
+                "value": 5.0
+              },
+              {
+                "date": "2019-09-27",
+                "value": 2.0
+              },
+              {
+                "date": "2019-10-04",
+                "value": 1.0
+              },
+              {
+                "date": "2019-10-11",
+                "value": 1.0
+              },
+              {
+                "date": "2019-10-18",
+                "value": 3.0
+              },
+              {
+                "date": "2019-10-25",
+                "value": 1.0
+              },
+              {
+                "date": "2019-11-01",
+                "value": 1.0
+              },
+              {
+                "date": "2019-11-08",
+                "value": 0.0
+              },
+              {
+                "date": "2019-11-15",
+                "value": 0.0
+              },
+              {
+                "date": "2019-11-22",
+                "value": 0.0
+              },
+              {
+                "date": "2019-11-29",
+                "value": 0.0
+              },
+              {
+                "date": "2019-12-06",
+                "value": -1.0
+              },
+              {
+                "date": "2019-12-13",
+                "value": -1.0
+              },
+              {
+                "date": "2019-12-20",
+                "value": -1.0
+              },
+              {
+                "date": "2019-12-27",
+                "value": -1.0
+              },
+              {
+                "date": "2020-01-03",
+                "value": -1.0
+              },
+              {
+                "date": "2020-01-10",
+                "value": -1.0
+              },
+              {
+                "date": "2020-01-17",
+                "value": -1.0
+              },
+              {
+                "date": "2020-01-24",
+                "value": -1.0
+              },
+              {
+                "date": "2020-01-31",
+                "value": -2.0
+              },
+              {
+                "date": "2020-02-07",
+                "value": -2.0
+              },
+              {
+                "date": "2020-02-14",
+                "value": -2.0
+              },
+              {
+                "date": "2020-02-21",
+                "value": -2.0
+              },
+              {
+                "date": "2020-02-28",
+                "value": -2.0
+              },
+              {
+                "date": "2020-03-06",
+                "value": -2.0
+              },
+              {
+                "date": "2020-03-13",
+                "value": 0.0
+              },
+              {
+                "date": "2020-03-20",
+                "value": 5.0
+              },
+              {
+                "date": "2020-03-27",
+                "value": -2.0
+              },
+              {
+                "date": "2020-04-03",
+                "value": -5.0
+              },
+              {
+                "date": "2020-04-10",
+                "value": -5.0
+              },
+              {
+                "date": "2020-04-17",
+                "value": -5.0
+              },
+              {
+                "date": "2020-04-24",
+                "value": -6.0
+              },
+              {
+                "date": "2020-05-01",
+                "value": -6.0
+              },
+              {
+                "date": "2020-05-08",
+                "value": -5.0
+              },
+              {
+                "date": "2020-05-15",
+                "value": -5.0
+              },
+              {
+                "date": "2020-05-22",
+                "value": -5.0
+              },
+              {
+                "date": "2020-05-29",
+                "value": -5.0
+              },
+              {
+                "date": "2020-06-05",
+                "value": -4.0
+              },
+              {
+                "date": "2020-06-12",
+                "value": -3.0
+              },
+              {
+                "date": "2020-06-19",
+                "value": -2.0
+              },
+              {
+                "date": "2020-06-26",
+                "value": -2.0
+              },
+              {
+                "date": "2020-07-03",
+                "value": -1.0
+              },
+              {
+                "date": "2020-07-10",
+                "value": -1.0
+              },
+              {
+                "date": "2020-07-17",
+                "value": -1.0
+              },
+              {
+                "date": "2020-07-24",
+                "value": -1.0
+              },
+              {
+                "date": "2020-07-31",
+                "value": -1.0
+              },
+              {
+                "date": "2020-08-07",
+                "value": -1.0
+              },
+              {
+                "date": "2020-08-14",
+                "value": -1.0
+              },
+              {
+                "date": "2020-08-21",
+                "value": -2.0
+              },
+              {
+                "date": "2020-08-28",
+                "value": -2.0
+              },
+              {
+                "date": "2020-09-04",
+                "value": -2.0
+              },
+              {
+                "date": "2020-09-11",
+                "value": -2.0
+              },
+              {
+                "date": "2020-09-18",
+                "value": -1.0
+              },
+              {
+                "date": "2020-09-25",
+                "value": -2.0
+              },
+              {
+                "date": "2020-10-02",
+                "value": -2.0
+              },
+              {
+                "date": "2020-10-09",
+                "value": -2.0
+              },
+              {
+                "date": "2020-10-16",
+                "value": -2.0
+              },
+              {
+                "date": "2020-10-23",
+                "value": -2.0
+              },
+              {
+                "date": "2020-10-30",
+                "value": -2.0
+              },
+              {
+                "date": "2020-11-06",
+                "value": -2.0
+              },
+              {
+                "date": "2020-11-13",
+                "value": -2.0
+              },
+              {
+                "date": "2020-11-20",
+                "value": -2.0
+              },
+              {
+                "date": "2020-11-27",
+                "value": -2.0
+              },
+              {
+                "date": "2020-12-04",
+                "value": -2.0
+              },
+              {
+                "date": "2020-12-11",
+                "value": -2.0
+              },
+              {
+                "date": "2020-12-18",
+                "value": -2.0
+              },
+              {
+                "date": "2020-12-24",
+                "value": -2.0
+              },
+              {
+                "date": "2020-12-31",
+                "value": -2.0
+              },
+              {
+                "date": "2021-01-08",
+                "value": -2.0
+              },
+              {
+                "date": "2021-01-15",
+                "value": -2.0
+              },
+              {
+                "date": "2021-01-22",
+                "value": -2.0
+              },
+              {
+                "date": "2021-01-29",
+                "value": -3.0
+              },
+              {
+                "date": "2021-02-05",
+                "value": -3.0
+              },
+              {
+                "date": "2021-02-12",
+                "value": -3.0
+              },
+              {
+                "date": "2021-02-19",
+                "value": -3.0
+              },
+              {
+                "date": "2021-02-26",
+                "value": -3.0
+              },
+              {
+                "date": "2021-03-05",
+                "value": -3.0
+              },
+              {
+                "date": "2021-03-12",
+                "value": -3.0
+              },
+              {
+                "date": "2021-03-19",
+                "value": -3.0
+              },
+              {
+                "date": "2021-03-26",
+                "value": -3.0
+              },
+              {
+                "date": "2021-04-02",
+                "value": -3.0
+              },
+              {
+                "date": "2021-04-09",
+                "value": -4.0
+              },
+              {
+                "date": "2021-04-16",
+                "value": -4.0
+              },
+              {
+                "date": "2021-04-23",
+                "value": -4.0
+              },
+              {
+                "date": "2021-04-30",
+                "value": -7.0
+              },
+              {
+                "date": "2021-05-07",
+                "value": -5.0
+              },
+              {
+                "date": "2021-05-14",
+                "value": -5.0
+              },
+              {
+                "date": "2021-05-21",
+                "value": -5.0
+              },
+              {
+                "date": "2021-05-28",
+                "value": -7.0
+              },
+              {
+                "date": "2021-06-04",
+                "value": -6.0
+              },
+              {
+                "date": "2021-06-11",
+                "value": -6.0
+              },
+              {
+                "date": "2021-06-18",
+                "value": -7.0
+              },
+              {
+                "date": "2021-06-25",
+                "value": -7.0
+              },
+              {
+                "date": "2021-07-02",
+                "value": -7.0
+              },
+              {
+                "date": "2021-07-09",
+                "value": -7.0
+              },
+              {
+                "date": "2021-07-16",
+                "value": -7.0
+              },
+              {
+                "date": "2021-07-23",
+                "value": -7.0
+              },
               {
                 "date": "2021-07-30",
                 "value": -9.0
@@ -7242,9 +8266,10 @@
       "contracts": [],
       "externalSourceDate": "2026-08-28",
       "obfrPct": 3.63,
-      "iorbPct": 3.65,
+      "reserveRatePct": 3.65,
+      "reserveRateCode": "IORB",
       "fundingSpreadBp": -2.0,
-      "interpretation": "利差上冲表示银行广义无担保隔夜融资成本相对准备金余额管理利率变贵，是美元银行融资压力代理，不等同于完整离岸美元流动性指数",
+      "interpretation": "利差上冲表示银行广义无担保隔夜融资成本相对准备金管理利率变贵；2021-07-29前使用IOER、此后使用IORB，是美元银行融资压力代理，不等同于完整离岸美元流动性指数",
       "marketCategory": "股指"
     },
     {
@@ -8727,13 +9752,13 @@
     {
       "strategyType": "回归",
       "pair": "纳斯达克/标普500",
-      "current": "3.4331",
+      "current": "3.4237",
       "previous": "3.4331",
-      "change": "+0.0000",
-      "changeValue": 0.0,
-      "allTime": "97.86%",
+      "change": "-0.0095",
+      "changeValue": -0.00945409,
+      "allTime": "97.55%",
       "allTimeRange": "1.6208 ~ 3.5822",
-      "percentile": 93.78,
+      "percentile": 92.75,
       "fiveYearRange": "2.6996 ~ 3.5641",
       "signal": "偏高",
       "lots": "—",
@@ -8742,8 +9767,8 @@
       "margin": "—",
       "leftSymbol": "IXIC.SINA",
       "rightSymbol": "INX.SINA",
-      "leftChangePct": 0.0,
-      "rightChangePct": 0.0,
+      "leftChangePct": -0.5234,
+      "rightChangePct": -0.2487,
       "seriesMode": "external",
       "pairType": "现货参考",
       "formulaLabel": "纳斯达克综合指数 / 标普500指数",
@@ -10914,7 +11939,7 @@
               },
               {
                 "date": "2026-08-28",
-                "value": 3.433112
+                "value": 3.423657
               }
             ]
           }
@@ -10924,8 +11949,8 @@
       "mainContinuousObservation": null,
       "contracts": [],
       "externalSourceDate": "2026-08-28",
-      "leftIndexLevel": 26541.3516,
-      "rightIndexLevel": 7730.9902,
+      "leftIndexLevel": 26402.4238,
+      "rightIndexLevel": 7711.7598,
       "marketCategory": "股指"
     },
     {
@@ -247183,13 +248208,13 @@
     {
       "strategyType": "外盘监控",
       "pair": "美盘油粕比",
-      "current": "4.0377",
+      "current": "4.0717",
       "previous": "4.0159",
-      "change": "+0.0219",
-      "changeValue": 0.02186137,
-      "allTime": "95.16%",
+      "change": "+0.0558",
+      "changeValue": 0.05583118,
+      "allTime": "95.28%",
       "allTimeRange": "1.5036 ~ 4.9055",
-      "percentile": 90.21,
+      "percentile": 90.45,
       "fiveYearRange": "2.1802 ~ 4.9055",
       "signal": "偏高",
       "lots": "—",
@@ -247198,8 +248223,8 @@
       "margin": "—",
       "leftSymbol": "BO.SINA",
       "rightSymbol": "SM.SINA",
-      "leftChangePct": 3.3504,
-      "rightChangePct": 2.7908,
+      "leftChangePct": 3.8625,
+      "rightChangePct": 2.4383,
       "seriesMode": "external",
       "pairType": "外盘参考",
       "formulaLabel": "美豆油（美分/磅）×20 ÷ 美豆粕（美元/短吨）",
@@ -249370,7 +250395,7 @@
               },
               {
                 "date": "2026-08-28",
-                "value": 4.037725
+                "value": 4.071695
               }
             ]
           }
@@ -249380,22 +250405,22 @@
       "mainContinuousObservation": null,
       "contracts": [],
       "externalSourceDate": "2026-08-28",
-      "soybeanOilCentsPerLb": 70.64,
-      "soybeanMealUsdPerShortTon": 349.9,
-      "soybeanOilUsdPerMetricTonne": 1557.34542,
-      "soybeanMealUsdPerMetricTonne": 385.698728,
+      "soybeanOilCentsPerLb": 70.99,
+      "soybeanMealUsdPerShortTon": 348.7,
+      "soybeanOilUsdPerMetricTonne": 1565.061599,
+      "soybeanMealUsdPerMetricTonne": 384.375954,
       "marketCategory": "农产品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "马盘棕榈油/美盘豆油",
-      "current": "69.22",
+      "current": "68.88",
       "previous": "70.43",
-      "change": "-1.2074",
-      "changeValue": -1.20736649,
-      "allTime": "28.83%",
+      "change": "-1.5487",
+      "changeValue": -1.54866079,
+      "allTime": "27.93%",
       "allTimeRange": "51.20 ~ 121.77",
-      "percentile": 31.93,
+      "percentile": 31.21,
       "fiveYearRange": "51.87 ~ 121.77",
       "signal": "中性",
       "lots": "—",
@@ -249405,7 +250430,7 @@
       "leftSymbol": "FCPO.SINA",
       "rightSymbol": "BO.SINA",
       "leftChangePct": 1.5787,
-      "rightChangePct": 3.3504,
+      "rightChangePct": 3.8625,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "马盘棕榈油报价（马币/公吨）÷ 美盘豆油报价（美分/磅）",
@@ -250876,7 +251901,7 @@
               },
               {
                 "date": "2026-08-28",
-                "value": 69.224236
+                "value": 68.882941
               }
             ]
           }
@@ -250887,16 +251912,16 @@
       "contracts": [],
       "externalSourceDate": "2026-08-28",
       "palmOilMyrPerMetricTonne": 4890.0,
-      "soybeanOilCentsPerLb": 70.64,
+      "soybeanOilCentsPerLb": 70.99,
       "marketCategory": "农产品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "铝内外盘比价",
-      "current": "7.3793",
+      "current": "7.3782",
       "previous": "7.3883",
-      "change": "-0.0090",
-      "changeValue": -0.00903776,
+      "change": "-0.0102",
+      "changeValue": -0.01017584,
       "allTime": "28.73%",
       "allTimeRange": "5.8549 ~ 8.8167",
       "percentile": 21.78,
@@ -250909,7 +251934,7 @@
       "leftSymbol": "al00.SF",
       "rightSymbol": "AHD.LME",
       "leftChangePct": 0.4198,
-      "rightChangePct": 0.5428,
+      "rightChangePct": 0.5583,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "al00.SF / AHD.LME",
@@ -253044,7 +254069,7 @@
               },
               {
                 "date": "2026-08-28",
-                "value": 7.3793
+                "value": 7.378162
               }
             ]
           }
@@ -255170,19 +256195,19 @@
       "contracts": [],
       "externalSourceDate": "2026-08-28",
       "domesticPrice": 23920.0,
-      "lmePriceUsdPerTonne": 3241.5,
+      "lmePriceUsdPerTonne": 3242.0,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "铜内外盘比价",
-      "current": "7.6087",
+      "current": "7.6252",
       "previous": "7.5732",
-      "change": "+0.0356",
-      "changeValue": 0.03557185,
-      "allTime": "21.90%",
+      "change": "+0.0521",
+      "changeValue": 0.05208767,
+      "allTime": "23.21%",
       "allTimeRange": "6.8790 ~ 8.5541",
-      "percentile": 18.14,
+      "percentile": 19.24,
       "fiveYearRange": "6.8790 ~ 8.5541",
       "signal": "中性",
       "lots": "—",
@@ -255192,7 +256217,7 @@
       "leftSymbol": "cu00.SF",
       "rightSymbol": "CAD.LME",
       "leftChangePct": 0.554,
-      "rightChangePct": 0.0839,
+      "rightChangePct": -0.1329,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "cu00.SF / CAD.LME",
@@ -257327,7 +258352,7 @@
               },
               {
                 "date": "2026-08-28",
-                "value": 7.608734
+                "value": 7.625249
               }
             ]
           }
@@ -259453,19 +260478,19 @@
       "contracts": [],
       "externalSourceDate": "2026-08-28",
       "domesticPrice": 108900.0,
-      "lmePriceUsdPerTonne": 14312.5,
+      "lmePriceUsdPerTonne": 14281.5,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "锌内外盘比价",
-      "current": "6.8234",
+      "current": "6.8348",
       "previous": "6.7258",
-      "change": "+0.0975",
-      "changeValue": 0.09754714,
-      "allTime": "2.57%",
+      "change": "+0.1090",
+      "changeValue": 0.10899283,
+      "allTime": "2.82%",
       "allTimeRange": "6.1944 ~ 9.0651",
-      "percentile": 5.17,
+      "percentile": 5.68,
       "fiveYearRange": "6.1944 ~ 8.8800",
       "signal": "偏低",
       "lots": "—",
@@ -259475,7 +260500,7 @@
       "leftSymbol": "zn00.SF",
       "rightSymbol": "ZSD.LME",
       "leftChangePct": 1.3198,
-      "rightChangePct": -0.1287,
+      "rightChangePct": -0.2959,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "zn00.SF / ZSD.LME",
@@ -261610,7 +262635,7 @@
               },
               {
                 "date": "2026-08-28",
-                "value": 6.823393
+                "value": 6.834839
               }
             ]
           }
@@ -263736,7 +264761,7 @@
       "contracts": [],
       "externalSourceDate": "2026-08-28",
       "domesticPrice": 26485.0,
-      "lmePriceUsdPerTonne": 3881.5,
+      "lmePriceUsdPerTonne": 3875.0,
       "marketCategory": "工业品"
     }
   ],

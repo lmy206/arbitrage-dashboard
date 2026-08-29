@@ -700,7 +700,7 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
   assert.equal(payload.externalSources.length, 15);
   assert.ok(payload.externalSources.every((source) => source.endDate <= new Date().toISOString().slice(0, 10)));
   assert.ok(payload.externalSources.every((source) => ["live", "cache"].includes(source.status)));
-  assert.match(payload.externalSourcePolicy, /国内主连÷LME三个月电子盘且不换汇.*风险溢价.*OBFR.*IORB.*马盘棕榈油.*美盘油粕比/);
+  assert.match(payload.externalSourcePolicy, /国内主连÷LME三个月电子盘且不换汇.*风险溢价.*OBFR.*IORB.*IOER.*马盘棕榈油.*美盘油粕比/);
 });
 
 test("approved external risk premiums, dollar funding pressure, and cross-market ratios are auditable", async () => {
@@ -720,8 +720,7 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
     assert.ok(row.mainHistoryChart);
     assert.equal(row.mainHistoryChart.endDate, payload.dataDate);
     assert.match(row.mainHistoryChart.grain, /^更早周频 · 最近20个交易日日线收盘/);
-    const minimumPoints = row === dollarFunding ? 250 : 300;
-    assert.ok(row.mainHistoryChart.series[0].points.length >= minimumPoints);
+    assert.ok(row.mainHistoryChart.series[0].points.length >= 300);
     assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
     assert.ok(row.mainHistoryChart.series[0].points.every((point) => point.date <= payload.dataDate));
   }
@@ -731,12 +730,15 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.equal(cnRisk.strategyType, "回归");
   assert.equal(usRisk.strategyType, "外盘监控");
   assert.equal(dollarFunding.current, `${dollarFunding.fundingSpreadBp.toFixed(2)}bp`);
-  assert.ok(Math.abs(dollarFunding.fundingSpreadBp - (dollarFunding.obfrPct - dollarFunding.iorbPct) * 100) < 0.000001);
-  assert.equal(dollarFunding.formulaLabel, "（OBFR − IORB）× 100 基点");
+  assert.ok(Math.abs(dollarFunding.fundingSpreadBp - (dollarFunding.obfrPct - dollarFunding.reserveRatePct) * 100) < 0.000001);
+  assert.equal(dollarFunding.reserveRateCode, "IORB");
+  assert.equal(dollarFunding.formulaLabel, "（OBFR − IORB/IOER）× 100 基点");
   assert.equal(dollarFunding.mainHistoryChart.unit, "基点");
   assert.equal(dollarFunding.mainHistoryChart.series[0].expiry, "外盘");
   assert.equal(dollarFunding.mainHistoryChart.startDate, dollarFunding.mainHistoryChart.series[0].points[0].date);
-  assert.ok(dollarFunding.mainHistoryChart.startDate >= "2021-07-29");
+  assert.ok(dollarFunding.mainHistoryChart.startDate >= "2016-08-25");
+  assert.ok(dollarFunding.mainHistoryChart.startDate <= "2016-09-05");
+  assert.ok(dollarFunding.mainHistoryChart.series[0].points.length >= 500);
   assert.equal(dollarFunding.pairType, "外盘参考");
   assert.equal(dollarFunding.strategyType, "外盘监控");
   assert.match(dollarFunding.interpretation, /美元银行融资压力代理.*不等同于完整离岸美元流动性指数/);
@@ -782,17 +784,21 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   const soybeanOil = payload.externalSources.find((source) => source.symbol === "BO.SINA");
   const soybeanMeal = payload.externalSources.find((source) => source.symbol === "SM.SINA");
   const obfr = payload.externalSources.find((source) => source.symbol === "OBFR.NYFED");
-  const iorb = payload.externalSources.find((source) => source.symbol === "IORB.FED");
+  const reserveRate = payload.externalSources.find((source) => source.symbol === "IORB_IOER.FED");
   assert.equal(soybeanOil.quoteUnit, "美分/磅");
   assert.equal(soybeanMeal.quoteUnit, "美元/短吨");
   assert.match(soybeanOil.path, /sina_foreign_futures[\\/]BO\.csv$/);
   assert.match(soybeanMeal.path, /sina_foreign_futures[\\/]SM\.csv$/);
   assert.equal(obfr.provider, "Federal Reserve Bank of New York");
-  assert.equal(iorb.provider, "Board of Governors of the Federal Reserve System");
+  assert.equal(reserveRate.provider, "Board of Governors of the Federal Reserve System");
   assert.equal(obfr.quoteUnit, "%");
-  assert.equal(iorb.quoteUnit, "%");
+  assert.equal(reserveRate.quoteUnit, "%");
   assert.match(obfr.path, /newyorkfed[\\/]OBFR\.csv$/);
-  assert.match(iorb.path, /federalreserve[\\/]IORB\.csv$/);
+  assert.match(reserveRate.path, /federalreserve[\\/]IORB_IOER\.csv$/);
+  assert.equal(reserveRate.startDate, "2008-10-09");
+  assert.ok(reserveRate.rows > 6500);
+  assert.ok(reserveRate.endDate <= new Date().toISOString().slice(0, 10));
+  assert.equal(payload.externalSources.find((source) => source.symbol === "IORB.FED"), undefined);
   assert.equal(payload.externalSources.find((source) => source.symbol === "SOFR.NYFED"), undefined);
 
   const cnyMyr = payload.externalSources.find((source) => source.symbol === "CNYMYR_MID.SAFE");
