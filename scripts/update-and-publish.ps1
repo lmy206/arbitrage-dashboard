@@ -153,15 +153,16 @@ function Assert-IntegrityReport {
   $report = Read-Utf8Text -Path $reportPath | ConvertFrom-Json
   $checks = @(
     ($report.status -eq "ok")
-    ([int]$report.pairCount -eq 38)
-    ([int]$report.expectedPairCount -eq 38)
+    ([int]$report.pairCount -eq 36)
+    ([int]$report.expectedPairCount -eq 36)
     ([int]$report.pairCount -eq [int]$report.expectedPairCount)
     ($report.futureDataDetected -eq $false)
     ($report.hierarchySorted -eq $true)
+    ($report.relatedObservationsComplete -eq $true)
     ($report.externalSourcesComplete -eq $true)
   )
   if ($checks -contains $false) {
-    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，externalSourcesComplete=$($report.externalSourcesComplete)"
+    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
   }
 
   if (-not (Test-Path -LiteralPath $outputPath)) {

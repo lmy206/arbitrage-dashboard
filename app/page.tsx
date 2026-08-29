@@ -87,6 +87,13 @@ type MainContinuousObservation = Omit<ContractRow, "expiry" | "leftVolume" | "ri
   historyChart: ContractHistoryChartData | null;
 };
 
+type RelatedObservation = Omit<ContractRow, "expiry" | "leftVolume" | "rightVolume" | "pairedVolume" | "historyChart"> & {
+  key: string;
+  label: string;
+  formulaLabel: string;
+  historyChart: ContractHistoryChartData | null;
+};
+
 type TermObservation = Omit<ContractRow, "expiry" | "leftVolume" | "rightVolume" | "pairedVolume" | "historyChart"> & {
   key: "term-down" | "term-skip";
   label: "下季" | "隔季";
@@ -152,6 +159,7 @@ type PairRow = {
   mainHistoryChart: ContractHistoryChartData | null;
   spotObservation: SpotObservation | null;
   mainContinuousObservation: MainContinuousObservation | null;
+  relatedObservations?: RelatedObservation[];
   termObservations?: TermObservation[];
   contracts: ContractRow[];
   formulaKind: "spread" | "ratio";
@@ -175,6 +183,11 @@ const favoriteStorageKey = "arbitrage-favorites-v1";
 const legacyPairNameByCurrent: Record<string, string> = {
   "玻璃纯碱比": "纯碱玻璃比",
   "塑料-聚丙烯价差": "聚乙烯-聚丙烯价差",
+};
+const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
+  "玻璃纯碱比": ["纯碱玻璃比", "玻璃生产利润"],
+  "焦炭焦煤比": ["焦化利润"],
+  "塑料-聚丙烯价差": ["聚乙烯-聚丙烯价差"],
 };
 
 type SortKey = "pair" | "current" | "previous" | "change" | "allTime" | "percentile" | "lots" | "deviation" | "notional" | "margin";
@@ -228,12 +241,6 @@ function pairCodeFormula(
   if (row.pair === "PTA盘面加工费") {
     return `${leftSymbol} − 0.655 × ${rightSymbol}`;
   }
-  if (row.pair === "玻璃生产利润") {
-    return `${leftSymbol} − 0.2 × ${rightSymbol}`;
-  }
-  if (row.pair === "焦化利润") {
-    return `${leftSymbol} − 1.3 × ${rightSymbol}`;
-  }
   const operator = row.formulaKind === "spread" ? "−" : "/";
   return `${leftSymbol} ${operator} ${rightSymbol}`;
 }
@@ -242,8 +249,6 @@ const codeOnlyFormulaPairs = new Set([
   "塑料-聚丙烯价差",
   "MTO盘面利润",
   "PTA盘面加工费",
-  "玻璃生产利润",
-  "焦化利润",
 ]);
 
 function pairHoverFormula(
@@ -274,6 +279,7 @@ function applyPrimaryObservation(row: PairRow, selection?: string): PairRow {
   const observation = selection === "spot"
     ? row.spotObservation
     : row.termObservations?.find((item) => item.key === selection)
+      ?? row.relatedObservations?.find((item) => item.key === selection)
       ?? row.contracts.find((item) => item.expiry === selection);
   if (!observation) return row;
 
@@ -366,8 +372,28 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
     term: false,
     historyChart: row.mainHistoryChart,
   });
+  const related = (row.relatedObservations ?? []).map((observation) => ({
+    key: observation.key,
+    label: observation.label,
+    detail: observation.formulaLabel,
+    current: observation.current,
+    percentile: observation.percentile,
+    signal: observation.signal,
+    leftSymbol: observation.leftSymbol,
+    rightSymbol: observation.rightSymbol,
+    leftChangePct: observation.leftChangePct,
+    rightChangePct: observation.rightChangePct,
+    leftVolume: null,
+    rightVolume: null,
+    pairedVolume: null,
+    pinned: true,
+    spot: false,
+    term: false,
+    historyChart: observation.historyChart,
+  }));
   return [
     ...pinned,
+    ...related,
     ...row.contracts.map((contract) => ({
       key: contract.expiry,
       label: contract.expiry,
@@ -716,6 +742,7 @@ export default function Home() {
           (
             (expiry === "spot" && row.spotObservation !== null) ||
             row.termObservations?.some((observation) => observation.key === expiry) ||
+            row.relatedObservations?.some((observation) => observation.key === expiry) ||
             row.contracts.some((contract) => contract.expiry === expiry)
           )
         ) {
@@ -741,9 +768,11 @@ export default function Home() {
       const parsed = stored ? JSON.parse(stored) as Record<string, unknown> : {};
       const validFavoriteTimes: Record<string, number> = {};
       rows.forEach((row) => {
-        const favoritedAt = parsed[row.pair] ?? parsed[legacyPairNameByCurrent[row.pair]];
-        if (typeof favoritedAt === "number" && Number.isFinite(favoritedAt) && favoritedAt > 0) {
-          validFavoriteTimes[row.pair] = favoritedAt;
+        const favoriteCandidates = [row.pair, ...(legacyFavoriteNamesByCurrent[row.pair] ?? [])]
+          .map((pairName) => parsed[pairName])
+          .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0);
+        if (favoriteCandidates.length > 0) {
+          validFavoriteTimes[row.pair] = Math.max(...favoriteCandidates);
         }
       });
       setFavoriteTimes(validFavoriteTimes);
@@ -763,7 +792,8 @@ export default function Home() {
     const observedRows = rows.map((row) => applyPrimaryObservation(row, primaryObservations[row.pair]));
     const filtered = observedRows.filter(
       (row) => {
-        const searchableName = `${row.pair} ${primaryObservations[row.pair] ?? ""}`.toLowerCase();
+        const relatedNames = (row.relatedObservations ?? []).map((observation) => observation.label).join(" ");
+        const searchableName = `${row.pair} ${relatedNames} ${primaryObservations[row.pair] ?? ""}`.toLowerCase();
         return searchableName.includes(query.trim().toLowerCase());
       },
     );
@@ -1003,9 +1033,11 @@ export default function Home() {
                 const selectedObservation = primaryObservations[row.pair];
                 const selectedTermLabel = baseRow.termObservations
                   ?.find((observation) => observation.key === selectedObservation)?.label;
+                const selectedRelatedLabel = baseRow.relatedObservations
+                  ?.find((observation) => observation.key === selectedObservation)?.label;
                 const selectedLabel = selectedObservation === "spot"
                   ? "现货"
-                  : selectedTermLabel ?? (
+                  : selectedTermLabel ?? selectedRelatedLabel ?? (
                       baseRow.contracts.some((contract) => contract.expiry === selectedObservation)
                         ? selectedObservation
                         : undefined

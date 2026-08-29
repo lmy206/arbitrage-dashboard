@@ -316,6 +316,36 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
     },
 ]
 
+
+RELATED_OBSERVATIONS: dict[str, list[dict[str, Any]]] = {
+    "玻璃纯碱比": [
+        {
+            "key": "glass-production-profit",
+            "pair": "玻璃生产利润",
+            "label": "玻璃生产利润",
+            "left": "FGJQ00.ZF",
+            "right": "SAJQ00.ZF",
+            "formula": glass_production_profit,
+            "kind": "spread",
+            "fixed_lots": (5, 1),
+            "formula_label": "FG − 0.2 × SA（未扣燃料与其他成本）",
+        }
+    ],
+    "焦炭焦煤比": [
+        {
+            "key": "coking-profit",
+            "pair": "焦化利润",
+            "label": "焦化利润",
+            "left": "jJQ00.DF",
+            "right": "jmJQ00.DF",
+            "formula": coking_profit,
+            "kind": "spread",
+            "fixed_lots": (6, 13),
+            "formula_label": "J − 1.3 × JM（未扣其他成本）",
+        }
+    ],
+}
+
 ADDITIONAL_EXTERNAL_PAIRS = {
     "ERP：沪深300",
     "ERP：标普500",
@@ -353,30 +383,12 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"pair": "玻璃纯碱比", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {
-        "pair": "玻璃生产利润",
-        "left": "FGJQ00.ZF",
-        "right": "SAJQ00.ZF",
-        "formula": glass_production_profit,
-        "kind": "spread",
-        "fixed_lots": (5, 1),
-        "formula_label": "FG − 0.2 × SA（未扣燃料与其他成本）",
-    },
-    {
         "pair": "焦炭焦煤比",
         "left": "jJQ00.DF",
         "right": "jmJQ00.DF",
         "formula": ratio,
         "kind": "ratio",
         "contract_months": {1, 5, 9},
-    },
-    {
-        "pair": "焦化利润",
-        "left": "jJQ00.DF",
-        "right": "jmJQ00.DF",
-        "formula": coking_profit,
-        "kind": "spread",
-        "fixed_lots": (6, 13),
-        "formula_label": "J − 1.3 × JM（未扣其他成本）",
     },
     {"pair": "油粕比", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio", "strategy_type": "趋势", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "豆油菜油比", "left": "yJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
@@ -2155,6 +2167,74 @@ def pair_source_status(definition: dict[str, Any], source_validation: dict[str, 
     return "待校验"
 
 
+def build_related_observations(
+    parent_definition: dict[str, Any],
+    histories: dict[str, pd.Series],
+    common_latest_date: pd.Timestamp,
+    source_validation: dict[str, Any],
+) -> list[dict[str, Any]]:
+    observations: list[dict[str, Any]] = []
+    for definition in RELATED_OBSERVATIONS.get(parent_definition["pair"], []):
+        left = definition["left"]
+        right = definition["right"]
+        aligned = pd.concat([histories[left], histories[right]], axis=1, join="inner").dropna()
+        aligned = aligned[aligned.index <= common_latest_date]
+        formula: Callable[[pd.Series, pd.Series], pd.Series] = definition["formula"]
+        values = formula(aligned[left], aligned[right]).replace(
+            [math.inf, -math.inf], pd.NA
+        ).dropna()
+        if len(values) < 2 or values.index[-1] != common_latest_date:
+            raise RuntimeError(f"{definition['pair']} 的加权共同交易日不足")
+
+        latest_date = values.index[-1]
+        current = float(values.iloc[-1])
+        previous = float(values.iloc[-2])
+        change = current - previous
+        five_year = values[values.index >= latest_date - pd.DateOffset(years=5)]
+        five_year_percentile = percentile(five_year)
+        lots, deviation, notional, margin = balance_metrics(
+            left,
+            right,
+            float(aligned.loc[latest_date, left]),
+            float(aligned.loc[latest_date, right]),
+            fixed_lots=definition.get("fixed_lots"),
+        )
+        observations.append(
+            {
+                "key": definition["key"],
+                "label": definition["label"],
+                "formulaLabel": definition["formula_label"],
+                "current": display_number(current, definition["kind"]),
+                "previous": display_number(previous, definition["kind"]),
+                "change": display_change(change, definition["kind"]),
+                "changeValue": round(change, 8),
+                "allTime": f"{percentile(values):.2f}%",
+                "allTimeRange": display_range(values, definition["kind"]),
+                "percentile": five_year_percentile,
+                "fiveYearRange": display_range(five_year, definition["kind"]),
+                "signal": signal_for(five_year_percentile),
+                "lots": lots,
+                "deviation": deviation,
+                "notional": notional,
+                "margin": margin,
+                "sourceStatus": pair_source_status(definition, source_validation),
+                "leftSymbol": left,
+                "rightSymbol": right,
+                "leftChangePct": latest_leg_change_pct(aligned[left], latest_date),
+                "rightChangePct": latest_leg_change_pct(aligned[right], latest_date),
+                "historyChart": build_observation_history_chart(
+                    definition,
+                    "加权",
+                    left,
+                    right,
+                    values,
+                    common_latest_date,
+                ),
+            }
+        )
+    return observations
+
+
 def build_spot_observation(
     definition: dict[str, Any],
     histories: dict[str, pd.Series],
@@ -3058,6 +3138,12 @@ def build_rows(
                     common_latest_date,
                     source_validation,
                 ),
+                "relatedObservations": build_related_observations(
+                    definition,
+                    histories,
+                    common_latest_date,
+                    source_validation,
+                ),
                 "contracts": build_contract_rows(
                     definition,
                     monthly_histories,
@@ -3215,6 +3301,26 @@ def write_outputs(
         )
         for chart in weighted_observation_history_charts
     )
+    related_observations = [
+        observation
+        for row in rows
+        for observation in row.get("relatedObservations", [])
+    ]
+    expected_related_observation_count = sum(
+        len(observations) for observations in RELATED_OBSERVATIONS.values()
+    )
+    related_observations_complete = (
+        len(related_observations) == expected_related_observation_count
+        and all(
+            observation["historyChart"] is not None
+            and observation["historyChart"]["title"].endswith("加权走势")
+            and observation["historyChart"]["endDate"] == data_date
+            and len(observation["historyChart"]["series"]) == 1
+            and observation["historyChart"]["series"][0]["expiry"] == "加权"
+            and len(observation["historyChart"]["series"][0]["points"]) >= 8
+            for observation in related_observations
+        )
+    )
     contract_history_charts = [
         contract.get("historyChart")
         for row in commodity_tradable_rows
@@ -3335,6 +3441,7 @@ def write_outputs(
         contract_rows_complete,
         contract_history_charts_complete,
         weighted_observation_histories_complete,
+        related_observations_complete,
         equity_index_contract_history_disabled,
         equity_index_observation_histories_complete,
         spot_reference_histories_complete,
@@ -3370,6 +3477,9 @@ def write_outputs(
         ),
         "expectedWeightedObservationHistoryCount": len(weighted_rows),
         "weightedObservationHistoriesComplete": weighted_observation_histories_complete,
+        "relatedObservationCount": len(related_observations),
+        "expectedRelatedObservationCount": expected_related_observation_count,
+        "relatedObservationsComplete": related_observations_complete,
         "equityIndexContractHistoryDisabled": equity_index_contract_history_disabled,
         "equityIndexObservationHistoryCount": sum(
             chart is not None for chart in equity_index_observation_history_charts

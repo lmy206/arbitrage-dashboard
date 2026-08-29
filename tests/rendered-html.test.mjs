@@ -76,13 +76,11 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.doesNotMatch(html, /聚乙烯-聚丙烯价差/);
   assert.match(html, /MTO盘面利润/);
   assert.match(html, /PTA盘面加工费/);
-  assert.match(html, /玻璃生产利润/);
-  assert.match(html, /焦化利润/);
-  assert.match(html, /title="jJQ00\.DF − 1\.3 × jmJQ00\.DF"/);
+  assert.doesNotMatch(html, /玻璃生产利润/);
+  assert.doesNotMatch(html, /焦化利润/);
   assert.match(html, /玻璃纯碱比/);
   assert.doesNotMatch(html, /纯碱玻璃比/);
   assert.match(html, /title="FGJQ00\.ZF \/ SAJQ00\.ZF"/);
-  assert.match(html, /title="FGJQ00\.ZF − 0\.2 × SAJQ00\.ZF"/);
   assert.doesNotMatch(html, /纯碱玻璃差/);
   assert.match(html, /title="lJQ00\.DF − ppJQ00\.DF"/);
   assert.match(html, /title="ppJQ00\.DF − 3 × MAJQ00\.ZF"/);
@@ -185,6 +183,10 @@ test("expanded contract lists omit the extra main-continuous observation", async
   assert.match(pageSource, /const favoriteStorageKey = "arbitrage-favorites-v1"/);
   assert.match(pageSource, /"玻璃纯碱比": "纯碱玻璃比"/);
   assert.match(pageSource, /"塑料-聚丙烯价差": "聚乙烯-聚丙烯价差"/);
+  assert.match(pageSource, /"玻璃纯碱比": \["纯碱玻璃比", "玻璃生产利润"\]/);
+  assert.match(pageSource, /"焦炭焦煤比": \["焦化利润"\]/);
+  assert.match(pageSource, /row\.relatedObservations\?\.find/);
+  assert.match(pageSource, /\.\.\.related/);
   assert.match(pageSource, /window\.localStorage\.getItem\(favoriteStorageKey\)/);
   assert.match(pageSource, /window\.localStorage\.setItem\(favoriteStorageKey, JSON\.stringify\(favoriteTimes\)\)/);
   assert.match(pageSource, /return bFavoriteTime - aFavoriteTime/);
@@ -238,13 +240,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 38);
+  assert.equal(payload.rows.length, 36);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油粕比", "金银比"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 29);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
@@ -441,12 +443,34 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(glassSoda.current, Number(glassSoda.current).toFixed(4));
   assert.equal(payload.rows.some((row) => row.pair === "纯碱玻璃比"), false);
 
+  const relatedObservations = new Map([
+    ["玻璃纯碱比", ["glass-production-profit", "玻璃生产利润", "FGJQ00.ZF", "SAJQ00.ZF", "FG − 0.2 × SA（未扣燃料与其他成本）", "5:1"]],
+    ["焦炭焦煤比", ["coking-profit", "焦化利润", "jJQ00.DF", "jmJQ00.DF", "J − 1.3 × JM（未扣其他成本）", "6:13"]],
+  ]);
+  for (const [parentPair, [key, label, leftSymbol, rightSymbol, formulaLabel, lots]] of relatedObservations) {
+    const parent = payload.rows.find((row) => row.pair === parentPair);
+    assert.ok(parent);
+    assert.equal(parent.relatedObservations.length, 1);
+    const observation = parent.relatedObservations[0];
+    assert.equal(observation.key, key);
+    assert.equal(observation.label, label);
+    assert.equal(observation.leftSymbol, leftSymbol);
+    assert.equal(observation.rightSymbol, rightSymbol);
+    assert.equal(observation.formulaLabel, formulaLabel);
+    assert.equal(observation.lots, lots);
+    assert.match(observation.current, /^-?\d+$/);
+    assert.ok(observation.historyChart);
+    assert.equal(observation.historyChart.title, `${label}加权走势`);
+    assert.equal(observation.historyChart.series[0].expiry, "加权");
+    assert.ok(observation.historyChart.series[0].points.length >= 300);
+  }
+  assert.equal(payload.rows.some((row) => row.pair === "玻璃生产利润"), false);
+  assert.equal(payload.rows.some((row) => row.pair === "焦化利润"), false);
+
   const replacementSpreads = new Map([
     ["塑料-聚丙烯价差", ["lJQ00.DF", "ppJQ00.DF", "塑料 − 聚丙烯", "1:1"]],
     ["MTO盘面利润", ["ppJQ00.DF", "MAJQ00.ZF", "聚丙烯 − 3 × 甲醇（未扣加工费等）", "2:3"]],
     ["PTA盘面加工费", ["TAJQ00.ZF", "PXJQ00.ZF", "PTA − 0.655 × PX（未扣其他成本）", "20:13"]],
-    ["玻璃生产利润", ["FGJQ00.ZF", "SAJQ00.ZF", "FG − 0.2 × SA（未扣燃料与其他成本）", "5:1"]],
-    ["焦化利润", ["jJQ00.DF", "jmJQ00.DF", "J − 1.3 × JM（未扣其他成本）", "6:13"]],
   ]);
   for (const [pair, [leftSymbol, rightSymbol, formulaLabel, expectedLots]] of replacementSpreads) {
     const row = payload.rows.find((item) => item.pair === pair);
