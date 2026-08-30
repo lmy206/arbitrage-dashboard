@@ -318,6 +318,19 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
 
 
 RELATED_OBSERVATIONS: dict[str, list[dict[str, Any]]] = {
+    "聚丙烯/甲醇比价": [
+        {
+            "key": "mto-screen-margin",
+            "pair": "MTO盘面利润",
+            "label": "MTO盘面利润",
+            "left": "ppJQ00.DF",
+            "right": "MAJQ00.ZF",
+            "formula": mto_screen_margin,
+            "kind": "spread",
+            "fixed_lots": (2, 3),
+            "formula_label": "聚丙烯 − 3 × 甲醇（未扣加工费等）",
+        }
+    ],
     "玻璃/纯碱比价": [
         {
             "key": "glass-production-profit",
@@ -412,15 +425,6 @@ PAIRS: list[dict[str, Any]] = [
         "formula": spread,
         "kind": "spread",
         "formula_label": "塑料 − 聚丙烯",
-    },
-    {
-        "pair": "MTO盘面利润",
-        "left": "ppJQ00.DF",
-        "right": "MAJQ00.ZF",
-        "formula": mto_screen_margin,
-        "kind": "spread",
-        "fixed_lots": (2, 3),
-        "formula_label": "聚丙烯 − 3 × 甲醇（未扣加工费等）",
     },
     {
         "pair": "聚丙烯/甲醇比价",

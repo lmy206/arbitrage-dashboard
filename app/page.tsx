@@ -191,6 +191,7 @@ const legacyPairNamesByCurrent: Record<string, string[]> = {
   "塑料-聚丙烯价差": ["聚乙烯-聚丙烯价差"],
 };
 const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
+  "聚丙烯/甲醇比价": ["MTO盘面利润"],
   "螺/矿比价": ["螺矿比"],
   "油/粕比价": ["油粕比"],
   "卷-螺价差": ["卷螺价差"],
@@ -246,9 +247,6 @@ function pairCodeFormula(
   leftSymbol = row.leftSymbol,
   rightSymbol = row.rightSymbol,
 ) {
-  if (row.pair === "MTO盘面利润") {
-    return `${leftSymbol} − 3 × ${rightSymbol}`;
-  }
   if (row.pair === "PTA盘面加工费") {
     return `${leftSymbol} − 0.655 × ${rightSymbol}`;
   }
@@ -258,7 +256,6 @@ function pairCodeFormula(
 
 const codeOnlyFormulaPairs = new Set([
   "塑料-聚丙烯价差",
-  "MTO盘面利润",
   "PTA盘面加工费",
 ]);
 
