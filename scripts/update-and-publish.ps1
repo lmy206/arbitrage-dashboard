@@ -159,10 +159,11 @@ function Assert-IntegrityReport {
     ($report.futureDataDetected -eq $false)
     ($report.hierarchySorted -eq $true)
     ($report.relatedObservationsComplete -eq $true)
+    ($report.fundingPressureOverlayComplete -eq $true)
     ($report.externalSourcesComplete -eq $true)
   )
   if ($checks -contains $false) {
-    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
+    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
   }
 
   if (-not (Test-Path -LiteralPath $outputPath)) {

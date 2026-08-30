@@ -2896,6 +2896,29 @@ def build_external_reference_row(
         "跨市场套利": "跨市场",
         "外盘参考": "外盘",
     }[pair_type]
+    if builder == "usd_funding_pressure":
+        sp500_window = external_histories[SP500_SYMBOL][
+            (external_histories[SP500_SYMBOL].index >= pd.Timestamp(chart["startDate"]))
+            & (external_histories[SP500_SYMBOL].index <= common_latest_date)
+        ].dropna()
+        if len(sp500_window) < 2:
+            raise ExternalDataError("美元银行融资压力代理 标普500叠加线数据不足")
+        sp500_chart_values = sample_chart_history(sp500_window)
+        chart["series"][0]["expiry"] = "美元融资压力（左轴）"
+        chart["overlaySeries"] = {
+            "label": "标普500指数（右轴）",
+            "symbol": SP500_SYMBOL,
+            "unit": "点位",
+            "points": [
+                {
+                    "date": timestamp.strftime("%Y-%m-%d"),
+                    "value": round(float(value), 4),
+                }
+                for timestamp, value in sp500_chart_values.items()
+            ],
+        }
+        chart["source"] = f"{source}；标普500指数：新浪美股指数"
+        chart["grain"] = f"{HYBRID_CHART_GRAIN} · 仅向后匹配已公布数据 · 标普500仅作右轴对照"
 
     percentage = definition["kind"] == "percentage"
     basis_points = definition["kind"] == "basis_points"
@@ -3366,9 +3389,18 @@ def write_outputs(
     spot_reference_histories_complete = all(
         chart is not None
         and len(chart["series"]) == 1
-        and chart["series"][0]["expiry"] in {"现货", "外盘"}
+        and chart["series"][0]["expiry"] in {"现货", "外盘", "美元融资压力（左轴）"}
         and len(chart["series"][0]["points"]) >= 8
         for chart in spot_reference_history_charts
+    )
+    funding_pressure_rows = [row for row in rows if row["pair"] == "美元银行融资压力代理"]
+    funding_pressure_overlay_complete = (
+        len(funding_pressure_rows) == 1
+        and funding_pressure_rows[0]["mainHistoryChart"] is not None
+        and funding_pressure_rows[0]["mainHistoryChart"]["series"][0]["expiry"] == "美元融资压力（左轴）"
+        and funding_pressure_rows[0]["mainHistoryChart"].get("overlaySeries", {}).get("symbol") == SP500_SYMBOL
+        and funding_pressure_rows[0]["mainHistoryChart"].get("overlaySeries", {}).get("unit") == "点位"
+        and len(funding_pressure_rows[0]["mainHistoryChart"].get("overlaySeries", {}).get("points", [])) >= 8
     )
     spot_observation_count = sum(row["spotObservation"] is not None for row in rows)
     term_structure_count = sum(
@@ -3452,6 +3484,7 @@ def write_outputs(
         equity_index_contract_history_disabled,
         equity_index_observation_histories_complete,
         spot_reference_histories_complete,
+        funding_pressure_overlay_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
         term_structure_count == expected_term_structure_count,
         im_term_history_complete,
@@ -3498,6 +3531,7 @@ def write_outputs(
         ),
         "expectedSpotReferenceHistoryCount": len(spot_reference_history_charts),
         "spotReferenceHistoriesComplete": spot_reference_histories_complete,
+        "fundingPressureOverlayComplete": funding_pressure_overlay_complete,
         "spotObservationCount": spot_observation_count,
         "expectedSpotObservationCount": len(SPOT_OBSERVATIONS),
         "termStructureCount": term_structure_count,

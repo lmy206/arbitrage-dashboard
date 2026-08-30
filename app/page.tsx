@@ -32,7 +32,7 @@ type ContractHistorySeries = {
 type ContractHistoryOverlaySeries = {
   label: string;
   symbol: string;
-  unit: "人民币/美元";
+  unit: "人民币/美元" | "点位";
   points: ContractHistoryPoint[];
 };
 
@@ -451,6 +451,14 @@ function formatContractHistoryValue(value: number, unit: ContractHistoryChartDat
   return formatChartNumber(value);
 }
 
+function formatOverlayValue(value: number, unit: ContractHistoryOverlaySeries["unit"]) {
+  return unit === "点位" ? value.toFixed(0) : value.toFixed(4);
+}
+
+function overlayTooltipLabel(label: string) {
+  return label.replace(/（右轴）$/, "");
+}
+
 function quantile(values: number[], percentile: number) {
   const sorted = [...values].sort((left, right) => left - right);
   if (sorted.length === 0) return 0;
@@ -663,7 +671,7 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
         ))}
         {overlayYTicks.map((tick) => (
           <text className="chart-axis-label overlay-axis-label" key={`overlay-${tick}`} x={width - inset.right + 10} y={overlayY(tick) + 3} textAnchor="start">
-            {tick.toFixed(4)}
+            {overlaySeries ? formatOverlayValue(tick, overlaySeries.unit) : ""}
           </text>
         ))}
         {thresholds.map((threshold) => (
@@ -715,7 +723,11 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
               <rect width={hoveredOverlayPoint ? 176 : 132} height={hoveredOverlayPoint ? 58 : 41} rx="5" />
               <text x="8" y="15">{hovered.series.expiry} · {hovered.point.date}</text>
               <text x="8" y="32">{formatContractHistoryValue(hovered.point.value, chart.unit)}</text>
-              {hoveredOverlayPoint && <text className="overlay-tooltip-value" x="8" y="49">汇率 {hoveredOverlayPoint.value.toFixed(4)}</text>}
+              {hoveredOverlayPoint && overlaySeries && (
+                <text className="overlay-tooltip-value" x="8" y="49">
+                  {overlayTooltipLabel(overlaySeries.label)} {formatOverlayValue(hoveredOverlayPoint.value, overlaySeries.unit)}
+                </text>
+              )}
             </g>
           </g>
         )}
