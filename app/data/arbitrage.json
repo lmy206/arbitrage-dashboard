@@ -232457,7 +232457,7 @@
     },
     {
       "strategyType": "趋势",
-      "pair": "油粕比",
+      "pair": "油/粕比价",
       "current": "2.7319",
       "previous": "2.6746",
       "change": "+0.0573",
@@ -232498,7 +232498,7 @@
         "contractCount": 4
       },
       "mainHistoryChart": {
-        "title": "油粕比加权走势",
+        "title": "油/粕比价加权走势",
         "unit": "比值",
         "month": "",
         "startDate": "2016-09-02",
@@ -234673,7 +234673,7 @@
           "rightVolume": 86443,
           "pairedVolume": 3475,
           "historyChart": {
-            "title": "油粕比历年9月合约",
+            "title": "油/粕比价历年9月合约",
             "unit": "比值",
             "month": "09",
             "startDate": "2016-08-28",
@@ -237470,7 +237470,7 @@
           "rightVolume": 1657224,
           "pairedVolume": 499122,
           "historyChart": {
-            "title": "油粕比历年1月合约",
+            "title": "油/粕比价历年1月合约",
             "unit": "比值",
             "month": "01",
             "startDate": "2016-08-28",
@@ -240191,7 +240191,7 @@
           "rightVolume": 366557,
           "pairedVolume": 106599,
           "historyChart": {
-            "title": "油粕比历年5月合约",
+            "title": "油/粕比价历年5月合约",
             "unit": "比值",
             "month": "05",
             "startDate": "2016-08-28",
@@ -279501,8 +279501,8 @@
     },
     {
       "id": "soy-oil-meal",
-      "pair": "油粕比",
-      "title": "油粕比走势",
+      "pair": "油/粕比价",
+      "title": "油/粕比价走势",
       "unit": "比值",
       "grain": "更早周频 · 最近20个交易日日线收盘 · MA基于日频",
       "source": "xtdata",

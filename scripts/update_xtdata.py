@@ -390,7 +390,7 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "ratio",
         "contract_months": {1, 5, 9},
     },
-    {"pair": "油粕比", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio", "strategy_type": "趋势", "contract_months": OILSEED_CONTRACT_MONTHS},
+    {"pair": "油/粕比价", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio", "strategy_type": "趋势", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "豆油菜油比", "left": "yJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {
         "pair": "螺矿比",
@@ -574,7 +574,7 @@ HISTORY_CHARTS: list[dict[str, Any]] = [
     {"id": "ic-if", "pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"id": "im-if", "pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"id": "rebar-ore", "pair": "螺矿比", "left": "rbJQ00.SF", "right": "iJQ00.DF", "formula": ratio, "kind": "ratio"},
-    {"id": "soy-oil-meal", "pair": "油粕比", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio"},
+    {"id": "soy-oil-meal", "pair": "油/粕比价", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"id": "copper-aluminum", "pair": "铜/铝比价", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
 ]
 
