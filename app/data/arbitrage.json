@@ -149626,7 +149626,7 @@
     },
     {
       "strategyType": "回归",
-      "pair": "螺矿比",
+      "pair": "螺/矿比价",
       "current": "4.3389",
       "previous": "4.3391",
       "change": "-0.0003",
@@ -149667,7 +149667,7 @@
         "contractCount": 4
       },
       "mainHistoryChart": {
-        "title": "螺矿比加权走势",
+        "title": "螺/矿比价加权走势",
         "unit": "比值",
         "month": "",
         "startDate": "2016-09-02",
@@ -151842,7 +151842,7 @@
           "rightVolume": 15591,
           "pairedVolume": 3346,
           "historyChart": {
-            "title": "螺矿比历年9月合约",
+            "title": "螺/矿比价历年9月合约",
             "unit": "比值",
             "month": "09",
             "startDate": "2016-08-28",
@@ -154631,7 +154631,7 @@
           "rightVolume": 232135,
           "pairedVolume": 232135,
           "historyChart": {
-            "title": "螺矿比历年1月合约",
+            "title": "螺/矿比价历年1月合约",
             "unit": "比值",
             "month": "01",
             "startDate": "2016-08-28",
@@ -157352,7 +157352,7 @@
           "rightVolume": 9820,
           "pairedVolume": 9820,
           "historyChart": {
-            "title": "螺矿比历年5月合约",
+            "title": "螺/矿比价历年5月合约",
             "unit": "比值",
             "month": "05",
             "startDate": "2016-08-28",
@@ -277588,8 +277588,8 @@
     },
     {
       "id": "rebar-ore",
-      "pair": "螺矿比",
-      "title": "螺矿比走势",
+      "pair": "螺/矿比价",
+      "title": "螺/矿比价走势",
       "unit": "比值",
       "grain": "更早周频 · 最近20个交易日日线收盘 · MA基于日频",
       "source": "xtdata",

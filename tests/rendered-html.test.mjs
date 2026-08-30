@@ -92,6 +92,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /铜\/铝比价/);
   assert.match(html, /金\/银比价/);
   assert.match(html, /油\/粕比价/);
+  assert.match(html, /螺\/矿比价/);
   assert.doesNotMatch(html, /螺卷差/);
   assert.match(html, /title="hcJQ00\.SF − rbJQ00\.SF"/);
   assert.match(html, /铜内外盘比价/);
@@ -132,7 +133,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.doesNotMatch(html, /IM-IC价差走势/);
   assert.doesNotMatch(html, /IC\/IF比价走势/);
   assert.doesNotMatch(html, /IM\/IF比价走势/);
-  assert.doesNotMatch(html, /螺矿比走势/);
+  assert.doesNotMatch(html, /螺\/矿比价走势/);
   assert.doesNotMatch(html, /油\/粕比价走势/);
   assert.doesNotMatch(html, /豆粕豆油比|豆油豆粕比/);
   assert.doesNotMatch(html, /铜\/铝比价走势/);
@@ -186,6 +187,7 @@ test("pinned risk and dollar-funding indicators stay first, followed by regressi
 test("expanded contract lists omit the extra main-continuous observation", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /const favoriteStorageKey = "arbitrage-favorites-v1"/);
+  assert.match(pageSource, /"螺\/矿比价": \["螺矿比"\]/);
   assert.match(pageSource, /"油\/粕比价": \["油粕比"\]/);
   assert.match(pageSource, /"卷-螺价差": \["卷螺价差"\]/);
   assert.match(pageSource, /"铜\/铝比价": \["铜铝比"\]/);
@@ -275,7 +277,7 @@ test("monthly contract details contain only current values and liquidity", async
     "蛋白质价差",
     "豆棕价差",
   ]);
-  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺矿比", "焦炭/焦煤比"]);
+  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺/矿比价", "焦炭/焦煤比"]);
 
   for (const row of payload.rows) {
     const isEquityIndex = [row.leftSymbol, row.rightSymbol].some((symbol) => /^(IC|IM|IF)00\.IF$/.test(symbol));
@@ -396,7 +398,7 @@ test("monthly contract details contain only current values and liquidity", async
     assert.ok(row.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))), `${pair} should only show 1/5/9 contracts`);
   }
 
-  const rebarOreRatio = payload.rows.find((row) => row.pair === "螺矿比");
+  const rebarOreRatio = payload.rows.find((row) => row.pair === "螺/矿比价");
   assert.ok(rebarOreRatio.contracts.length > 0 && rebarOreRatio.contracts.length <= 4);
   assert.ok(rebarOreRatio.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))));
 

@@ -181,6 +181,7 @@ const hasExternalSources = externalSources.length > 0;
 const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
 const favoriteStorageKey = "arbitrage-favorites-v1";
 const legacyPairNamesByCurrent: Record<string, string[]> = {
+  "螺/矿比价": ["螺矿比"],
   "油/粕比价": ["油粕比"],
   "卷-螺价差": ["卷螺价差"],
   "铜/铝比价": ["铜铝比"],
@@ -190,6 +191,7 @@ const legacyPairNamesByCurrent: Record<string, string[]> = {
   "塑料-聚丙烯价差": ["聚乙烯-聚丙烯价差"],
 };
 const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
+  "螺/矿比价": ["螺矿比"],
   "油/粕比价": ["油粕比"],
   "卷-螺价差": ["卷螺价差"],
   "铜/铝比价": ["铜铝比"],
