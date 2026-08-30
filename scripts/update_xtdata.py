@@ -318,7 +318,7 @@ LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
 
 
 RELATED_OBSERVATIONS: dict[str, list[dict[str, Any]]] = {
-    "玻璃/纯碱比": [
+    "玻璃/纯碱比价": [
         {
             "key": "glass-production-profit",
             "pair": "玻璃生产利润",
@@ -367,8 +367,8 @@ PAIRS: list[dict[str, Any]] = [
     },
     {"pair": "豆一豆二比", "left": "aJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
-    {"pair": "卷螺价差", "left": "hcJQ00.SF", "right": "rbJQ00.SF", "formula": spread, "kind": "spread"},
-    {"pair": "铜铝比", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
+    {"pair": "卷-螺价差", "left": "hcJQ00.SF", "right": "rbJQ00.SF", "formula": spread, "kind": "spread"},
+    {"pair": "铜/铝比价", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
     *[
         {
             **definition,
@@ -381,7 +381,7 @@ PAIRS: list[dict[str, Any]] = [
     ],
     {"pair": "棕榈油菜油比", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
-    {"pair": "玻璃/纯碱比", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
+    {"pair": "玻璃/纯碱比价", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {
         "pair": "焦炭/焦煤比",
         "left": "jJQ00.DF",
@@ -400,7 +400,7 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "ratio",
         "contract_months": {1, 5, 9},
     },
-    {"pair": "金银比", "left": "auJQ00.SF", "right": "agJQ00.SF", "formula": gold_silver, "kind": "gold_silver", "strategy_type": "趋势"},
+    {"pair": "金/银比价", "left": "auJQ00.SF", "right": "agJQ00.SF", "formula": gold_silver, "kind": "gold_silver", "strategy_type": "趋势"},
     {"pair": "燃料油/沥青比价", "left": "fuJQ00.SF", "right": "buJQ00.SF", "formula": ratio, "kind": "ratio"},
     {"pair": "20号胶/BR橡胶比价", "left": "nrJQ00.INE", "right": "brJQ00.SF", "formula": ratio, "kind": "ratio"},
     {"pair": "烧碱/玻璃比价", "left": "SHJQ00.ZF", "right": "FGJQ00.ZF", "formula": ratio, "kind": "ratio"},
@@ -575,7 +575,7 @@ HISTORY_CHARTS: list[dict[str, Any]] = [
     {"id": "im-if", "pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"id": "rebar-ore", "pair": "螺矿比", "left": "rbJQ00.SF", "right": "iJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"id": "soy-oil-meal", "pair": "油粕比", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio"},
-    {"id": "copper-aluminum", "pair": "铜铝比", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
+    {"id": "copper-aluminum", "pair": "铜/铝比价", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
 ]
 
 

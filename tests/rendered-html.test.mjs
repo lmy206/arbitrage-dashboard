@@ -80,7 +80,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /PTA盘面加工费/);
   assert.doesNotMatch(html, /玻璃生产利润/);
   assert.doesNotMatch(html, /焦化利润/);
-  assert.match(html, /玻璃\/纯碱比/);
+  assert.match(html, /玻璃\/纯碱比价/);
   assert.doesNotMatch(html, /纯碱玻璃比/);
   assert.match(html, /title="FGJQ00\.ZF \/ SAJQ00\.ZF"/);
   assert.doesNotMatch(html, /纯碱玻璃差/);
@@ -88,7 +88,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /title="ppJQ00\.DF − 3 × MAJQ00\.ZF"/);
   assert.match(html, /title="TAJQ00\.ZF − 0\.655 × PXJQ00\.ZF"/);
   assert.match(html, /猪肉\/玉米比价/);
-  assert.match(html, /卷螺价差/);
+  assert.match(html, /卷-螺价差/);
+  assert.match(html, /铜\/铝比价/);
+  assert.match(html, /金\/银比价/);
   assert.doesNotMatch(html, /螺卷差/);
   assert.match(html, /title="hcJQ00\.SF − rbJQ00\.SF"/);
   assert.match(html, /铜内外盘比价/);
@@ -132,7 +134,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.doesNotMatch(html, /螺矿比走势/);
   assert.doesNotMatch(html, /油粕比走势/);
   assert.doesNotMatch(html, /豆粕豆油比|豆油豆粕比/);
-  assert.doesNotMatch(html, /铜铝比走势/);
+  assert.doesNotMatch(html, /铜\/铝比价走势/);
   assert.match(html, /左腿结构/);
   assert.match(html, /右腿结构/);
   assert.match(html, /Contango|Back/);
@@ -183,10 +185,13 @@ test("pinned risk and dollar-funding indicators stay first, followed by regressi
 test("expanded contract lists omit the extra main-continuous observation", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /const favoriteStorageKey = "arbitrage-favorites-v1"/);
-  assert.match(pageSource, /"玻璃\/纯碱比": \["玻璃纯碱比", "纯碱玻璃比"\]/);
+  assert.match(pageSource, /"卷-螺价差": \["卷螺价差"\]/);
+  assert.match(pageSource, /"铜\/铝比价": \["铜铝比"\]/);
+  assert.match(pageSource, /"金\/银比价": \["金银比"\]/);
+  assert.match(pageSource, /"玻璃\/纯碱比价": \["玻璃\/纯碱比", "玻璃纯碱比", "纯碱玻璃比"\]/);
   assert.match(pageSource, /"焦炭\/焦煤比": \["焦炭焦煤比"\]/);
   assert.match(pageSource, /"塑料-聚丙烯价差": \["聚乙烯-聚丙烯价差"\]/);
-  assert.match(pageSource, /"玻璃\/纯碱比": \["玻璃纯碱比", "纯碱玻璃比", "玻璃生产利润"\]/);
+  assert.match(pageSource, /"玻璃\/纯碱比价": \["玻璃\/纯碱比", "玻璃纯碱比", "纯碱玻璃比", "玻璃生产利润"\]/);
   assert.match(pageSource, /"焦炭\/焦煤比": \["焦炭焦煤比", "焦化利润"\]/);
   assert.match(pageSource, /row\.relatedObservations\?\.find/);
   assert.match(pageSource, /\.\.\.related,\s*defaultObservation/);
@@ -246,7 +251,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.length, 37);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
-  assert.deepEqual(trendPairs, ["油粕比", "金银比"].sort());
+  assert.deepEqual(trendPairs, ["油粕比", "金/银比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
   assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
@@ -440,7 +445,7 @@ test("monthly contract details contain only current values and liquidity", async
 
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚乙烯比价"), false);
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚丙烯比价"), false);
-  const glassSoda = payload.rows.find((row) => row.pair === "玻璃/纯碱比");
+  const glassSoda = payload.rows.find((row) => row.pair === "玻璃/纯碱比价");
   assert.ok(glassSoda);
   assert.equal(glassSoda.leftSymbol, "FGJQ00.ZF");
   assert.equal(glassSoda.rightSymbol, "SAJQ00.ZF");
@@ -448,7 +453,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.some((row) => row.pair === "纯碱玻璃比"), false);
 
   const relatedObservations = new Map([
-    ["玻璃/纯碱比", ["glass-production-profit", "玻璃生产利润", "FGJQ00.ZF", "SAJQ00.ZF", "FG − 0.2 × SA（未扣燃料与其他成本）", "5:1"]],
+    ["玻璃/纯碱比价", ["glass-production-profit", "玻璃生产利润", "FGJQ00.ZF", "SAJQ00.ZF", "FG − 0.2 × SA（未扣燃料与其他成本）", "5:1"]],
     ["焦炭/焦煤比", ["coking-profit", "焦化利润", "jJQ00.DF", "jmJQ00.DF", "J − 1.3 × JM（未扣其他成本）", "6:13"]],
   ]);
   for (const [parentPair, [key, label, leftSymbol, rightSymbol, formulaLabel, lots]] of relatedObservations) {
