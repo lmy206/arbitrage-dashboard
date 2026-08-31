@@ -904,6 +904,17 @@ tbody th {
 
 .term-structure-cell { padding-inline: 5px; }
 
+.term-structure-group {
+  display: inline-flex;
+  gap: 3px;
+  justify-content: center;
+}
+
+.term-structure-group .term-structure-badge {
+  min-width: 43px;
+  padding-inline: 4px;
+}
+
 .favorite-cell { padding-inline: 4px; }
 
 .favorite-button {

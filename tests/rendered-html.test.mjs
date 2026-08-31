@@ -78,6 +78,8 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /聚丙烯\/甲醇比价/);
   assert.match(html, /title="ppJQ00\.DF \/ MAJQ00\.ZF"/);
   assert.match(html, /PTA盘面加工费/);
+  assert.match(html, /涤纶短纤生产利润价差/);
+  assert.match(html, /title="PF − 0\.86 × PTA − 0\.34 × MEG（未扣能源、人工等成本）"/);
   assert.doesNotMatch(html, /玻璃生产利润/);
   assert.doesNotMatch(html, /焦化利润/);
   assert.match(html, /玻璃\/纯碱比价/);
@@ -200,6 +202,8 @@ test("expanded contract lists omit the extra main-continuous observation", async
   assert.match(pageSource, /"焦炭\/焦煤比": \["焦炭焦煤比", "焦化利润"\]/);
   assert.match(pageSource, /row\.relatedObservations\?\.find/);
   assert.match(pageSource, /\.\.\.related,\s*defaultObservation/);
+  assert.match(pageSource, /baseRow\.thirdSymbol/);
+  assert.match(pageSource, /PTA \/ MEG 涨跌幅/);
   assert.match(pageSource, /window\.localStorage\.getItem\(favoriteStorageKey\)/);
   assert.match(pageSource, /window\.localStorage\.setItem\(favoriteStorageKey, JSON\.stringify\(favoriteTimes\)\)/);
   assert.match(pageSource, /return bFavoriteTime - aFavoriteTime/);
@@ -227,7 +231,8 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /historyChart: row\.mainHistoryChart/);
   assert.match(pageSource, /row\.termObservations\?\.length/);
   assert.match(pageSource, /hasTermObservations/);
-  assert.match(pageSource, /option\.term \? option\.rightSymbol/);
+  assert.match(pageSource, /option\.term/);
+  assert.match(pageSource, /option\.thirdSymbol/);
   assert.match(pageSource, /<ContractHistoryChart chart={option\.historyChart} formula={option\.detail} \/>/);
   assert.match(pageSource, /<ContractHistoryChart chart={standaloneHistoryChart} formula={baseRow\.formulaLabel} \/>/);
   assert.match(pageSource, /className="contract-history-formula">公式：{formula}/);
@@ -253,13 +258,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 36);
+  assert.equal(payload.rows.length, 37);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
@@ -302,9 +307,7 @@ test("monthly contract details contain only current values and liquidity", async
     }
     for (const contract of row.contracts) {
       assert.equal(contract.signal, expectedSignal(contract.percentile), `${row.pair} ${contract.expiry} signal band`);
-      assert.deepEqual(
-        Object.keys(contract).sort(),
-        [
+      const expectedContractKeys = [
           "allTime",
           "allTimeRange",
           "change",
@@ -328,9 +331,17 @@ test("monthly contract details contain only current values and liquidity", async
           "rightVolume",
           "signal",
           "sourceStatus",
-        ].sort(),
+      ];
+      if (row.thirdSymbol) {
+        expectedContractKeys.push("thirdSymbol", "thirdChangePct", "thirdVolume");
+      }
+      assert.deepEqual(Object.keys(contract).sort(), expectedContractKeys.sort());
+      assert.equal(
+        contract.pairedVolume,
+        row.thirdSymbol
+          ? Math.min(Math.floor(contract.leftVolume / 6), Math.floor(contract.rightVolume / 5), contract.thirdVolume)
+          : Math.min(contract.leftVolume, contract.rightVolume),
       );
-      assert.equal(contract.pairedVolume, Math.min(contract.leftVolume, contract.rightVolume));
       assert.ok(Number.isFinite(contract.leftChangePct), `${row.pair} ${contract.expiry} left-leg daily return`);
       assert.ok(Number.isFinite(contract.rightChangePct), `${row.pair} ${contract.expiry} right-leg daily return`);
       assert.ok(contract.percentile >= 0 && contract.percentile <= 100);
@@ -499,6 +510,32 @@ test("monthly contract details contain only current values and liquidity", async
     assert.ok(row.mainHistoryChart, `${pair} should include a weighted-index chart`);
   }
 
+  const stapleProfit = payload.rows.find((row) => row.pair === "涤纶短纤生产利润价差");
+  assert.ok(stapleProfit);
+  assert.equal(stapleProfit.leftSymbol, "PFJQ00.ZF");
+  assert.equal(stapleProfit.rightSymbol, "TAJQ00.ZF");
+  assert.equal(stapleProfit.thirdSymbol, "egJQ00.DF");
+  assert.equal(stapleProfit.formulaLabel, "PF − 0.86 × PTA − 0.34 × MEG（未扣能源、人工等成本）");
+  assert.equal(stapleProfit.lots, "6:5:1");
+  assert.equal(stapleProfit.deviation, "3.10%");
+  assert.equal(stapleProfit.contracts.length, 4);
+  assert.equal(stapleProfit.mainContinuousObservation, null);
+  assert.ok(stapleProfit.thirdStructure);
+  assert.equal(stapleProfit.mainHistoryChart.series[0].thirdSymbol, "egJQ00.DF");
+  assert.equal(stapleProfit.mainHistoryChart.series[0].formulaLabel, stapleProfit.formulaLabel);
+  assert.equal(stapleProfit.current, Math.round(stapleProfit.mainHistoryChart.series[0].points.at(-1).value).toString());
+  for (const contract of stapleProfit.contracts) {
+    assert.equal(contract.lots, "6:5:1");
+    assert.match(contract.leftSymbol, /^PF\d{3,4}\.ZF$/);
+    assert.match(contract.rightSymbol, /^TA\d{3,4}\.ZF$/);
+    assert.match(contract.thirdSymbol, /^eg\d{4}\.DF$/);
+    assert.ok(Number.isFinite(contract.thirdChangePct));
+    assert.ok(contract.thirdVolume > 0);
+    assert.ok(contract.pairedVolume > 0);
+    assert.ok(contract.historyChart);
+    assert.ok(contract.historyChart.series.every((series) => series.thirdSymbol && series.formulaLabel === stapleProfit.formulaLabel));
+  }
+
   for (const row of payload.rows.filter((item) => item.pairType === "期货套利")) {
     const isEquityIndex = [row.leftSymbol, row.rightSymbol].some((symbol) => /^(IC|IM|IF)00\.IF$/.test(symbol));
     if (isEquityIndex) {
@@ -511,9 +548,14 @@ test("monthly contract details contain only current values and liquidity", async
       assert.equal(row.mainHistoryChart.series[0].expiry, "加权");
       assert.match(row.leftSymbol, /JQ00\./);
       assert.match(row.rightSymbol, /JQ00\./);
-      assert.ok(row.mainContinuousObservation, `${row.pair} should retain a main-continuous observation`);
-      assert.doesNotMatch(row.mainContinuousObservation.leftSymbol, /JQ00\./);
-      assert.doesNotMatch(row.mainContinuousObservation.rightSymbol, /JQ00\./);
+      if (row.thirdSymbol) {
+        assert.match(row.thirdSymbol, /JQ00\./);
+        assert.equal(row.mainContinuousObservation, null);
+      } else {
+        assert.ok(row.mainContinuousObservation, `${row.pair} should retain a main-continuous observation`);
+        assert.doesNotMatch(row.mainContinuousObservation.leftSymbol, /JQ00\./);
+        assert.doesNotMatch(row.mainContinuousObservation.rightSymbol, /JQ00\./);
+      }
     }
   }
 
@@ -700,7 +742,9 @@ test("each tradable leg has a valid futures term-structure classification", asyn
       assert.equal(row.rightStructure, null);
       continue;
     }
-    for (const structure of [row.leftStructure, row.rightStructure]) {
+    const structures = [row.leftStructure, row.rightStructure];
+    if (row.thirdSymbol) structures.push(row.thirdStructure);
+    for (const structure of structures) {
       assert.ok(structure);
       assert.ok(["Contango", "Back"].includes(structure.state));
       assert.ok(structure.contractCount >= 2 && structure.contractCount <= 4);
@@ -715,7 +759,7 @@ test("xtdata-only integrity validation is internally consistent", async () => {
   const validation = payload.sourceValidation;
   assert.match(payload.source, /xtdata.*用户批准/);
   assert.equal(validation.mode, "xtdata_only");
-  assert.equal(validation.summary.total, 75);
+  assert.equal(validation.summary.total, 79);
   assert.equal(validation.checks.length, validation.summary.total);
   assert.equal(validation.summary.consistent, validation.summary.total);
   assert.equal(validation.summary.review, 0);

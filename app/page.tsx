@@ -26,6 +26,8 @@ type ContractHistorySeries = {
   expiry: string;
   leftSymbol: string;
   rightSymbol: string;
+  thirdSymbol?: string;
+  formulaLabel?: string;
   points: ContractHistoryPoint[];
 };
 
@@ -67,10 +69,13 @@ type ContractRow = {
   sourceStatus: SourceStatus;
   leftSymbol: string;
   rightSymbol: string;
+  thirdSymbol?: string;
   leftChangePct: number | null;
   rightChangePct: number | null;
+  thirdChangePct?: number | null;
   leftVolume: number;
   rightVolume: number;
+  thirdVolume?: number;
   pairedVolume: number;
   historyChart: ContractHistoryChartData | null;
 };
@@ -115,10 +120,13 @@ type ObservationOption = {
   signal: Signal;
   leftSymbol: string;
   rightSymbol: string;
+  thirdSymbol?: string;
   leftChangePct: number | null;
   rightChangePct: number | null;
+  thirdChangePct?: number | null;
   leftVolume: number | null;
   rightVolume: number | null;
+  thirdVolume?: number | null;
   pairedVolume: number | null;
   pinned: boolean;
   spot: boolean;
@@ -146,8 +154,10 @@ type PairRow = {
   margin: string;
   leftSymbol: string;
   rightSymbol: string;
+  thirdSymbol?: string;
   leftChangePct: number | null;
   rightChangePct: number | null;
+  thirdChangePct?: number | null;
   denominatorSymbol?: string;
   seriesMode: "weighted" | "main" | "spot" | "term" | "external";
   pairType: "期货套利" | "现货参考" | "期限套利" | "跨市场套利" | "外盘参考";
@@ -156,6 +166,7 @@ type PairRow = {
   sourceStatus: SourceStatus;
   leftStructure: TermStructure | null;
   rightStructure: TermStructure | null;
+  thirdStructure?: TermStructure | null;
   mainHistoryChart: ContractHistoryChartData | null;
   spotObservation: SpotObservation | null;
   mainContinuousObservation: MainContinuousObservation | null;
@@ -243,10 +254,14 @@ const pinnedPairOrder: Record<string, number> = {
 };
 
 function pairCodeFormula(
-  row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol">,
+  row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol" | "thirdSymbol">,
   leftSymbol = row.leftSymbol,
   rightSymbol = row.rightSymbol,
+  thirdSymbol = row.thirdSymbol,
 ) {
+  if (thirdSymbol) {
+    return `${leftSymbol} − 0.86 × ${rightSymbol} − 0.34 × ${thirdSymbol}`;
+  }
   if (row.pair === "PTA盘面加工费") {
     return `${leftSymbol} − 0.655 × ${rightSymbol}`;
   }
@@ -260,7 +275,7 @@ const codeOnlyFormulaPairs = new Set([
 ]);
 
 function pairHoverFormula(
-  row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol" | "formulaLabel">,
+  row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol" | "thirdSymbol" | "formulaLabel">,
 ) {
   if (row.formulaLabel && !codeOnlyFormulaPairs.has(row.pair)) {
     return row.formulaLabel;
@@ -309,8 +324,10 @@ function applyPrimaryObservation(row: PairRow, selection?: string): PairRow {
     sourceStatus: observation.sourceStatus,
     leftSymbol: observation.leftSymbol,
     rightSymbol: observation.rightSymbol,
+    thirdSymbol: observation.thirdSymbol,
     leftChangePct: observation.leftChangePct,
     rightChangePct: observation.rightChangePct,
+    thirdChangePct: observation.thirdChangePct,
     denominatorSymbol: "denominatorSymbol" in observation ? observation.denominatorSymbol : row.denominatorSymbol,
     formulaLabel: "formulaLabel" in observation ? observation.formulaLabel : row.formulaLabel,
   };
@@ -370,10 +387,13 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
     signal: row.signal,
     leftSymbol: row.leftSymbol,
     rightSymbol: row.rightSymbol,
+    thirdSymbol: row.thirdSymbol,
     leftChangePct: row.leftChangePct,
     rightChangePct: row.rightChangePct,
+    thirdChangePct: row.thirdChangePct,
     leftVolume: null,
     rightVolume: null,
+    thirdVolume: null,
     pairedVolume: null,
     pinned: true,
     spot: false,
@@ -406,16 +426,19 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
     ...row.contracts.map((contract) => ({
       key: contract.expiry,
       label: contract.expiry,
-      detail: pairCodeFormula(row, contract.leftSymbol, contract.rightSymbol),
+      detail: pairCodeFormula(row, contract.leftSymbol, contract.rightSymbol, contract.thirdSymbol),
       current: contract.current,
       percentile: contract.percentile,
       signal: contract.signal,
       leftSymbol: contract.leftSymbol,
       rightSymbol: contract.rightSymbol,
+      thirdSymbol: contract.thirdSymbol,
       leftChangePct: contract.leftChangePct,
       rightChangePct: contract.rightChangePct,
+      thirdChangePct: contract.thirdChangePct,
       leftVolume: contract.leftVolume,
       rightVolume: contract.rightVolume,
+      thirdVolume: contract.thirdVolume,
       pairedVolume: contract.pairedVolume,
       pinned: false,
       spot: false,
@@ -500,6 +523,8 @@ const contractRootNames: Record<string, string> = {
   MA: "甲醇",
   TA: "PTA",
   PX: "PX",
+  PF: "涤纶短纤",
+  EG: "乙二醇",
   IF: "沪深300",
   IC: "中证500",
   IM: "中证1000",
@@ -637,7 +662,11 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
       </header>
       <div className="contract-history-legend" aria-label="历年合约图例">
         {paths.map(({ series, style }) => (
-          <span key={series.expiry} title={`${series.leftSymbol} ${chart.unit === "比值" ? "/" : "−"} ${series.rightSymbol}`}>
+          <span key={series.expiry} title={series.formulaLabel ?? (
+            series.thirdSymbol
+              ? `${series.leftSymbol} − 0.86 × ${series.rightSymbol} − 0.34 × ${series.thirdSymbol}`
+              : `${series.leftSymbol} ${chart.unit === "比值" ? "/" : "−"} ${series.rightSymbol}`
+          )}>
             <i style={{ borderTopColor: style.color, borderTopStyle: style.dash ? "dashed" : "solid" }} aria-hidden="true" />
             {series.expiry}
           </span>
@@ -1048,6 +1077,7 @@ export default function Home() {
                 const isExpanded = expandedPairs.has(row.pair);
                 const hasContracts = baseRow.contracts.length > 0;
                 const hasTermObservations = (baseRow.termObservations?.length ?? 0) > 0;
+                const hasThreeLeg = Boolean(baseRow.thirdSymbol);
                 const hasObservationPanel = hasContracts || hasTermObservations;
                 const standaloneHistoryChart = ["现货参考", "跨市场套利", "外盘参考"].includes(baseRow.pairType)
                   ? baseRow.mainHistoryChart
@@ -1126,9 +1156,17 @@ export default function Home() {
                       </td>
                       <td className="term-structure-cell">
                         {row.rightStructure ? (
-                          <span className={`term-structure-badge ${row.rightStructure.state === "Contango" ? "contango" : "back"}`} title={termStructureTitle(baseRow.rightSymbol, row.rightStructure)}>
-                            <small>{contractRootLabel(baseRow.rightSymbol)}</small>
-                            <strong>{row.rightStructure.state}</strong>
+                          <span className={hasThreeLeg ? "term-structure-group" : undefined}>
+                            <span className={`term-structure-badge ${row.rightStructure.state === "Contango" ? "contango" : "back"}`} title={termStructureTitle(baseRow.rightSymbol, row.rightStructure)}>
+                              <small>{contractRootLabel(baseRow.rightSymbol)}</small>
+                              <strong>{row.rightStructure.state}</strong>
+                            </span>
+                            {baseRow.thirdSymbol && row.thirdStructure && (
+                              <span className={`term-structure-badge ${row.thirdStructure.state === "Contango" ? "contango" : "back"}`} title={termStructureTitle(baseRow.thirdSymbol, row.thirdStructure)}>
+                                <small>{contractRootLabel(baseRow.thirdSymbol)}</small>
+                                <strong>{row.thirdStructure.state}</strong>
+                              </span>
+                            )}
                           </span>
                         ) : <span className="muted">—</span>}
                       </td>
@@ -1154,8 +1192,8 @@ export default function Home() {
                               <span>当前值</span>
                               <span>{hasTermObservations ? "当月涨跌幅" : `${contractRootLabel(baseRow.leftSymbol)} 涨跌幅`}</span>
                               <span>{hasTermObservations ? "当月合约" : `${contractRootLabel(baseRow.contracts[0].leftSymbol)} 成交量`}</span>
-                              <span>{hasTermObservations ? "远季涨跌幅" : `${contractRootLabel(baseRow.rightSymbol)} 涨跌幅`}</span>
-                              <span>{hasTermObservations ? "远季合约" : `${contractRootLabel(baseRow.contracts[0].rightSymbol)} 成交量`}</span>
+                              <span>{hasTermObservations ? "远季涨跌幅" : hasThreeLeg ? "PTA / MEG 涨跌幅" : `${contractRootLabel(baseRow.rightSymbol)} 涨跌幅`}</span>
+                              <span>{hasTermObservations ? "远季合约" : hasThreeLeg ? "PTA / MEG 成交量" : `${contractRootLabel(baseRow.contracts[0].rightSymbol)} 成交量`}</span>
                               <span>{hasTermObservations ? "现货指数" : "可配对成交量 ↓"}</span>
                               <span>近5年分位</span>
                               <span>判断</span>
@@ -1192,8 +1230,18 @@ export default function Home() {
                                     <span className="tabular contract-current">{option.current}</span>
                                     <span className={`tabular change ${legChangeClass(option.leftChangePct)}`} title={`${option.leftSymbol} 最近一个交易日涨跌幅`}>{formatLegChange(option.leftChangePct)}</span>
                                     <span className="tabular" title={option.leftSymbol}>{option.term ? option.leftSymbol.replace(".IF", "") : formatVolume(option.leftVolume)}</span>
-                                    <span className={`tabular change ${legChangeClass(option.rightChangePct)}`} title={`${option.rightSymbol} 最近一个交易日涨跌幅`}>{formatLegChange(option.rightChangePct)}</span>
-                                    <span className="tabular" title={option.rightSymbol}>{option.term ? option.rightSymbol.replace(".IF", "") : formatVolume(option.rightVolume)}</span>
+                                    <span className={`tabular change ${legChangeClass(option.rightChangePct)}`} title={`${option.rightSymbol}${option.thirdSymbol ? ` / ${option.thirdSymbol}` : ""} 最近一个交易日涨跌幅`}>
+                                      {option.thirdSymbol
+                                        ? `${formatLegChange(option.rightChangePct)} / ${formatLegChange(option.thirdChangePct ?? null)}`
+                                        : formatLegChange(option.rightChangePct)}
+                                    </span>
+                                    <span className="tabular" title={`${option.rightSymbol}${option.thirdSymbol ? ` / ${option.thirdSymbol}` : ""}`}>
+                                      {option.term
+                                        ? option.rightSymbol.replace(".IF", "")
+                                        : option.thirdSymbol
+                                          ? `${formatVolume(option.rightVolume)} / ${formatVolume(option.thirdVolume ?? null)}`
+                                          : formatVolume(option.rightVolume)}
+                                    </span>
                                     <span className="tabular paired-volume">{option.term ? option.denominatorSymbol?.replace(".SH", "") : formatVolume(option.pairedVolume)}</span>
                                     <span className="tabular contract-percentile">{option.percentile.toFixed(option.percentile % 1 === 0 ? 1 : 2)}%</span>
                                     <span><i className={`signal contract-signal ${signalClass(option.signal)}`}>{option.signal}</i></span>

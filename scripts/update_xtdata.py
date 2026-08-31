@@ -110,6 +110,8 @@ CONTRACTS: dict[str, dict[str, float]] = {
     "MA00.ZF": {"multiplier": 10, "margin_rate": 0.10},
     "TA00.ZF": {"multiplier": 5, "margin_rate": 0.09},
     "PX00.ZF": {"multiplier": 5, "margin_rate": 0.10},
+    "PF00.ZF": {"multiplier": 5, "margin_rate": 0.07},
+    "eg00.DF": {"multiplier": 10, "margin_rate": 0.07},
     "lh00.DF": {"multiplier": 16, "margin_rate": 0.08},
     "c00.DF": {"multiplier": 10, "margin_rate": 0.07},
 }
@@ -137,10 +139,18 @@ def is_weighted_symbol(symbol: str) -> bool:
     return symbol.split(".", maxsplit=1)[0].endswith("JQ00")
 
 
+def definition_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
+    return tuple(
+        definition[key]
+        for key in ("left", "right", "third")
+        if definition.get(key)
+    )
+
+
 def is_equity_index_definition(definition: dict[str, Any]) -> bool:
     return any(
         symbol.endswith(".IF") or symbol in INDEXES
-        for symbol in (definition["left"], definition["right"])
+        for symbol in definition_symbols(definition)
     )
 
 
@@ -205,7 +215,7 @@ def market_category_for_definition(definition: dict[str, Any]) -> str:
         return "股指"
     roots = {
         symbol_product_root(symbol)
-        for symbol in (definition["left"], definition["right"])
+        for symbol in definition_symbols(definition)
     }
     if roots and roots <= AGRICULTURAL_PRODUCT_ROOTS:
         return "农产品"
@@ -274,6 +284,15 @@ def mto_screen_margin(polypropylene: pd.Series, methanol: pd.Series) -> pd.Serie
 def pta_processing_fee(pta: pd.Series, paraxylene: pd.Series) -> pd.Series:
     """PTA screen processing fee using the common 0.655 PX consumption factor."""
     return pta - 0.655 * paraxylene
+
+
+def polyester_staple_profit(
+    staple_fiber: pd.Series,
+    pta: pd.Series,
+    monoethylene_glycol: pd.Series,
+) -> pd.Series:
+    """Per-ton PF screen margin using the common 0.86 PTA and 0.34 MEG factors."""
+    return staple_fiber - 0.86 * pta - 0.34 * monoethylene_glycol
 
 
 def glass_production_profit(glass: pd.Series, soda_ash: pd.Series) -> pd.Series:
@@ -442,6 +461,18 @@ PAIRS: list[dict[str, Any]] = [
         "fixed_lots": (20, 13),
         "formula_label": "PTA − 0.655 × PX（未扣其他成本）",
     },
+    {
+        "pair": "涤纶短纤生产利润价差",
+        "left": "PFJQ00.ZF",
+        "right": "TAJQ00.ZF",
+        "third": "egJQ00.DF",
+        "formula": polyester_staple_profit,
+        "kind": "spread",
+        "right_factor": 0.86,
+        "third_factor": 0.34,
+        "fixed_lots_3": (6, 5, 1),
+        "formula_label": "PF − 0.86 × PTA − 0.34 × MEG（未扣能源、人工等成本）",
+    },
     {"pair": "猪肉/玉米比价", "left": "lhJQ00.DF", "right": "cJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "豆粕价差", "left": "mJQ00.DF", "right": "aJQ00.DF", "formula": spread, "kind": "spread", "contract_months": OILSEED_CONTRACT_MONTHS},
     {
@@ -570,7 +601,22 @@ def definition_xt_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
         "us_soy_oil_meal_ratio",
     }:
         return ()
-    return (definition["left"], definition["right"])
+    return definition_symbols(definition)
+
+
+def dashboard_common_latest_date(
+    histories: dict[str, pd.Series],
+    external_histories: dict[str, pd.Series],
+) -> pd.Timestamp:
+    required_symbols = {
+        symbol for definition in PAIRS for symbol in definition_xt_symbols(definition)
+    }
+    domestic_latest_date = min(histories[symbol].index.max() for symbol in required_symbols)
+    lme_latest_date = min(
+        external_histories[definition["lme_symbol"]].index.max()
+        for definition in LME_CROSS_MARKET_PAIRS
+    )
+    return pd.Timestamp(min(domestic_latest_date, lme_latest_date))
 
 
 HISTORY_CHARTS: list[dict[str, Any]] = [
@@ -945,12 +991,10 @@ def fetch_history() -> tuple[
         )
         for contract in preview_contracts:
             for historical_expiry in seasonal_expiries(contract["expiry"]):
-                archive_symbols.add(
-                    contract_symbol_for_expiry(definition["left"], historical_expiry)
-                )
-                archive_symbols.add(
-                    contract_symbol_for_expiry(definition["right"], historical_expiry)
-                )
+                for continuous_symbol in definition_symbols(definition):
+                    archive_symbols.add(
+                        contract_symbol_for_expiry(continuous_symbol, historical_expiry)
+                    )
 
     # IM期限套需要按历史时点选择具体的当月、下季与隔季合约。这里一次性补齐
     # IM上市以来的月度合约，选择规则在后续计算中只依赖已知交易日历，
@@ -1641,6 +1685,8 @@ def build_xtdata_only_validation(
                 "ss00.SF": "不锈钢",
                 "l00.DF": "聚乙烯",
                 "pp00.DF": "聚丙烯",
+                "PF00.ZF": "涤纶短纤",
+                "eg00.DF": "乙二醇",
                 "lh00.DF": "生猪",
                 "c00.DF": "玉米",
             }.get(base_symbol, base_symbol)
@@ -1821,6 +1867,43 @@ def balance_metrics(
     )
 
 
+def three_leg_balance_metrics(
+    definition: dict[str, Any],
+    left_price: float,
+    right_price: float,
+    third_price: float,
+) -> tuple[str, str, str, str]:
+    left_lots, right_lots, third_lots = definition.get("fixed_lots_3", (6, 5, 1))
+    left_contract = CONTRACTS[main_continuous_symbol(definition["left"])]
+    right_contract = CONTRACTS[main_continuous_symbol(definition["right"])]
+    third_contract = CONTRACTS[main_continuous_symbol(definition["third"])]
+    left_tonnes = left_contract["multiplier"] * left_lots
+    right_tonnes = right_contract["multiplier"] * right_lots
+    third_tonnes = third_contract["multiplier"] * third_lots
+    target_right = left_tonnes * float(definition["right_factor"])
+    target_third = left_tonnes * float(definition["third_factor"])
+    deviation = max(
+        abs(right_tonnes - target_right) / target_right,
+        abs(third_tonnes - target_third) / target_third,
+    ) * 100
+    notionals = (
+        left_price * left_contract["multiplier"] * left_lots,
+        right_price * right_contract["multiplier"] * right_lots,
+        third_price * third_contract["multiplier"] * third_lots,
+    )
+    margins = (
+        notionals[0] * left_contract["margin_rate"],
+        notionals[1] * right_contract["margin_rate"],
+        notionals[2] * third_contract["margin_rate"],
+    )
+    return (
+        f"{left_lots}:{right_lots}:{third_lots}",
+        f"{deviation:.2f}%",
+        f"{sum(notionals) / 10000:.0f}万",
+        f"{sum(margins) / 10000:.1f}万",
+    )
+
+
 def sample_chart_history(values: pd.Series) -> pd.Series:
     """Keep the latest trading days intact and compact older chart points weekly."""
     ordered = values.dropna().sort_index()
@@ -1839,23 +1922,33 @@ def build_contract_history_series(
     monthly_histories: dict[str, pd.DataFrame],
     common_latest_date: pd.Timestamp,
 ) -> list[dict[str, Any]]:
-    formula: Callable[[pd.Series, pd.Series], pd.Series] = definition["formula"]
+    formula: Callable[..., pd.Series] = definition["formula"]
+    third_continuous = definition.get("third")
     start_date = common_latest_date - pd.DateOffset(years=SEASONAL_CONTRACT_YEARS)
     series: list[dict[str, Any]] = []
 
     for historical_expiry in seasonal_expiries(expiry):
         left_symbol = contract_symbol_for_expiry(definition["left"], historical_expiry)
         right_symbol = contract_symbol_for_expiry(definition["right"], historical_expiry)
+        third_symbol = (
+            contract_symbol_for_expiry(third_continuous, historical_expiry)
+            if third_continuous
+            else None
+        )
         left_frame = monthly_histories.get(left_symbol)
         right_frame = monthly_histories.get(right_symbol)
-        if left_frame is None or right_frame is None:
+        third_frame = monthly_histories.get(third_symbol) if third_symbol else None
+        if left_frame is None or right_frame is None or (third_symbol and third_frame is None):
             continue
 
+        frames = [
+            left_frame["close"].rename("leftClose"),
+            right_frame["close"].rename("rightClose"),
+        ]
+        if third_frame is not None:
+            frames.append(third_frame["close"].rename("thirdClose"))
         aligned = pd.concat(
-            [
-                left_frame["close"].rename("leftClose"),
-                right_frame["close"].rename("rightClose"),
-            ],
+            frames,
             axis=1,
             join="inner",
         ).dropna()
@@ -1872,7 +1965,11 @@ def build_contract_history_series(
         aligned_span_days = (aligned.index.max() - aligned.index.min()).days
         if aligned_span_days > CONTRACT_HISTORY_MAX_SPAN_DAYS:
             continue
-        values = formula(aligned["leftClose"], aligned["rightClose"]).replace(
+        values = (
+            formula(aligned["leftClose"], aligned["rightClose"], aligned["thirdClose"])
+            if third_symbol
+            else formula(aligned["leftClose"], aligned["rightClose"])
+        ).replace(
             [math.inf, -math.inf], pd.NA
         ).dropna()
         if len(values) < 2:
@@ -1884,6 +1981,8 @@ def build_contract_history_series(
                 "expiry": historical_expiry,
                 "leftSymbol": left_symbol,
                 "rightSymbol": right_symbol,
+                "thirdSymbol": third_symbol,
+                "formulaLabel": definition.get("formula_label"),
                 "values": chart_values,
             }
         )
@@ -1923,6 +2022,8 @@ def build_contract_history_chart(
                 "expiry": item["expiry"],
                 "leftSymbol": item["leftSymbol"],
                 "rightSymbol": item["rightSymbol"],
+                **({"thirdSymbol": item["thirdSymbol"]} if item.get("thirdSymbol") else {}),
+                **({"formulaLabel": item["formulaLabel"]} if item.get("formulaLabel") else {}),
                 "points": [
                     {
                         "date": timestamp.strftime("%Y-%m-%d"),
@@ -1943,6 +2044,8 @@ def build_observation_history_chart(
     right_symbol: str,
     values: pd.Series,
     common_latest_date: pd.Timestamp,
+    third_symbol: str | None = None,
+    formula_label: str | None = None,
 ) -> dict[str, Any] | None:
     start_date = common_latest_date - pd.DateOffset(years=SEASONAL_CONTRACT_YEARS)
     window = values[
@@ -1964,6 +2067,8 @@ def build_observation_history_chart(
                 "expiry": label,
                 "leftSymbol": left_symbol,
                 "rightSymbol": right_symbol,
+                **({"thirdSymbol": third_symbol} if third_symbol else {}),
+                **({"formulaLabel": formula_label} if formula_label else {}),
                 "points": [
                     {
                         "date": timestamp.strftime("%Y-%m-%d"),
@@ -1987,16 +2092,30 @@ def build_contract_rows(
         return []
     left_months = monthly_contracts[main_continuous_symbol(definition["left"])]
     right_months = monthly_contracts[main_continuous_symbol(definition["right"])]
-    formula: Callable[[pd.Series, pd.Series], pd.Series] = definition["formula"]
+    third_continuous = definition.get("third")
+    third_months = (
+        monthly_contracts[main_continuous_symbol(third_continuous)]
+        if third_continuous
+        else None
+    )
+    formula: Callable[..., pd.Series] = definition["formula"]
     results: list[dict[str, Any]] = []
 
-    for expiry in sorted(set(left_months) & set(right_months)):
+    common_expiries = set(left_months) & set(right_months)
+    if third_months is not None:
+        common_expiries &= set(third_months)
+    for expiry in sorted(common_expiries):
         allowed_months = definition.get("contract_months")
         if allowed_months and int(expiry[-2:]) not in allowed_months:
             continue
         left_symbol = left_months[expiry]
         right_symbol = right_months[expiry]
-        if left_symbol not in monthly_histories or right_symbol not in monthly_histories:
+        third_symbol = third_months[expiry] if third_months is not None else None
+        if (
+            left_symbol not in monthly_histories
+            or right_symbol not in monthly_histories
+            or (third_symbol is not None and third_symbol not in monthly_histories)
+        ):
             continue
 
         left_frame = monthly_histories[left_symbol].rename(
@@ -2005,7 +2124,14 @@ def build_contract_rows(
         right_frame = monthly_histories[right_symbol].rename(
             columns={"close": "rightClose", "volume": "rightVolume"}
         )
-        aligned = pd.concat([left_frame, right_frame], axis=1, join="inner").dropna()
+        frames = [left_frame, right_frame]
+        if third_symbol is not None:
+            frames.append(
+                monthly_histories[third_symbol].rename(
+                    columns={"close": "thirdClose", "volume": "thirdVolume"}
+                )
+            )
+        aligned = pd.concat(frames, axis=1, join="inner").dropna()
         aligned = aligned[aligned.index <= common_latest_date]
         if aligned.empty or aligned.index[-1] != common_latest_date:
             continue
@@ -2013,10 +2139,27 @@ def build_contract_rows(
         latest = aligned.iloc[-1]
         left_volume = max(0, int(round(float(latest["leftVolume"]))))
         right_volume = max(0, int(round(float(latest["rightVolume"]))))
-        paired_volume = min(left_volume, right_volume)
+        third_volume = (
+            max(0, int(round(float(latest["thirdVolume"]))))
+            if third_symbol is not None
+            else None
+        )
+        if third_volume is not None:
+            left_lots, right_lots, third_lots = definition.get("fixed_lots_3", (6, 5, 1))
+            paired_volume = min(
+                left_volume // left_lots,
+                right_volume // right_lots,
+                third_volume // third_lots,
+            )
+        else:
+            paired_volume = min(left_volume, right_volume)
         if paired_volume <= 0:
             continue
-        current_series = formula(aligned["leftClose"], aligned["rightClose"]).replace(
+        current_series = (
+            formula(aligned["leftClose"], aligned["rightClose"], aligned["thirdClose"])
+            if third_symbol is not None
+            else formula(aligned["leftClose"], aligned["rightClose"])
+        ).replace(
             [math.inf, -math.inf], pd.NA
         ).dropna()
         if len(current_series) < 2:
@@ -2046,14 +2189,22 @@ def build_contract_rows(
         statistical_current = round(current, 6)
         all_time_percentile = round(float((statistical_series <= statistical_current).mean() * 100), 2)
         five_year_percentile = round(float((five_year <= statistical_current).mean() * 100), 2)
-        lots, deviation, notional, margin = balance_metrics(
-            definition["left"],
-            definition["right"],
-            float(aligned.loc[latest_date, "leftClose"]),
-            float(aligned.loc[latest_date, "rightClose"]),
-            force_one_to_one=definition["kind"] == "spread",
-            fixed_lots=definition.get("fixed_lots"),
-        )
+        if third_symbol is not None:
+            lots, deviation, notional, margin = three_leg_balance_metrics(
+                definition,
+                float(aligned.loc[latest_date, "leftClose"]),
+                float(aligned.loc[latest_date, "rightClose"]),
+                float(aligned.loc[latest_date, "thirdClose"]),
+            )
+        else:
+            lots, deviation, notional, margin = balance_metrics(
+                definition["left"],
+                definition["right"],
+                float(aligned.loc[latest_date, "leftClose"]),
+                float(aligned.loc[latest_date, "rightClose"]),
+                force_one_to_one=definition["kind"] == "spread",
+                fixed_lots=definition.get("fixed_lots"),
+            )
 
         results.append(
             {
@@ -2074,10 +2225,17 @@ def build_contract_rows(
                 "sourceStatus": "仅xtdata",
                 "leftSymbol": left_symbol,
                 "rightSymbol": right_symbol,
+                **({"thirdSymbol": third_symbol} if third_symbol else {}),
                 "leftChangePct": latest_leg_change_pct(aligned["leftClose"], latest_date),
                 "rightChangePct": latest_leg_change_pct(aligned["rightClose"], latest_date),
+                **(
+                    {"thirdChangePct": latest_leg_change_pct(aligned["thirdClose"], latest_date)}
+                    if third_symbol
+                    else {}
+                ),
                 "leftVolume": left_volume,
                 "rightVolume": right_volume,
+                **({"thirdVolume": third_volume} if third_volume is not None else {}),
                 "pairedVolume": paired_volume,
                 "historyChart": (
                     build_contract_history_chart(
@@ -2096,7 +2254,7 @@ def build_contract_rows(
     results.sort(
         key=lambda item: (
             -item["pairedVolume"],
-            -(item["leftVolume"] + item["rightVolume"]),
+            -(item["leftVolume"] + item["rightVolume"] + item.get("thirdVolume", 0)),
             item["expiry"],
         )
     )
@@ -2164,7 +2322,7 @@ def pair_source_status(definition: dict[str, Any], source_validation: dict[str, 
     }
     checks = [
         checks_by_symbol[symbol]
-        for symbol in (definition["left"], definition["right"])
+        for symbol in definition_symbols(definition)
         if symbol in checks_by_symbol
     ]
     if not checks:
@@ -2320,6 +2478,8 @@ def build_main_continuous_observation(
 ) -> dict[str, Any] | None:
     """Keep the 00 main-continuous pair available when the default uses JQ00."""
     if not definition.get("tradable", True):
+        return None
+    if definition.get("third"):
         return None
     if not any(is_weighted_symbol(symbol) for symbol in (definition["left"], definition["right"])):
         return None
@@ -3010,10 +3170,10 @@ def build_rows(
 ) -> tuple[list[dict[str, Any]], str]:
     rows: list[dict[str, Any]] = []
     latest_dates: list[pd.Timestamp] = []
-    required_symbols = {
-        symbol for definition in PAIRS for symbol in definition_xt_symbols(definition)
-    }
-    common_latest_date = min(histories[symbol].index.max() for symbol in required_symbols)
+    # The dashboard uses one auditable data date across every row. During the
+    # Asian session, domestic quotes can advance before LME's same-day close is
+    # available, so anchor generation to the latest common domestic/LME date.
+    common_latest_date = dashboard_common_latest_date(histories, external_histories)
     required_futures_symbols = {
         symbol
         for definition in PAIRS
@@ -3078,10 +3238,16 @@ def build_rows(
 
         left = definition["left"]
         right = definition["right"]
-        aligned = pd.concat([histories[left], histories[right]], axis=1, join="inner").dropna()
+        third = definition.get("third")
+        symbols = definition_symbols(definition)
+        aligned = pd.concat([histories[symbol] for symbol in symbols], axis=1, join="inner").dropna()
         aligned = aligned[aligned.index <= common_latest_date]
-        formula: Callable[[pd.Series, pd.Series], pd.Series] = definition["formula"]
-        values = formula(aligned[left], aligned[right]).replace([math.inf, -math.inf], pd.NA).dropna()
+        formula: Callable[..., pd.Series] = definition["formula"]
+        values = (
+            formula(aligned[left], aligned[right], aligned[third])
+            if third
+            else formula(aligned[left], aligned[right])
+        ).replace([math.inf, -math.inf], pd.NA).dropna()
         if len(values) < 2:
             raise RuntimeError(f"{definition['pair']} 的有效共同交易日不足")
 
@@ -3096,16 +3262,25 @@ def build_rows(
         five_year_percentile = percentile(five_year)
         left_price = float(aligned.loc[latest_date, left])
         right_price = float(aligned.loc[latest_date, right])
+        third_price = float(aligned.loc[latest_date, third]) if third else None
         tradable = definition.get("tradable", True)
         if tradable:
-            lots, deviation, notional, margin = balance_metrics(
-                left,
-                right,
-                left_price,
-                right_price,
-                force_one_to_one=definition["kind"] == "spread",
-                fixed_lots=definition.get("fixed_lots"),
-            )
+            if third and third_price is not None:
+                lots, deviation, notional, margin = three_leg_balance_metrics(
+                    definition,
+                    left_price,
+                    right_price,
+                    third_price,
+                )
+            else:
+                lots, deviation, notional, margin = balance_metrics(
+                    left,
+                    right,
+                    left_price,
+                    right_price,
+                    force_one_to_one=definition["kind"] == "spread",
+                    fixed_lots=definition.get("fixed_lots"),
+                )
         else:
             lots = deviation = notional = margin = "—"
 
@@ -3128,34 +3303,43 @@ def build_rows(
                 "margin": margin,
                 "leftSymbol": left,
                 "rightSymbol": right,
+                **({"thirdSymbol": third} if third else {}),
                 "formulaLabel": definition.get("formula_label"),
                 "leftChangePct": latest_leg_change_pct(aligned[left], latest_date),
                 "rightChangePct": latest_leg_change_pct(aligned[right], latest_date),
+                **(
+                    {"thirdChangePct": latest_leg_change_pct(aligned[third], latest_date)}
+                    if third
+                    else {}
+                ),
                 "seriesMode": (
                     "weighted"
-                    if any(is_weighted_symbol(symbol) for symbol in (left, right))
+                    if any(is_weighted_symbol(symbol) for symbol in symbols)
                     else ("main" if tradable else "spot")
                 ),
                 "pairType": "期货套利" if tradable else "现货参考",
                 "sourceStatus": pair_source_status(definition, source_validation),
                 "leftStructure": term_structures.get(left) if tradable else None,
                 "rightStructure": term_structures.get(right) if tradable else None,
+                **({"thirdStructure": term_structures.get(third)} if third and tradable else {}),
                 "mainHistoryChart": (
                     build_observation_history_chart(
                         definition,
                         (
                             "加权"
-                            if any(is_weighted_symbol(symbol) for symbol in (left, right))
+                            if any(is_weighted_symbol(symbol) for symbol in symbols)
                             else ("主连" if tradable else "现货")
                         ),
                         left,
                         right,
                         values,
                         common_latest_date,
+                        third,
+                        definition.get("formula_label"),
                     )
                     if (
                         is_equity_index_definition(definition)
-                        or any(is_weighted_symbol(symbol) for symbol in (left, right))
+                        or any(is_weighted_symbol(symbol) for symbol in symbols)
                         or not tradable
                     )
                     else None
@@ -3410,9 +3594,13 @@ def write_outputs(
     term_structure_count = sum(
         row[side] is not None
         for row in tradable_rows
-        for side in ("leftStructure", "rightStructure")
+        for side in ("leftStructure", "rightStructure", "thirdStructure")
+        if side in row
     )
-    expected_term_structure_count = len(tradable_rows) * 2
+    expected_term_structure_count = sum(
+        len(definition_symbols(definitions_by_pair[row["pair"]]))
+        for row in tradable_rows
+    )
     im_term_rows = [row for row in rows if row["pairType"] == "期限套利"]
     im_term_observations = (
         im_term_rows[0].get("termObservations", []) if im_term_rows else []
@@ -3622,11 +3810,8 @@ def record_failure(error: Exception) -> None:
 def main() -> int:
     try:
         histories, monthly_histories, monthly_contracts, trading_calendar, port = fetch_history()
-        required_symbols = {
-            symbol for definition in PAIRS for symbol in definition_xt_symbols(definition)
-        }
-        common_latest_date = min(histories[symbol].index.max() for symbol in required_symbols)
         external_histories, external_sources, external_errors = fetch_external_market_history()
+        common_latest_date = dashboard_common_latest_date(histories, external_histories)
         xtdata_only = os.environ.get("ARBITRAGE_XTDATA_ONLY", "1").strip() != "0"
         if xtdata_only:
             akshare_errors: list[str] = []
