@@ -27,6 +27,15 @@ if (-not (Test-Path -LiteralPath $publisherGit)) {
   }
 }
 
+$sourceNodeModules = Join-Path $sourceRoot "node_modules"
+$publisherNodeModules = Join-Path $PublisherRoot "node_modules"
+if (-not (Test-Path -LiteralPath $sourceNodeModules)) {
+  throw "主项目缺少 node_modules，请先在 $sourceRoot 运行 npm install"
+}
+if (-not (Test-Path -LiteralPath $publisherNodeModules)) {
+  New-Item -ItemType Junction -Path $publisherNodeModules -Target $sourceNodeModules | Out-Null
+}
+
 $launcherPath = Join-Path $PublisherRoot "scripts\run-update-and-publish-hidden.vbs"
 if (-not (Test-Path -LiteralPath $launcherPath)) {
   throw "找不到隐藏启动器：$launcherPath"

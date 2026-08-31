@@ -972,6 +972,7 @@ test("scheduled publishing isolates development work and rejects stale domestic 
   assert.match(installer, /D:\\arbitrage-dashboard-publisher/);
   assert.match(installer, /automation\/publisher/);
   assert.match(installer, /worktree add/);
+  assert.match(installer, /New-Item -ItemType Junction -Path \$publisherNodeModules -Target \$sourceNodeModules/);
   assert.match(publisher, /domesticFreshnessComplete/);
   assert.match(publisher, /externalRowDatesComplete/);
   assert.match(publisher, /Get-NormalizedJsonHash/);
