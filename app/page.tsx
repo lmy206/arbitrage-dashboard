@@ -164,6 +164,9 @@ type PairRow = {
   denominatorSymbol?: string;
   seriesMode: "weighted" | "main" | "spot" | "term" | "external";
   pairType: "期货套利" | "现货参考" | "期限套利" | "跨市场套利" | "外盘参考";
+  externalSourceDate?: string;
+  externalSourceDates?: Record<string, string>;
+  externalSourceMaxLagDays?: number;
   formulaLabel?: string;
   rollRule?: string;
   sourceStatus: SourceStatus;
@@ -956,7 +959,7 @@ export default function Home() {
   }
 
   return (
-    <main className="dashboard-shell">
+    <main className="dashboard-shell" data-snapshot-updated-at={dashboardData.updatedAt}>
       <section className="dashboard" aria-labelledby="dashboard-title">
         <header className="dashboard-header">
           <div>
@@ -974,7 +977,7 @@ export default function Home() {
             <span className="status-dot" aria-hidden="true" />
             <div>
               <strong>{manualUpdateAvailable ? (manualUpdateStatus === "updating" ? "正在更新…" : "立即更新数据") : "云端数据快照"}</strong>
-              <span>{manualUpdateAvailable ? (manualUpdateMessage || `${dashboardData.dataDate} · 每日 20:00`) : `数据截止 ${dashboardData.dataDate}`}</span>
+              <span>{manualUpdateAvailable ? (manualUpdateMessage || `国内数据 ${dashboardData.dataDate} · 每日 20:00`) : `国内数据截止 ${dashboardData.dataDate}`}</span>
             </div>
             <span className="update-action" aria-hidden="true">{manualUpdateAvailable ? "↻" : "●"}</span>
           </button>
@@ -1123,7 +1126,14 @@ export default function Home() {
                           ) : (
                             <span className="reference-mark" title="现货指数参考，不对应可交易期货组合">参考</span>
                           )}
-                          <span>{row.pair}{selectedLabel ? `（${selectedLabel}）` : ""}</span>
+                          <span className="pair-name-stack">
+                            <span>{row.pair}{selectedLabel ? `（${selectedLabel}）` : ""}</span>
+                            {row.externalSourceDate && row.externalSourceDate < dashboardData.dataDate && (
+                              <small className="external-source-date" title={`外部数据实际来源日：${row.externalSourceDate}`}>
+                                外部截至 {row.externalSourceDate.slice(5)}
+                              </small>
+                            )}
+                          </span>
                         </div>
                       </th>
                       <td className="tabular current-value">{row.current}</td>
@@ -1293,7 +1303,7 @@ export default function Home() {
 
         <footer className="dashboard-footer">
           <span>口径：国内商品默认 JQ00 持仓量加权，股指及铜铝锌内外盘国内腿使用 00 主连；风险溢价、美元银行融资压力代理、海外指数和马盘比价使用已批准外部源，跨日只向后匹配已公布数据。</span>
-          <span>数据日：{dashboardData.dataDate} · 更新时间：每日 20:00</span>
+          <span>国内数据日：{dashboardData.dataDate} · 更新时间：每日 20:00</span>
         </footer>
       </section>
 

@@ -9,7 +9,7 @@ import os
 import re
 import sqlite3
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
@@ -43,6 +43,7 @@ MONTHLY_LOOKBACK_DAYS = 1100
 SEASONAL_CONTRACT_YEARS = 10
 CONTRACT_HISTORY_MAX_SPAN_DAYS = 400
 RECENT_DAILY_TRADING_DAYS = 20
+FUTURE_XTDATA_ROWS_DISCARDED = 0
 HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘"
 IM_TERM_START_DATE = pd.Timestamp("2022-07-22")
 IM_TERM_SPOT_SYMBOL = "000852.SH"
@@ -604,19 +605,26 @@ def definition_xt_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
     return definition_symbols(definition)
 
 
-def dashboard_common_latest_date(
-    histories: dict[str, pd.Series],
-    external_histories: dict[str, pd.Series],
-) -> pd.Timestamp:
+def dashboard_domestic_latest_date(histories: dict[str, pd.Series]) -> pd.Timestamp:
     required_symbols = {
         symbol for definition in PAIRS for symbol in definition_xt_symbols(definition)
     }
-    domestic_latest_date = min(histories[symbol].index.max() for symbol in required_symbols)
-    lme_latest_date = min(
-        external_histories[definition["lme_symbol"]].index.max()
-        for definition in LME_CROSS_MARKET_PAIRS
-    )
-    return pd.Timestamp(min(domestic_latest_date, lme_latest_date))
+    return pd.Timestamp(min(histories[symbol].index.max() for symbol in required_symbols))
+
+
+def expected_domestic_data_date(
+    trading_calendar: pd.DatetimeIndex,
+    now: datetime,
+) -> pd.Timestamp:
+    calendar = pd.DatetimeIndex(trading_calendar).normalize().sort_values()
+    today = pd.Timestamp(now.date())
+    if now.time() < time(20, 0) and today in calendar:
+        calendar = calendar[calendar < today]
+    else:
+        calendar = calendar[calendar <= today]
+    if len(calendar) == 0:
+        raise RuntimeError("国内交易日历没有可用日期")
+    return pd.Timestamp(calendar[-1])
 
 
 HISTORY_CHARTS: list[dict[str, Any]] = [
@@ -660,6 +668,7 @@ def connect_xtdata():
 
 
 def normalize_market_frame(frame: pd.DataFrame, include_volume: bool = False) -> pd.DataFrame:
+    global FUTURE_XTDATA_ROWS_DISCARDED
     if frame.empty or "close" not in frame.columns:
         return pd.DataFrame(columns=["close", "volume"] if include_volume else ["close"])
 
@@ -681,6 +690,9 @@ def normalize_market_frame(frame: pd.DataFrame, include_volume: bool = False) ->
     result = result.dropna(subset=["date", "close"])
     result = result[result["close"] > 0]
     result["date"] = result["date"].dt.normalize()
+    latest_allowed_date = pd.Timestamp(datetime.now(SHANGHAI).date())
+    FUTURE_XTDATA_ROWS_DISCARDED += int((result["date"] > latest_allowed_date).sum())
+    result = result[result["date"] <= latest_allowed_date]
     result = result.drop_duplicates(subset=["date"], keep="last").set_index("date").sort_index()
     return result[["close", "volume"]] if include_volume else result[["close"]]
 
@@ -2778,6 +2790,23 @@ def build_im_term_row(
     )
 
 
+def latest_source_date_on_or_before(
+    series: pd.Series,
+    anchor_date: pd.Timestamp,
+    max_lag_days: int,
+) -> pd.Timestamp:
+    available = series[series.index <= anchor_date].dropna().sort_index()
+    if available.empty:
+        raise ExternalDataError(f"外部数据在 {anchor_date:%Y-%m-%d} 前没有可用值")
+    source_date = pd.Timestamp(available.index[-1])
+    lag_days = int((anchor_date.normalize() - source_date.normalize()).days)
+    if lag_days > max_lag_days:
+        raise ExternalDataError(
+            f"外部数据截至 {source_date:%Y-%m-%d}，相对 {anchor_date:%Y-%m-%d} 滞后 {lag_days} 天，超过允许的 {max_lag_days} 天"
+        )
+    return source_date
+
+
 def build_lme_cross_market_row(
     definition: dict[str, Any],
     histories: dict[str, pd.Series],
@@ -2789,10 +2818,18 @@ def build_lme_cross_market_row(
     domestic_symbol = definition["left"]
     lme_symbol = definition["lme_symbol"]
     lme_key = lme_symbol
+    domestic = histories[domestic_symbol][
+        histories[domestic_symbol].index <= common_latest_date
+    ].dropna().sort_index()
+    lme_aligned = align_external_asof(
+        domestic.index,
+        external_histories[lme_key],
+        5,
+    )
     aligned = pd.concat(
         [
-            histories[domestic_symbol].rename("domestic"),
-            external_histories[lme_key].rename("lme"),
+            domestic.rename("domestic"),
+            lme_aligned.rename("lme"),
         ],
         axis=1,
         join="inner",
@@ -2808,6 +2845,11 @@ def build_lme_cross_market_row(
         )
 
     latest_date = pd.Timestamp(values.index[-1])
+    external_source_date = latest_source_date_on_or_before(
+        external_histories[lme_key],
+        latest_date,
+        5,
+    )
     current = float(values.iloc[-1])
     previous = float(values.iloc[-2])
     change = current - previous
@@ -2837,7 +2879,7 @@ def build_lme_cross_market_row(
         {
             "title": f"{definition['pair']}走势",
             "source": "国内：xtdata 00主力连续；外盘：AKShare/新浪 LME三个月电子盘；汇率：AKShare/国家外汇管理局",
-            "grain": f"{HYBRID_CHART_GRAIN} · 比价不做汇率换算 · 汇率仅作右轴参考",
+            "grain": f"{HYBRID_CHART_GRAIN} · 外盘截至{external_source_date:%Y-%m-%d} · 比价不做汇率换算 · 汇率仅作右轴参考",
             "overlaySeries": {
                 "label": "美元兑人民币中间价（右轴）",
                 "symbol": USD_CNY_MID_SYMBOL,
@@ -2884,7 +2926,8 @@ def build_lme_cross_market_row(
             "spotObservation": None,
             "mainContinuousObservation": None,
             "contracts": [],
-            "externalSourceDate": latest_date.strftime("%Y-%m-%d"),
+            "externalSourceDate": external_source_date.strftime("%Y-%m-%d"),
+            "externalSourceMaxLagDays": 5,
             "domesticPrice": round(float(latest_row["domestic"]), 6),
             "lmePriceUsdPerTonne": round(float(latest_row["lme"]), 6),
         },
@@ -2924,14 +2967,14 @@ def build_external_reference_row(
     common_latest_date: pd.Timestamp,
 ) -> tuple[dict[str, Any], pd.Timestamp]:
     builder = definition["custom_builder"]
-    external_anchor = pd.DatetimeIndex([common_latest_date])
     pair_type = "现货参考"
     label = "外部"
     unit = "比值"
+    source_date_specs: list[tuple[str, pd.Series, int]] = []
 
     if builder == "cn_equity_risk_premium":
         pe = external_histories[CSI300_PE_SYMBOL]
-        anchor = pe.index.union(external_anchor)
+        anchor = pe.index
         pe_aligned = align_external_asof(anchor, pe, 5)
         yield_aligned = align_external_asof(anchor, external_histories[CN10Y_SYMBOL], 7)
         aligned = pd.concat(
@@ -2943,9 +2986,13 @@ def build_external_reference_row(
         formula_label = "100 / 沪深300滚动市盈率 − 中国10年期国债收益率"
         source = "中证指数有限公司滚动市盈率；中国债券信息网10年期国债收益率"
         unit = "百分比"
+        source_date_specs = [
+            (CSI300_PE_SYMBOL, pe, 5),
+            (CN10Y_SYMBOL, external_histories[CN10Y_SYMBOL], 7),
+        ]
     elif builder == "us_equity_risk_premium":
         us10y = external_histories[US10Y_SYMBOL]
-        anchor = us10y.index.union(external_anchor)
+        anchor = us10y.index
         pe_aligned = align_external_asof(anchor, external_histories[SP500_PE_SYMBOL], 45)
         yield_aligned = align_external_asof(anchor, us10y, 7)
         aligned = pd.concat(
@@ -2957,9 +3004,13 @@ def build_external_reference_row(
         formula_label = "100 / 标普500市盈率 − 美国10年期国债收益率"
         source = "Multpl标普500月度市盈率；东方财富美国10年期国债收益率"
         unit = "百分比"
+        source_date_specs = [
+            (SP500_PE_SYMBOL, external_histories[SP500_PE_SYMBOL], 45),
+            (US10Y_SYMBOL, us10y, 7),
+        ]
     elif builder == "usd_funding_pressure":
         obfr = external_histories[OBFR_SYMBOL]
-        anchor = obfr.index.union(external_anchor)
+        anchor = obfr.index
         obfr_aligned = align_external_asof(anchor, obfr, 7)
         reserve_rate_aligned = align_external_asof(
             anchor,
@@ -2979,9 +3030,13 @@ def build_external_reference_row(
         unit = "基点"
         pair_type = "外盘参考"
         label = "外盘"
+        source_date_specs = [
+            (OBFR_SYMBOL, obfr, 7),
+            (RESERVE_ADMINISTERED_RATE_SYMBOL, external_histories[RESERVE_ADMINISTERED_RATE_SYMBOL], 7),
+        ]
     elif builder == "external_ratio":
         sp500 = external_histories[SP500_SYMBOL]
-        anchor = sp500.index.union(external_anchor)
+        anchor = sp500.index
         left_aligned = align_external_asof(anchor, external_histories[NASDAQ_SYMBOL], 7)
         right_aligned = align_external_asof(anchor, sp500, 7)
         aligned = pd.concat(
@@ -2992,10 +3047,15 @@ def build_external_reference_row(
         values = aligned["left"] / aligned["right"]
         formula_label = "纳斯达克综合指数 / 标普500指数"
         source = "新浪美股指数"
+        source_date_specs = [
+            (NASDAQ_SYMBOL, external_histories[NASDAQ_SYMBOL], 7),
+            (SP500_SYMBOL, sp500, 7),
+        ]
     elif builder == "malaysia_palm_us_soy_oil_ratio":
         soy_oil = external_histories[US_SOYBEAN_OIL_SYMBOL]
-        anchor = soy_oil.index.union(external_anchor)
-        palm_aligned = align_external_asof(anchor, external_histories[FCPO_SYMBOL], 7)
+        palm = external_histories[FCPO_SYMBOL]
+        anchor = palm.index
+        palm_aligned = align_external_asof(anchor, palm, 7)
         soy_oil_aligned = align_external_asof(anchor, soy_oil, 7)
         aligned = pd.concat(
             [
@@ -3011,9 +3071,13 @@ def build_external_reference_row(
         formula_label = "马盘棕榈油报价（马币/公吨）÷ 美盘豆油报价（美分/磅）"
         source = "马盘FCPO与CBOT美豆油：新浪外盘期货（AKShare）；直接使用两市场原始报价相除，不做单位或汇率换算"
         pair_type = "跨市场套利"
+        source_date_specs = [
+            (FCPO_SYMBOL, palm, 7),
+            (US_SOYBEAN_OIL_SYMBOL, soy_oil, 7),
+        ]
     elif builder == "us_soy_oil_meal_ratio":
         meal = external_histories[US_SOYBEAN_MEAL_SYMBOL]
-        anchor = meal.index.union(external_anchor)
+        anchor = meal.index
         oil_aligned = align_external_asof(
             anchor,
             external_histories[US_SOYBEAN_OIL_SYMBOL],
@@ -3032,18 +3096,27 @@ def build_external_reference_row(
         source = "CBOT美豆油与美豆粕：新浪外盘期货（AKShare）；报价统一换算为美元/短吨"
         pair_type = "外盘参考"
         label = "外盘"
+        source_date_specs = [
+            (US_SOYBEAN_OIL_SYMBOL, external_histories[US_SOYBEAN_OIL_SYMBOL], 7),
+            (US_SOYBEAN_MEAL_SYMBOL, meal, 7),
+        ]
     else:
         raise RuntimeError(f"未知外部组合构建器: {builder}")
 
     values = values.replace([math.inf, -math.inf], pd.NA).dropna().sort_index()
     values = values[values.index <= common_latest_date]
-    if len(values) < 2 or pd.Timestamp(values.index[-1]) != common_latest_date:
-        latest = values.index[-1].strftime("%Y-%m-%d") if len(values) else "无"
-        raise ExternalDataError(
-            f"{definition['pair']} 未覆盖国内数据日 {common_latest_date:%Y-%m-%d}，最新={latest}"
-        )
+    if len(values) < 2:
+        raise ExternalDataError(f"{definition['pair']} 的外部历史数据不足")
 
     latest_date = pd.Timestamp(values.index[-1])
+    source_dates = {
+        symbol: latest_source_date_on_or_before(series, latest_date, max_lag_days)
+        for symbol, series, max_lag_days in source_date_specs
+    }
+    external_source_date = min(source_dates.values())
+    external_source_max_lag_days = max(
+        max_lag_days for _, _, max_lag_days in source_date_specs
+    )
     current = float(values.iloc[-1])
     previous = float(values.iloc[-2])
     change = current - previous
@@ -3055,7 +3128,7 @@ def build_external_reference_row(
         definition["left"],
         definition["right"],
         values,
-        common_latest_date,
+        latest_date,
     )
     if chart is None:
         raise ExternalDataError(f"{definition['pair']} 历史折线图数据不足")
@@ -3064,7 +3137,7 @@ def build_external_reference_row(
             "title": f"{definition['pair']}走势",
             "unit": unit,
             "source": source,
-            "grain": f"{HYBRID_CHART_GRAIN} · 仅向后匹配已公布数据",
+            "grain": f"{HYBRID_CHART_GRAIN} · 外部数据截至{external_source_date:%Y-%m-%d} · 仅向后匹配已公布数据",
         }
     )
     if builder == "cn_equity_risk_premium":
@@ -3080,7 +3153,7 @@ def build_external_reference_row(
     if builder == "usd_funding_pressure":
         sp500_window = external_histories[SP500_SYMBOL][
             (external_histories[SP500_SYMBOL].index >= pd.Timestamp(chart["startDate"]))
-            & (external_histories[SP500_SYMBOL].index <= common_latest_date)
+            & (external_histories[SP500_SYMBOL].index <= latest_date)
         ].dropna()
         if len(sp500_window) < 2:
             raise ExternalDataError("美元银行融资压力代理 标普500叠加线数据不足")
@@ -3099,7 +3172,7 @@ def build_external_reference_row(
             ],
         }
         chart["source"] = f"{source}；标普500指数：新浪美股指数"
-        chart["grain"] = f"{HYBRID_CHART_GRAIN} · 仅向后匹配已公布数据 · 标普500仅作右轴对照"
+        chart["grain"] = f"{HYBRID_CHART_GRAIN} · 外部数据截至{external_source_date:%Y-%m-%d} · 仅向后匹配已公布数据 · 标普500仅作右轴对照"
 
     percentage = definition["kind"] == "percentage"
     basis_points = definition["kind"] == "basis_points"
@@ -3170,7 +3243,12 @@ def build_external_reference_row(
             "spotObservation": None,
             "mainContinuousObservation": None,
             "contracts": [],
-            "externalSourceDate": latest_date.strftime("%Y-%m-%d"),
+            "externalSourceDate": external_source_date.strftime("%Y-%m-%d"),
+            "externalSourceDates": {
+                symbol: source_date.strftime("%Y-%m-%d")
+                for symbol, source_date in source_dates.items()
+            },
+            "externalSourceMaxLagDays": external_source_max_lag_days,
             **extra_fields,
         },
         latest_date,
@@ -3186,11 +3264,11 @@ def build_rows(
     source_validation: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], str]:
     rows: list[dict[str, Any]] = []
-    latest_dates: list[pd.Timestamp] = []
-    # The dashboard uses one auditable data date across every row. During the
-    # Asian session, domestic quotes can advance before LME's same-day close is
-    # available, so anchor generation to the latest common domestic/LME date.
-    common_latest_date = dashboard_common_latest_date(histories, external_histories)
+    domestic_row_dates: list[pd.Timestamp] = []
+    # The dashboard's headline date follows the latest complete domestic
+    # xtdata session. External rows keep their own source dates and may only
+    # use already-published values at or before this domestic anchor.
+    common_latest_date = dashboard_domestic_latest_date(histories)
     required_futures_symbols = {
         symbol
         for definition in PAIRS
@@ -3219,7 +3297,7 @@ def build_rows(
                 source_validation,
             )
             rows.append(row)
-            latest_dates.append(latest_date)
+            domestic_row_dates.append(latest_date)
             continue
 
         if definition.get("custom_builder") == "lme_cross_market":
@@ -3232,7 +3310,7 @@ def build_rows(
                 term_structures.get(definition["left"]),
             )
             rows.append(row)
-            latest_dates.append(latest_date)
+            domestic_row_dates.append(latest_date)
             continue
 
         if definition.get("custom_builder") in {
@@ -3250,7 +3328,6 @@ def build_rows(
                 common_latest_date,
             )
             rows.append(row)
-            latest_dates.append(latest_date)
             continue
 
         left = definition["left"]
@@ -3272,7 +3349,7 @@ def build_rows(
         previous = float(values.iloc[-2])
         change = current - previous
         latest_date = values.index[-1]
-        latest_dates.append(latest_date)
+        domestic_row_dates.append(latest_date)
         five_year_start = latest_date - pd.DateOffset(years=5)
         five_year = values[values.index >= five_year_start]
         all_time_percentile = percentile(values)
@@ -3392,10 +3469,15 @@ def build_rows(
     for row in rows:
         row["marketCategory"] = market_category_for_definition(definitions_by_pair[row["pair"]])
     rows.sort(key=dashboard_row_sort_key)
-    unique_latest_dates = sorted({value.strftime("%Y-%m-%d") for value in latest_dates})
-    if len(unique_latest_dates) != 1:
-        raise RuntimeError(f"套利组合最新交易日不一致: {', '.join(unique_latest_dates)}")
-    data_date = unique_latest_dates[0]
+    unique_domestic_dates = sorted(
+        {value.strftime("%Y-%m-%d") for value in domestic_row_dates}
+    )
+    expected_domestic_date = common_latest_date.strftime("%Y-%m-%d")
+    if unique_domestic_dates != [expected_domestic_date]:
+        raise RuntimeError(
+            f"国内套利组合最新交易日不一致: {', '.join(unique_domestic_dates)}；预期={expected_domestic_date}"
+        )
+    data_date = expected_domestic_date
     return rows, data_date
 
 
@@ -3464,6 +3546,8 @@ def write_outputs(
     rows: list[dict[str, Any]],
     charts: list[dict[str, Any]],
     data_date: str,
+    trading_calendar: pd.DatetimeIndex,
+    future_data_detected: bool,
     port: int,
     source_validation: dict[str, Any],
     akshare_errors: list[str],
@@ -3478,7 +3562,7 @@ def write_outputs(
         "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
         "sourceValidation": source_validation,
         "externalSources": external_sources,
-        "externalSourcePolicy": "铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元银行融资压力代理使用纽约联储OBFR减美联储理事会准备金管理利率并换算为基点，2021-07-29起使用IORB、此前使用IOER，只作为银行广义无担保隔夜融资相对准备金管理利率的压力代理；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
+        "externalSourcePolicy": "看板主数据日使用国内xtdata最新完整交易日；外盘与外部指标保留各自实际来源日期，不阻塞国内数据更新。铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元银行融资压力代理使用纽约联储OBFR减美联储理事会准备金管理利率并换算为基点，2021-07-29起使用IORB、此前使用IOER，只作为银行广义无担保隔夜融资相对准备金管理利率的压力代理；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
         "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",
@@ -3491,6 +3575,8 @@ def write_outputs(
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     latest = pd.Timestamp(data_date).date()
     lag_days = (now.date() - latest).days
+    expected_domestic_date = expected_domestic_data_date(trading_calendar, now)
+    domestic_freshness_complete = pd.Timestamp(data_date) == expected_domestic_date
     tradable_rows = [row for row in rows if row["pairType"] == "期货套利"]
     definitions_by_pair = {definition["pair"]: definition for definition in PAIRS}
     contract_rows_complete = all(
@@ -3681,9 +3767,17 @@ def write_outputs(
         and all(
             row["mainHistoryChart"] is not None
             and row["sourceStatus"] == "外部补充"
-            and row["externalSourceDate"] == data_date
+            and pd.Timestamp(row["externalSourceDate"]) <= pd.Timestamp(data_date)
             for row in cross_market_rows
         )
+    )
+    external_rows = [row for row in rows if row["seriesMode"] == "external"]
+    external_row_dates_complete = all(
+        row.get("externalSourceDate")
+        and pd.Timestamp(row["externalSourceDate"]) <= pd.Timestamp(data_date)
+        and row.get("mainHistoryChart") is not None
+        and pd.Timestamp(row["mainHistoryChart"]["endDate"]) <= pd.Timestamp(data_date)
+        for row in external_rows
     )
     expected_external_symbols = {
         *(definition["lme_symbol"] for definition in LME_CROSS_MARKET_PAIRS),
@@ -3713,6 +3807,8 @@ def write_outputs(
         row["pair"] for row in sorted(rows, key=dashboard_row_sort_key)
     ]
     integrity_checks = [
+        not future_data_detected,
+        domestic_freshness_complete,
         lag_days <= 4,
         len(rows) == len(PAIRS),
         contract_rows_complete,
@@ -3729,6 +3825,7 @@ def write_outputs(
         im_term_history_complete,
         charts_complete,
         cross_market_rows_complete,
+        external_row_dates_complete,
         external_sources_complete,
         hierarchy_sorted,
     ]
@@ -3736,6 +3833,9 @@ def write_outputs(
         "status": "ok" if all(integrity_checks) else "warning",
         "checkedAt": now.isoformat(timespec="seconds"),
         "dataDate": data_date,
+        "domesticDataDate": data_date,
+        "expectedDomesticDataDate": expected_domestic_date.strftime("%Y-%m-%d"),
+        "domesticFreshnessComplete": domestic_freshness_complete,
         "calendarLagDays": lag_days,
         "pairCount": len(rows),
         "expectedPairCount": len(PAIRS),
@@ -3799,12 +3899,14 @@ def write_outputs(
         "crossMarketPairCount": len(cross_market_rows),
         "expectedCrossMarketPairCount": expected_cross_market_count,
         "crossMarketRowsComplete": cross_market_rows_complete,
+        "externalRowDatesComplete": external_row_dates_complete,
         "externalSources": external_sources,
         "externalSourcesComplete": external_sources_complete,
         "externalErrors": external_errors,
         "sourceValidation": source_validation["summary"],
         "akshareErrors": [] if xtdata_only else akshare_errors,
-        "futureDataDetected": latest > now.date(),
+        "futureDataDetected": future_data_detected,
+        "futureXtdataRowsDiscarded": FUTURE_XTDATA_ROWS_DISCARDED,
         "xtdataPort": port,
         "output": str(OUTPUT_PATH),
     }
@@ -3859,18 +3961,28 @@ def main() -> int:
     try:
         histories, monthly_histories, monthly_contracts, trading_calendar, port = fetch_history()
         external_histories, external_sources, external_errors = fetch_external_market_history()
-        common_latest_date = dashboard_common_latest_date(histories, external_histories)
+        latest_allowed_date = pd.Timestamp(datetime.now(SHANGHAI).date())
+        future_data_detected = any(
+            pd.Timestamp(series.index.max()) > latest_allowed_date
+            for series in [
+                *histories.values(),
+                *(frame["close"] for frame in monthly_histories.values() if not frame.empty),
+                *external_histories.values(),
+            ]
+            if not series.empty
+        )
+        domestic_latest_date = dashboard_domestic_latest_date(histories)
         xtdata_only = os.environ.get("ARBITRAGE_XTDATA_ONLY", "1").strip() != "0"
         if xtdata_only:
             akshare_errors: list[str] = []
-            source_validation = build_xtdata_only_validation(histories, common_latest_date)
+            source_validation = build_xtdata_only_validation(histories, domestic_latest_date)
         else:
             ak_histories, ak_states, akshare_errors = fetch_akshare_history()
             source_validation = build_source_validation(
                 histories,
                 ak_histories,
                 ak_states,
-                common_latest_date,
+                domestic_latest_date,
                 monthly_histories,
                 monthly_contracts,
             )
@@ -3887,6 +3999,8 @@ def main() -> int:
             rows,
             charts,
             data_date,
+            trading_calendar,
+            future_data_detected,
             port,
             source_validation,
             akshare_errors,

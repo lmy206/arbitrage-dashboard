@@ -61,6 +61,10 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /<title>套利监测看板<\/title>/i);
   assert.match(html, /立即更新数据/);
   assert.match(html, /立即使用xtdata更新看板数据/);
+  assert.match(html, /国内数据 \d{4}-\d{2}-\d{2}/);
+  assert.match(html, /data-snapshot-updated-at="\d{4}-\d{2}-\d{2}T/);
+  assert.match(html, /class="external-source-date"/);
+  assert.match(html, /title="外部数据实际来源日：\d{4}-\d{2}-\d{2}"/);
   assert.match(html, /IM-IC价差/);
   assert.match(html, /IM期限套/);
   assert.match(html, /title="\(IM当月 − IM下季\) × 12 \/ 月差 \/ 中证1000"/);
@@ -792,7 +796,8 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assert.equal(row.rightSymbol, externalSymbol);
     assert.equal(row.sourceStatus, "外部补充");
     assert.equal(row.contracts.length, 0);
-    assert.equal(row.externalSourceDate, payload.dataDate);
+    assert.ok(row.externalSourceDate <= payload.dataDate);
+    assert.equal(row.externalSourceMaxLagDays, 5);
     assert.ok(row.domesticPrice > 0);
     assert.ok(row.lmePriceUsdPerTonne > 0);
     assert.equal(row.usdCnyMid, undefined);
@@ -801,6 +806,7 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assert.equal(row.formulaLabel, `${domesticSymbol} / ${lmeSymbol}.LME`);
     assert.ok(row.mainHistoryChart);
     assert.match(row.mainHistoryChart.source, /xtdata 00主力连续.*AKShare\/新浪 LME三个月电子盘/);
+    assert.match(row.mainHistoryChart.grain, new RegExp(`外盘截至${row.externalSourceDate}`));
     assert.equal(row.mainHistoryChart.overlaySeries.label, "美元兑人民币中间价（右轴）");
     assert.equal(row.mainHistoryChart.overlaySeries.symbol, "USDCNY_MID.SAFE");
     assert.match(row.mainHistoryChart.grain, /^更早周频 · 最近20个交易日日线收盘/);
@@ -815,7 +821,8 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
   assert.equal(payload.externalSources.length, 15);
   assert.ok(payload.externalSources.every((source) => source.endDate <= new Date().toISOString().slice(0, 10)));
   assert.ok(payload.externalSources.every((source) => ["live", "cache"].includes(source.status)));
-  assert.match(payload.externalSourcePolicy, /国内主连÷LME三个月电子盘且不换汇.*风险溢价.*OBFR.*IORB.*IOER.*马盘棕榈油.*美盘油粕比/);
+  assert.ok(payload.rows.filter((row) => row.seriesMode === "external").some((row) => row.externalSourceDate < payload.dataDate));
+  assert.match(payload.externalSourcePolicy, /主数据日使用国内xtdata最新完整交易日.*外盘与外部指标保留各自实际来源日期.*国内主连÷LME三个月电子盘且不换汇.*风险溢价.*OBFR.*IORB.*IOER.*马盘棕榈油.*美盘油粕比/);
 });
 
 test("approved external risk premiums, dollar funding pressure, and cross-market ratios are auditable", async () => {
@@ -833,7 +840,9 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
     assert.equal(row.sourceStatus, "外部补充");
     assert.equal(row.contracts.length, 0);
     assert.ok(row.mainHistoryChart);
-    assert.equal(row.mainHistoryChart.endDate, payload.dataDate);
+    assert.ok(row.externalSourceDate <= payload.dataDate);
+    assert.equal(row.mainHistoryChart.endDate, row.externalSourceDate);
+    assert.match(row.mainHistoryChart.grain, new RegExp(`外部数据截至${row.externalSourceDate}`));
     assert.match(row.mainHistoryChart.grain, /^更早周频 · 最近20个交易日日线收盘/);
     assert.ok(row.mainHistoryChart.series[0].points.length >= 300);
     assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
@@ -953,4 +962,25 @@ test("the six selected chart datasets are present in the requested order", async
     assert.match(chart.leftSymbol, /JQ00\./);
     assert.match(chart.rightSymbol, /JQ00\./);
   }
+});
+
+test("scheduled publishing isolates development work and rejects stale domestic data", async () => {
+  const publisher = await readFile(new URL("../scripts/update-and-publish.ps1", import.meta.url), "utf8");
+  const installer = await readFile(new URL("../scripts/install-update-and-publish-task.ps1", import.meta.url), "utf8");
+  const updater = await readFile(new URL("../scripts/update_xtdata.py", import.meta.url), "utf8");
+
+  assert.match(installer, /D:\\arbitrage-dashboard-publisher/);
+  assert.match(installer, /automation\/publisher/);
+  assert.match(installer, /worktree add/);
+  assert.match(publisher, /domesticFreshnessComplete/);
+  assert.match(publisher, /externalRowDatesComplete/);
+  assert.match(publisher, /Get-NormalizedJsonHash/);
+  assert.match(publisher, /Show-DashboardNotification/);
+  assert.match(publisher, /restore.*app\/data\/arbitrage\.json/s);
+  assert.match(publisher, /HEAD:main/);
+  assert.match(updater, /dashboard_domestic_latest_date/);
+  assert.match(updater, /expected_domestic_data_date/);
+  assert.match(updater, /FUTURE_XTDATA_ROWS_DISCARDED/);
+  assert.match(updater, /future_data_detected/);
+  assert.doesNotMatch(updater, /dashboard_common_latest_date/);
 });

@@ -10,14 +10,15 @@
 2. xtdata 数据写入 `E:\data\market\futures_daily` 和 `E:\data\market\index_daily`。
 3. 脚本更新 `catalog.sqlite`、`manifest.jsonl` 和完整性报告。
 4. 37 组主表指标、3 个展开利润观察口径及常规期货组合成交量最大的 4 个共同合约月写入 `app/data/arbitrage.json`，网站从该文件渲染。
-5. Windows 计划任务在周一至周五 20:10 检查新交易日数据；校验和静态页面测试通过后，只提交 `app/data/arbitrage.json` 并推送 `main`。节假日因数据日不变而自动跳过。
+5. 看板主日期取国内 xtdata 最新完整交易日；外盘和外部指标保留各自实际来源日，允许在最大滞后范围内向后匹配，不再因 LME 尚未收盘而回退全部国内行。
+6. Windows 计划任务在周一至周五 20:10 从 `D:\arbitrage-dashboard-publisher` 独立 worktree 检查更新；校验和静态页面测试通过后，只提交 `app/data/arbitrage.json` 并推送 `main`。节假日且规范化内容不变时自动跳过。
 
 ## 图表
 
 - 分位总览：全部 37 个主表品种对的近 5 年分位横向排名，统一使用 0%–100% 量尺。
 - 历史走势：IC/IF、IM/IF、科创50/上证50、创业板/沪深300、IM-IC价差、蛋白质价差。
 - 历史窗口：所有折线图最近 20 个交易日展示日线收盘，更早历史按每周最后一个实际交易日取点；展开图保留既定十年窗口，底部分析图保留近五年窗口。3%/97%阈值、全历史/近5年分位、区间、均线和当前值始终基于完整日频数据计算，绘图压缩不参与统计。
-- 图表数据：国内行情来自 xtdata；海外期货、海外指数、估值、国债收益率和汇率来自项目规则列明的已批准外部源。跨日合并只向后匹配已公布数据。
+- 图表数据：国内行情来自 xtdata；海外期货、海外指数、估值、国债收益率和汇率来自项目规则列明的已批准外部源。跨日合并只向后匹配已公布数据；外部来源日早于国内主日期时，品种对名称旁显示“外部截至 MM-DD”。
 
 本机执行：
 
@@ -41,7 +42,7 @@ Cloudflare Pages 使用静态快照构建，不运行本机 xtdata 更新接口�
 
 Cloudflare 连接的 Git 仓库必须包含当前代码；部署页面显示的提交号应与准备发布的提交一致。
 
-`scripts/update-and-publish.ps1` 是唯一获准自动执行 `git push` 的入口。它要求本地 `main` 与 `origin/main` 完全同步、没有其他已跟踪文件修改、完整性报告通过且数据日更新；随后运行 `npm run test:pages`、仅提交 `app/data/arbitrage.json`、推送 `main`，最后等待线上页面出现新的数据日。任何一步失败都会停止发布并写入 `.runtime/cloud-publish-status.json`；计划任务会每 10 分钟重试，最多 3 次。
+`scripts/update-and-publish.ps1` 是唯一获准自动执行 `git push` 的入口。计划任务使用 `automation/publisher` 独立分支，自动快进 `origin/main`；完整性报告必须确认国内数据日符合交易日历、外部行披露实际来源日。规范化数据内容有实质变化时才运行 `npm run test:pages`、仅提交 `app/data/arbitrage.json` 并推送 `main`；只有 `updatedAt` 变化时会恢复生成文件并跳过。若上次数据提交因网络中断未推送，下一次会验证提交只修改数据文件后重试 `HEAD:main`。Cloudflare 验收同时核对国内数据日和快照时间，避免同日期内容误判为已部署。任何一步失败都会停止发布、写入独立 worktree 的 `.runtime/cloud-publish-status.json` 并尝试显示 Windows 通知；计划任务配置每 10 分钟重试，最多 3 次。
 
 安装或刷新计划任务：
 

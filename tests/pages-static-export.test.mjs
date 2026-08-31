@@ -9,7 +9,7 @@ const clientDirectory = fileURLToPath(new URL("../dist/client/", import.meta.url
 test("Cloudflare Pages output contains a complete static entry document", async () => {
   const html = await readFile(path.join(clientDirectory, "index.html"), "utf8");
   assert.match(html, /<title>套利监测看板<\/title>/i);
-  assert.match(html, /<main class="dashboard-shell">/);
+  assert.match(html, /<main class="dashboard-shell" data-snapshot-updated-at="\d{4}-\d{2}-\d{2}T/);
   assert.match(html, /37<!-- --> 组/);
 
   const assetPaths = new Set(

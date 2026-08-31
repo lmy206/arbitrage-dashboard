@@ -17,6 +17,7 @@ $startedAt = Get-Date
 $runStamp = $startedAt.ToString("yyyyMMdd-HHmmss")
 $logPath = Join-Path $runtimeDirectory "cloud-publish-$runStamp.log"
 $currentDataDate = $null
+$publisherBranch = "automation/publisher"
 
 New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
 
@@ -43,6 +44,27 @@ function Write-RunStatus {
     logPath = $logPath
   }
   $payload | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding UTF8
+}
+
+function Show-DashboardNotification {
+  param(
+    [string]$Title,
+    [string]$Message
+  )
+
+  try {
+    [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
+    [void][Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, ContentType = WindowsRuntime]
+    $template = [Windows.UI.Notifications.ToastTemplateType]::ToastText02
+    $xml = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($template)
+    $textNodes = $xml.GetElementsByTagName("text")
+    [void]$textNodes.Item(0).AppendChild($xml.CreateTextNode($Title))
+    [void]$textNodes.Item(1).AppendChild($xml.CreateTextNode($Message))
+    $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("套利监测看板").Show($toast)
+  } catch {
+    Write-PublishLog "Windows 失败通知未显示：$($_.Exception.Message)"
+  }
 }
 
 function Resolve-CommandPath {
@@ -98,10 +120,35 @@ function Get-JsonDataDate {
   return $matched.Groups["date"].Value
 }
 
+function Get-JsonUpdatedAt {
+  param([string]$JsonText)
+
+  $matched = [regex]::Match($JsonText, '"updatedAt"\s*:\s*"(?<timestamp>[^"]+)"')
+  if (-not $matched.Success) {
+    throw "数据文件缺少 updatedAt"
+  }
+  return $matched.Groups["timestamp"].Value
+}
+
 function Read-Utf8Text {
   param([string]$Path)
 
   return [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
+}
+
+function Get-NormalizedJsonHash {
+  param([string]$JsonText)
+
+  $payload = $JsonText | ConvertFrom-Json
+  $payload.PSObject.Properties.Remove("updatedAt")
+  $normalized = $payload | ConvertTo-Json -Depth 100 -Compress
+  $bytes = [System.Text.Encoding]::UTF8.GetBytes($normalized)
+  $sha256 = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    return -join ($sha256.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") })
+  } finally {
+    $sha256.Dispose()
+  }
 }
 
 function Assert-RepositoryReady {
@@ -111,8 +158,8 @@ function Assert-RepositoryReady {
   )
 
   $branch = (& $GitPath -C $projectRoot branch --show-current).Trim()
-  if ($LASTEXITCODE -ne 0 -or $branch -ne "main") {
-    throw "自动发布只允许在 main 分支运行，当前分支为：$branch"
+  if ($LASTEXITCODE -ne 0 -or $branch -notin @("main", $publisherBranch)) {
+    throw "自动发布只允许在 main 或 $publisherBranch 分支运行，当前分支为：$branch"
   }
 
   $stagedPaths = @(& $GitPath -C $projectRoot diff --cached --name-only) | Where-Object { $_ }
@@ -139,8 +186,30 @@ function Assert-RepositoryReady {
     if ($LASTEXITCODE -ne 0 -or $syncCounts.Count -ne 2) {
       throw "无法比较本地 main 与 origin/main"
     }
-    if ($syncCounts[0] -ne "0" -or $syncCounts[1] -ne "0") {
-      throw "本地 main 与 origin/main 不同步（远端领先 $($syncCounts[0])，本地领先 $($syncCounts[1])），请人工处理"
+    $remoteAhead = [int]$syncCounts[0]
+    $localAhead = [int]$syncCounts[1]
+    if ($branch -eq $publisherBranch) {
+      if ($remoteAhead -gt 0 -and $localAhead -gt 0) {
+        throw "独立发布分支与 origin/main 已分叉（远端领先 $remoteAhead，本地领先 $localAhead），请人工处理"
+      }
+      if ($remoteAhead -gt 0) {
+        if ((& $GitPath -C $projectRoot diff --name-only -- "app/data/arbitrage.json")) {
+          Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "restore", "--source=HEAD", "--", "app/data/arbitrage.json") -Step "清理独立发布目录中的未发布生成文件"
+        }
+        Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "merge", "--ff-only", "origin/main") -Step "快进独立发布分支"
+      } elseif ($localAhead -gt 0) {
+        $aheadPaths = @(& $GitPath -C $projectRoot diff --name-only "origin/main..HEAD") | Where-Object { $_ }
+        if ($aheadPaths.Count -eq 0 -or ($aheadPaths | Where-Object { $_ -ne "app/data/arbitrage.json" }).Count -gt 0) {
+          throw "独立发布分支存在非数据提交，自动恢复已停止：$($aheadPaths -join ', ')"
+        }
+        Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "push", "origin", "HEAD:main") -Step "重试推送上次未完成的数据提交"
+        $recoveryJson = @(& $GitPath -C $projectRoot show "HEAD:app/data/arbitrage.json") -join "`n"
+        Wait-ForCloudflareSnapshot `
+          -ExpectedDataDate (Get-JsonDataDate -JsonText $recoveryJson) `
+          -ExpectedUpdatedAt (Get-JsonUpdatedAt -JsonText $recoveryJson)
+      }
+    } elseif ($remoteAhead -ne 0 -or $localAhead -ne 0) {
+      throw "本地 main 与 origin/main 不同步（远端领先 $remoteAhead，本地领先 $localAhead），请人工处理"
     }
   }
 }
@@ -161,10 +230,12 @@ function Assert-IntegrityReport {
     ($report.relatedObservationsComplete -eq $true)
     ($report.fundingPressureOverlayComplete -eq $true)
     ($report.fullDailyChartStatisticsComplete -eq $true)
+    ($report.domesticFreshnessComplete -eq $true)
+    ($report.externalRowDatesComplete -eq $true)
     ($report.externalSourcesComplete -eq $true)
   )
   if ($checks -contains $false) {
-    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，fullDailyChartStatisticsComplete=$($report.fullDailyChartStatisticsComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
+    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，dataDate=$($report.dataDate)，expectedDomesticDataDate=$($report.expectedDomesticDataDate)，domesticFreshnessComplete=$($report.domesticFreshnessComplete)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，fullDailyChartStatisticsComplete=$($report.fullDailyChartStatisticsComplete)，externalRowDatesComplete=$($report.externalRowDatesComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
   }
 
   if (-not (Test-Path -LiteralPath $outputPath)) {
@@ -178,7 +249,10 @@ function Assert-IntegrityReport {
 }
 
 function Wait-ForCloudflareSnapshot {
-  param([string]$ExpectedDataDate)
+  param(
+    [string]$ExpectedDataDate,
+    [string]$ExpectedUpdatedAt
+  )
 
   $deadline = (Get-Date).AddMinutes(15)
   while ((Get-Date) -lt $deadline) {
@@ -187,8 +261,8 @@ function Wait-ForCloudflareSnapshot {
       $cacheBust = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
       $separator = if ($ProductionUrl.Contains("?")) { "&" } else { "?" }
       $response = Invoke-WebRequest -Uri "$ProductionUrl${separator}v=$cacheBust" -Headers $headers -UseBasicParsing -TimeoutSec 30
-      if ($response.StatusCode -eq 200 -and $response.Content.Contains($ExpectedDataDate) -and $response.Content.Contains("套利监测看板")) {
-        Write-PublishLog "Cloudflare 已展示数据日 $ExpectedDataDate"
+      if ($response.StatusCode -eq 200 -and $response.Content.Contains($ExpectedDataDate) -and $response.Content.Contains($ExpectedUpdatedAt) -and $response.Content.Contains("套利监测看板")) {
+        Write-PublishLog "Cloudflare 已展示国内数据日 $ExpectedDataDate，快照时间 $ExpectedUpdatedAt"
         return
       }
     } catch {
@@ -196,13 +270,14 @@ function Wait-ForCloudflareSnapshot {
     }
     Start-Sleep -Seconds 20
   }
-  throw "GitHub 已推送，但 15 分钟内未确认 Cloudflare 展示数据日 $ExpectedDataDate"
+  throw "GitHub 已推送，但 15 分钟内未确认 Cloudflare 展示国内数据日 $ExpectedDataDate 与快照时间 $ExpectedUpdatedAt"
 }
 
 trap {
   $message = $_.Exception.Message
   Write-PublishLog "失败：$message"
   Write-RunStatus -Status "failed" -Message $message -DataDate $currentDataDate
+  Show-DashboardNotification -Title "套利看板自动更新失败" -Message $message
   exit 1
 }
 
@@ -222,6 +297,8 @@ if ($LASTEXITCODE -ne 0) {
   throw "无法读取 HEAD 中的 app/data/arbitrage.json"
 }
 $committedDataDate = Get-JsonDataDate -JsonText $committedJson
+$committedUpdatedAt = Get-JsonUpdatedAt -JsonText $committedJson
+$committedContentHash = Get-NormalizedJsonHash -JsonText $committedJson
 
 if ($DryRun) {
   $currentDataDate = Assert-IntegrityReport
@@ -233,9 +310,18 @@ if ($DryRun) {
 
 Invoke-LoggedCommand -FilePath $pythonPath -ArgumentList @("scripts\update_xtdata.py") -Step "更新 xtdata 与已批准外部补充数据"
 $currentDataDate = Assert-IntegrityReport
+$currentJson = Read-Utf8Text -Path $outputPath
+$currentUpdatedAt = Get-JsonUpdatedAt -JsonText $currentJson
+$currentContentHash = Get-NormalizedJsonHash -JsonText $currentJson
 
-if ($currentDataDate -eq $committedDataDate) {
-  $message = "无新交易日数据：HEAD 与当前数据日均为 $currentDataDate"
+if ([datetime]$currentDataDate -lt [datetime]$committedDataDate) {
+  throw "生成数据日 $currentDataDate 早于 HEAD 数据日 $committedDataDate"
+}
+
+if ($currentContentHash -eq $committedContentHash) {
+  Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "restore", "--source=HEAD", "--", "app/data/arbitrage.json") -Step "清理无实质变化的生成文件"
+  Wait-ForCloudflareSnapshot -ExpectedDataDate $committedDataDate -ExpectedUpdatedAt $committedUpdatedAt
+  $message = "无实质数据变化且线上快照已验证：国内数据日仍为 $currentDataDate，外部来源内容也未变化"
   Write-PublishLog $message
   Write-RunStatus -Status "no_new_data" -Message $message -DataDate $currentDataDate
   exit 0
@@ -245,10 +331,16 @@ Invoke-LoggedCommand -FilePath $npmPath -ArgumentList @("run", "test:pages") -St
 Assert-RepositoryReady -GitPath $gitPath -SkipFetch
 
 Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "add", "--", "app/data/arbitrage.json") -Step "暂存看板数据"
-Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "commit", "-m", "data: update arbitrage dashboard to $currentDataDate") -Step "提交数据快照"
-Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "push", "origin", "main") -Step "推送 main 并触发 Cloudflare"
+$commitMessage = if ($currentDataDate -ne $committedDataDate) {
+  "data: update arbitrage dashboard to $currentDataDate"
+} else {
+  "data: refresh arbitrage dashboard sources for $currentDataDate"
+}
+Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "commit", "-m", $commitMessage) -Step "提交数据快照"
+$pushRef = if ((& $gitPath -C $projectRoot branch --show-current).Trim() -eq $publisherBranch) { "HEAD:main" } else { "main" }
+Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "push", "origin", $pushRef) -Step "推送 main 并触发 Cloudflare"
 
-Wait-ForCloudflareSnapshot -ExpectedDataDate $currentDataDate
+Wait-ForCloudflareSnapshot -ExpectedDataDate $currentDataDate -ExpectedUpdatedAt $currentUpdatedAt
 $message = "更新成功：数据日 $currentDataDate 已推送并在 Cloudflare 生效"
 Write-PublishLog $message
 Write-RunStatus -Status "success" -Message $message -DataDate $currentDataDate
