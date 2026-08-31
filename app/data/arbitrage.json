@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-31",
-  "updatedAt": "2026-08-31T22:05:41+08:00",
+  "updatedAt": "2026-08-31T22:39:21+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -257061,13 +257061,13 @@
     {
       "strategyType": "外盘监控",
       "pair": "美盘油粕比",
-      "current": "4.0799",
+      "current": "4.0682",
       "previous": "4.0717",
-      "change": "+0.0082",
-      "changeValue": 0.00821249,
-      "allTime": "95.36%",
+      "change": "-0.0035",
+      "changeValue": -0.00352618,
+      "allTime": "95.24%",
       "allTimeRange": "1.5036 ~ 4.9055",
-      "percentile": 90.61,
+      "percentile": 90.37,
       "fiveYearRange": "2.1802 ~ 4.9055",
       "signal": "偏高",
       "lots": "—",
@@ -257076,8 +257076,8 @@
       "margin": "—",
       "leftSymbol": "BO.SINA",
       "rightSymbol": "SM.SINA",
-      "leftChangePct": -0.7466,
-      "rightChangePct": -0.9464,
+      "leftChangePct": -0.8029,
+      "rightChangePct": -0.7169,
       "seriesMode": "external",
       "pairType": "外盘参考",
       "formulaLabel": "美豆油（美分/磅）×20 ÷ 美豆粕（美元/短吨）",
@@ -259264,7 +259264,7 @@
               },
               {
                 "date": "2026-08-31",
-                "value": 4.079907
+                "value": 4.068169
               }
             ]
           }
@@ -259279,10 +259279,10 @@
         "SM.SINA": "2026-08-31"
       },
       "externalSourceMaxLagDays": 7,
-      "soybeanOilCentsPerLb": 70.46,
-      "soybeanMealUsdPerShortTon": 345.4,
-      "soybeanOilUsdPerMetricTonne": 1553.377099,
-      "soybeanMealUsdPerMetricTonne": 380.738327,
+      "soybeanOilCentsPerLb": 70.42,
+      "soybeanMealUsdPerShortTon": 346.2,
+      "soybeanOilUsdPerMetricTonne": 1552.49525,
+      "soybeanMealUsdPerMetricTonne": 381.620176,
       "marketCategory": "农产品"
     },
     {
