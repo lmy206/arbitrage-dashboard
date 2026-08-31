@@ -1752,6 +1752,14 @@ def percentile(series: pd.Series) -> float:
     return round(float((series <= current).mean() * 100), 2)
 
 
+def quantile_thresholds(series: pd.Series) -> list[dict[str, Any]]:
+    values = pd.to_numeric(series, errors="coerce").replace([math.inf, -math.inf], pd.NA).dropna()
+    return [
+        {"label": "3%", "value": round(float(values.quantile(0.03, interpolation="linear")), 6)},
+        {"label": "97%", "value": round(float(values.quantile(0.97, interpolation="linear")), 6)},
+    ]
+
+
 def display_number(value: float, kind: str) -> str:
     if kind == "spread":
         return f"{value:.0f}"
@@ -1974,7 +1982,8 @@ def build_contract_history_series(
         ).dropna()
         if len(values) < 2:
             continue
-        chart_values = sample_chart_history(values).round(6)
+        daily_values = values.round(6)
+        chart_values = sample_chart_history(daily_values).round(6)
 
         series.append(
             {
@@ -1983,7 +1992,8 @@ def build_contract_history_series(
                 "rightSymbol": right_symbol,
                 "thirdSymbol": third_symbol,
                 "formulaLabel": definition.get("formula_label"),
-                "values": chart_values,
+                "values": daily_values,
+                "chartValues": chart_values,
             }
         )
 
@@ -2009,6 +2019,7 @@ def build_contract_history_chart(
         return None
 
     month = expiry[-2:]
+    statistical_values = pd.concat([item["values"] for item in series]).sort_index()
     return {
         "title": f"{definition['pair']}历年{int(month)}月合约",
         "unit": "点差" if definition["kind"] == "spread" else "比值",
@@ -2017,6 +2028,9 @@ def build_contract_history_chart(
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
         "source": "xtdata",
         "grain": HYBRID_CHART_GRAIN,
+        "statisticsPointCount": len(statistical_values),
+        "renderPointCount": sum(len(item["chartValues"]) for item in series),
+        "quantileThresholds": quantile_thresholds(statistical_values),
         "series": [
             {
                 "expiry": item["expiry"],
@@ -2029,7 +2043,7 @@ def build_contract_history_chart(
                         "date": timestamp.strftime("%Y-%m-%d"),
                         "value": float(value),
                     }
-                    for timestamp, value in item["values"].items()
+                    for timestamp, value in item["chartValues"].items()
                 ],
             }
             for item in series
@@ -2062,6 +2076,9 @@ def build_observation_history_chart(
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
         "source": "xtdata",
         "grain": HYBRID_CHART_GRAIN,
+        "statisticsPointCount": len(window),
+        "renderPointCount": len(chart_values),
+        "quantileThresholds": quantile_thresholds(window),
         "series": [
             {
                 "expiry": label,
@@ -3502,6 +3519,19 @@ def write_outputs(
         for row in tradable_rows
         if is_equity_index_definition(definitions_by_pair[row["pair"]])
     ]
+
+    def chart_statistics_complete(chart: dict[str, Any] | None) -> bool:
+        if chart is None:
+            return False
+        render_points = sum(len(series["points"]) for series in chart["series"])
+        thresholds = chart.get("quantileThresholds", [])
+        return (
+            chart.get("statisticsPointCount", 0) >= render_points
+            and chart.get("renderPointCount") == render_points
+            and [item.get("label") for item in thresholds] == ["3%", "97%"]
+            and all(math.isfinite(float(item.get("value"))) for item in thresholds)
+        )
+
     weighted_rows = [row for row in tradable_rows if row["seriesMode"] == "weighted"]
     weighted_observation_history_charts = [
         row.get("mainHistoryChart") for row in weighted_rows
@@ -3513,6 +3543,7 @@ def write_outputs(
         and len(chart["series"]) == 1
         and chart["series"][0]["expiry"] == "加权"
         and len(chart["series"][0]["points"]) >= 8
+        and chart_statistics_complete(chart)
         and all(
             point["date"] <= data_date
             for point in chart["series"][0]["points"]
@@ -3536,6 +3567,7 @@ def write_outputs(
             and len(observation["historyChart"]["series"]) == 1
             and observation["historyChart"]["series"][0]["expiry"] == "加权"
             and len(observation["historyChart"]["series"][0]["points"]) >= 8
+            and chart_statistics_complete(observation["historyChart"])
             for observation in related_observations
         )
     )
@@ -3548,6 +3580,7 @@ def write_outputs(
         chart is not None
         and 1 <= len(chart["series"]) <= SEASONAL_CONTRACT_YEARS
         and sum(len(item["points"]) for item in chart["series"]) >= 8
+        and chart_statistics_complete(chart)
         for chart in contract_history_charts
     )
     equity_index_contract_history_disabled = all(
@@ -3567,6 +3600,7 @@ def write_outputs(
         chart is not None
         and len(chart["series"]) == 1
         and sum(len(item["points"]) for item in chart["series"]) >= 8
+        and chart_statistics_complete(chart)
         for chart in equity_index_observation_history_charts
     )
     spot_reference_history_charts = [
@@ -3579,6 +3613,7 @@ def write_outputs(
         and len(chart["series"]) == 1
         and chart["series"][0]["expiry"] in {"现货", "外盘", "美元融资压力（左轴）"}
         and len(chart["series"][0]["points"]) >= 8
+        and chart_statistics_complete(chart)
         for chart in spot_reference_history_charts
     )
     funding_pressure_rows = [row for row in rows if row["pair"] == "美元银行融资压力代理"]
@@ -3620,11 +3655,22 @@ def write_outputs(
             and item["historyChart"]["endDate"] == data_date
             and len(item["historyChart"]["series"]) == 1
             and len(item["historyChart"]["series"][0]["points"]) >= 8
+            and chart_statistics_complete(item["historyChart"])
             and all(
                 point["date"] <= data_date
                 for point in item["historyChart"]["series"][0]["points"]
             )
             for item in im_term_observations
+        )
+    )
+    full_daily_chart_statistics_complete = all(
+        (
+            weighted_observation_histories_complete,
+            related_observations_complete,
+            contract_history_charts_complete,
+            equity_index_observation_histories_complete,
+            spot_reference_histories_complete,
+            im_term_history_complete,
         )
     )
     charts_complete = len(charts) == len(HISTORY_CHARTS) and all(len(chart["points"]) >= 12 for chart in charts)
@@ -3677,6 +3723,7 @@ def write_outputs(
         equity_index_observation_histories_complete,
         spot_reference_histories_complete,
         funding_pressure_overlay_complete,
+        full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
         term_structure_count == expected_term_structure_count,
         im_term_history_complete,
@@ -3724,6 +3771,7 @@ def write_outputs(
         "expectedSpotReferenceHistoryCount": len(spot_reference_history_charts),
         "spotReferenceHistoriesComplete": spot_reference_histories_complete,
         "fundingPressureOverlayComplete": funding_pressure_overlay_complete,
+        "fullDailyChartStatisticsComplete": full_daily_chart_statistics_complete,
         "spotObservationCount": spot_observation_count,
         "expectedSpotObservationCount": len(SPOT_OBSERVATIONS),
         "termStructureCount": term_structure_count,

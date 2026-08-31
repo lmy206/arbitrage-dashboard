@@ -46,6 +46,9 @@ type ContractHistoryChartData = {
   endDate: string;
   source: string;
   grain: string;
+  statisticsPointCount?: number;
+  renderPointCount?: number;
+  quantileThresholds?: { label: string; value: number }[];
   series: ContractHistorySeries[];
   overlaySeries?: ContractHistoryOverlaySeries;
   fixedThresholds?: { label: string; value: number }[];
@@ -582,13 +585,15 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
   const timeRange = Math.max(endTime - startTime, 1);
   const allPoints = chart.series.flatMap((series) => series.points.map((point) => ({ series, point })));
   const values = allPoints.map(({ point }) => point.value);
-  const thresholds = chart.fixedThresholds ?? [
-    { label: "3%", value: quantile(values, 0.03) },
-    { label: "97%", value: quantile(values, 0.97) },
-  ];
+  const thresholds = chart.fixedThresholds ?? chart.quantileThresholds ?? [
+      { label: "3%", value: quantile(values, 0.03) },
+      { label: "97%", value: quantile(values, 0.97) },
+    ];
   const thresholdSummary = chart.fixedThresholds
     ? `${thresholds.map((threshold) => threshold.label).join("/")}固定阈值`
-    : "3%/97%阈值按图内全部历史值";
+    : chart.quantileThresholds
+      ? "3%/97%阈值按完整日频历史值"
+      : "3%/97%阈值按图内全部历史值";
   const isSeasonalHistory = chart.series.every((series) => /^\d{4}$/.test(series.expiry));
   const rawMin = Math.min(...values, ...thresholds.map((threshold) => threshold.value));
   const rawMax = Math.max(...values, ...thresholds.map((threshold) => threshold.value));

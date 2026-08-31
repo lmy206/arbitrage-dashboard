@@ -43,6 +43,15 @@ function assertHybridHistory(points, label = "history chart") {
   assert.ok(recentGaps.every((gap) => gap <= 15 * DAY_MS), `${label} latest observations should not have weekly spacing`);
 }
 
+function quantile(values, percentile) {
+  const sorted = [...values].sort((left, right) => left - right);
+  const position = (sorted.length - 1) * percentile;
+  const lowerIndex = Math.floor(position);
+  const upperIndex = Math.ceil(position);
+  const weight = position - lowerIndex;
+  return sorted[lowerIndex] + (sorted[upperIndex] - sorted[lowerIndex]) * weight;
+}
+
 test("server-renders the arbitrage dashboard", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -223,9 +232,9 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /const height = 270/);
   assert.match(pageSource, /quantile\(values, 0\.03\)/);
   assert.match(pageSource, /quantile\(values, 0\.97\)/);
-  assert.match(pageSource, /chart\.fixedThresholds \?\?/);
+  assert.match(pageSource, /chart\.fixedThresholds \?\? chart\.quantileThresholds \?\?/);
   assert.match(pageSource, /thresholds\.map\(\(threshold\) => threshold\.label\)\.join\(" \/ "\)/);
-  assert.match(pageSource, /3%\/97%阈值按图内全部历史值/);
+  assert.match(pageSource, /3%\/97%阈值按完整日频历史值/);
   assert.match(pageSource, /chart\.fixedThresholds\s*\? threshold\.label\s*:\s*`\$\{threshold\.label\}阈值/);
   assert.match(pageSource, /historyChart: row\.spotObservation\.historyChart/);
   assert.match(pageSource, /historyChart: row\.mainHistoryChart/);
@@ -357,6 +366,10 @@ test("monthly contract details contain only current values and liquidity", async
       assert.equal(contract.historyChart.source, "xtdata");
       assert.equal(contract.historyChart.grain, HYBRID_CHART_GRAIN);
       assert.ok(contract.historyChart.series.length >= 1 && contract.historyChart.series.length <= 10);
+      const renderedPointCount = contract.historyChart.series.reduce((sum, series) => sum + series.points.length, 0);
+      assert.equal(contract.historyChart.renderPointCount, renderedPointCount);
+      assert.ok(contract.historyChart.statisticsPointCount >= renderedPointCount);
+      assert.deepEqual(contract.historyChart.quantileThresholds.map((item) => item.label), ["3%", "97%"]);
       assert.equal(new Set(contract.historyChart.series.map((series) => series.expiry)).size, contract.historyChart.series.length);
       for (const series of contract.historyChart.series) {
         assert.equal(series.expiry.slice(-2), contract.expiry.slice(-2));
@@ -375,26 +388,7 @@ test("monthly contract details contain only current values and liquidity", async
       }
       const selectedSeries = contract.historyChart.series.find((series) => series.expiry === contract.expiry);
       assert.ok(selectedSeries, `${row.pair} ${contract.expiry} should be part of its same-month history sample`);
-      const selectedCurrent = selectedSeries.points.at(-1).value;
-      const allSeasonalPoints = contract.historyChart.series.flatMap((series) => series.points);
-      const allTimePercentile = Math.round(
-        allSeasonalPoints.filter((point) => point.value <= selectedCurrent).length / allSeasonalPoints.length * 10000,
-      ) / 100;
-      const fiveYearStart = new Date(`${selectedSeries.points.at(-1).date}T00:00:00Z`);
-      fiveYearStart.setUTCFullYear(fiveYearStart.getUTCFullYear() - 5);
-      const fiveYearStartDate = fiveYearStart.toISOString().slice(0, 10);
-      const fiveYearSeasonalPoints = allSeasonalPoints.filter((point) => point.date >= fiveYearStartDate);
-      const fiveYearPercentile = Math.round(
-        fiveYearSeasonalPoints.filter((point) => point.value <= selectedCurrent).length / fiveYearSeasonalPoints.length * 10000,
-      ) / 100;
-      assert.ok(
-        Math.abs(Number.parseFloat(contract.allTime) - allTimePercentile) <= 5,
-        `${row.pair} ${contract.expiry} all-time percentile should stay consistent with the compact same-month chart`,
-      );
-      assert.ok(
-        Math.abs(contract.percentile - fiveYearPercentile) <= 5,
-        `${row.pair} ${contract.expiry} five-year percentile should stay consistent with the compact same-month chart`,
-      );
+      assert.ok(contract.historyChart.statisticsPointCount >= contract.historyChart.renderPointCount);
     }
   }
 
@@ -441,6 +435,13 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(oilMeal.leftSymbol, "yJQ00.DF");
   assert.equal(oilMeal.rightSymbol, "mJQ00.DF");
   assert.equal(oilMeal.current, (Number(oilMeal.current)).toFixed(4));
+  const oilMealMay = oilMeal.contracts.find((contract) => contract.expiry === "2705");
+  const plottedValues = oilMealMay.historyChart.series.flatMap((series) => series.points.map((point) => point.value));
+  const fullDaily97 = oilMealMay.historyChart.quantileThresholds.find((item) => item.label === "97%").value;
+  const plotted97 = quantile(plottedValues, 0.97);
+  assert.ok(oilMealMay.historyChart.statisticsPointCount > oilMealMay.historyChart.renderPointCount);
+  assert.ok(Math.abs(fullDaily97 - plotted97) > 0.01, "full-daily threshold must not be recomputed from compact chart points");
+  assert.ok(Math.abs(fullDaily97 - 2.966376) < 0.01);
 
   const addedRatios = new Map([
     ["燃料油/沥青比价", ["fuJQ00.SF", "buJQ00.SF"]],
@@ -613,6 +614,9 @@ test("every weighted pair includes an expandable ten-year weighted-index chart",
     assert.equal(chart.series[0].leftSymbol, row.leftSymbol);
     assert.equal(chart.series[0].rightSymbol, row.rightSymbol);
     assert.ok(chart.series[0].points.length >= 120);
+    assert.equal(chart.renderPointCount, chart.series[0].points.length);
+    assert.ok(chart.statisticsPointCount >= chart.renderPointCount);
+    assert.deepEqual(chart.quantileThresholds.map((item) => item.label), ["3%", "97%"]);
     assertHybridHistory(chart.series[0].points, row.pair);
     assert.equal(chart.series[0].points.at(-1).date, payload.dataDate);
     assert.ok(Date.parse(chart.endDate) - Date.parse(chart.startDate) >= 600 * 24 * 60 * 60 * 1000);

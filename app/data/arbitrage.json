@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-08-28",
-  "updatedAt": "2026-08-31T11:03:28+08:00",
+  "updatedAt": "2026-08-31T14:45:28+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -1809,6 +1809,18 @@
         "endDate": "2026-08-28",
         "source": "中证指数有限公司滚动市盈率；中国债券信息网10年期国债收益率",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 仅向后匹配已公布数据",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.025812
+          },
+          {
+            "label": "97%",
+            "value": 0.066673
+          }
+        ],
         "series": [
           {
             "expiry": "现货",
@@ -3979,6 +3991,18 @@
         "endDate": "2026-08-28",
         "source": "Multpl标普500月度市盈率；东方财富美国10年期国债收益率",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 仅向后匹配已公布数据",
+        "statisticsPointCount": 2494,
+        "renderPointCount": 537,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": -0.009876
+          },
+          {
+            "label": "97%",
+            "value": 0.029187
+          }
+        ],
         "series": [
           {
             "expiry": "现货",
@@ -6179,6 +6203,18 @@
         "endDate": "2026-08-28",
         "source": "纽约联储官方日度OBFR；美联储理事会官方准备金管理利率，2021-07-29起使用IORB、此前使用IOER；标普500指数：新浪美股指数",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 仅向后匹配已公布数据 · 标普500仅作右轴对照",
+        "statisticsPointCount": 2511,
+        "renderPointCount": 538,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": -9.0
+          },
+          {
+            "label": "97%",
+            "value": 2.0
+          }
+        ],
         "series": [
           {
             "expiry": "美元融资压力（左轴）",
@@ -10545,6 +10581,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 1615,
+        "renderPointCount": 357,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.299289
+          },
+          {
+            "label": "97%",
+            "value": 0.584669
+          }
+        ],
         "series": [
           {
             "expiry": "现货",
@@ -12023,6 +12071,18 @@
         "endDate": "2026-08-28",
         "source": "新浪美股指数",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 仅向后匹配已公布数据",
+        "statisticsPointCount": 2515,
+        "renderPointCount": 538,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 2.447599
+          },
+          {
+            "label": "97%",
+            "value": 3.463034
+          }
+        ],
         "series": [
           {
             "expiry": "现货",
@@ -14227,6 +14287,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.404919
+          },
+          {
+            "label": "97%",
+            "value": 0.758431
+          }
+        ],
         "series": [
           {
             "expiry": "现货",
@@ -16401,6 +16473,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 1.247456
+          },
+          {
+            "label": "97%",
+            "value": 1.887923
+          }
+        ],
         "series": [
           {
             "expiry": "主连",
@@ -18548,6 +18632,18 @@
           "endDate": "2026-08-28",
           "source": "xtdata",
           "grain": "更早周频 · 最近20个交易日日线收盘",
+          "statisticsPointCount": 2428,
+          "renderPointCount": 527,
+          "quantileThresholds": [
+            {
+              "label": "3%",
+              "value": 1.250097
+            },
+            {
+              "label": "97%",
+              "value": 1.891393
+            }
+          ],
           "series": [
             {
               "expiry": "现货指数",
@@ -20813,6 +20909,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 995,
+        "renderPointCount": 225,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.010524
+          },
+          {
+            "label": "97%",
+            "value": 0.166039
+          }
+        ],
         "series": [
           {
             "expiry": "下季",
@@ -21759,6 +21867,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 995,
+            "renderPointCount": 225,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.010524
+              },
+              {
+                "label": "97%",
+                "value": 0.166039
+              }
+            ],
             "series": [
               {
                 "expiry": "下季",
@@ -22705,6 +22825,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 995,
+            "renderPointCount": 225,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.013007
+              },
+              {
+                "label": "97%",
+                "value": 0.135668
+              }
+            ],
             "series": [
               {
                 "expiry": "隔季",
@@ -23672,6 +23804,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 996,
+        "renderPointCount": 226,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 1.388129
+          },
+          {
+            "label": "97%",
+            "value": 1.775399
+          }
+        ],
         "series": [
           {
             "expiry": "主连",
@@ -24615,6 +24759,18 @@
           "endDate": "2026-08-28",
           "source": "xtdata",
           "grain": "更早周频 · 最近20个交易日日线收盘",
+          "statisticsPointCount": 2428,
+          "renderPointCount": 527,
+          "quantileThresholds": [
+            {
+              "label": "3%",
+              "value": 1.258372
+            },
+            {
+              "label": "97%",
+              "value": 2.568783
+            }
+          ],
           "series": [
             {
               "expiry": "现货指数",
@@ -26890,6 +27046,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 996,
+        "renderPointCount": 226,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": -237.76
+          },
+          {
+            "label": "97%",
+            "value": 658.1
+          }
+        ],
         "series": [
           {
             "expiry": "主连",
@@ -27833,6 +28001,18 @@
           "endDate": "2026-08-28",
           "source": "xtdata",
           "grain": "更早周频 · 最近20个交易日日线收盘",
+          "statisticsPointCount": 2428,
+          "renderPointCount": 527,
+          "quantileThresholds": [
+            {
+              "label": "3%",
+              "value": -112.10696
+            },
+            {
+              "label": "97%",
+              "value": 2254.13983
+            }
+          ],
           "series": [
             {
               "expiry": "现货指数",
@@ -30108,6 +30288,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.645025
+          },
+          {
+            "label": "97%",
+            "value": 0.998521
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -32258,9 +32450,9 @@
           "previous": "0.9302",
           "change": "+0.0072",
           "changeValue": 0.00720682,
-          "allTime": "88.11%",
-          "allTimeRange": "0.6047 ~ 1.0304",
-          "percentile": 76.95,
+          "allTime": "89.07%",
+          "allTimeRange": "0.6023 ~ 1.0304",
+          "percentile": 78.2,
           "fiveYearRange": "0.6435 ~ 1.0304",
           "signal": "中性",
           "lots": "16:15",
@@ -32283,6 +32475,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.637098
+              },
+              {
+                "label": "97%",
+                "value": 0.979901
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -35055,10 +35259,10 @@
           "previous": "0.9918",
           "change": "+0.0053",
           "changeValue": 0.00525421,
-          "allTime": "94.80%",
-          "allTimeRange": "0.6309 ~ 1.1668",
-          "percentile": 90.34,
-          "fiveYearRange": "0.6391 ~ 1.1668",
+          "allTime": "96.53%",
+          "allTimeRange": "0.6243 ~ 1.2043",
+          "percentile": 93.31,
+          "fiveYearRange": "0.6391 ~ 1.2043",
           "signal": "偏高",
           "lots": "1:1",
           "deviation": "0.29%",
@@ -35080,6 +35284,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.652844
+              },
+              {
+                "label": "97%",
+                "value": 1.0
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -37776,10 +37992,10 @@
           "previous": "1.0368",
           "change": "+0.0068",
           "changeValue": 0.0068128,
-          "allTime": "98.27%",
+          "allTime": "99.03%",
           "allTimeRange": "0.5862 ~ 1.2314",
-          "percentile": 96.87,
-          "fiveYearRange": "0.6549 ~ 1.2314",
+          "percentile": 98.18,
+          "fiveYearRange": "0.6494 ~ 1.2314",
           "signal": "极度偏高",
           "lots": "19:20",
           "deviation": "0.86%",
@@ -37801,6 +38017,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2258,
+            "renderPointCount": 635,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.659653
+              },
+              {
+                "label": "97%",
+                "value": 1.009802
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -40468,6 +40696,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 349.0
+          },
+          {
+            "label": "97%",
+            "value": 927.38
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -42618,10 +42858,10 @@
           "previous": "901",
           "change": "-2",
           "changeValue": -2.0,
-          "allTime": "98.51%",
-          "allTimeRange": "135 ~ 1057",
-          "percentile": 98.27,
-          "fiveYearRange": "135 ~ 1057",
+          "allTime": "99.59%",
+          "allTimeRange": "106 ~ 1057",
+          "percentile": 99.5,
+          "fiveYearRange": "106 ~ 1057",
           "signal": "极度偏高",
           "lots": "1:1",
           "deviation": "31.41%",
@@ -42643,6 +42883,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 329.42
+              },
+              {
+                "label": "97%",
+                "value": 771.0
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -45415,11 +45667,11 @@
           "previous": "978",
           "change": "-4",
           "changeValue": -4.0,
-          "allTime": "91.44%",
+          "allTime": "94.86%",
           "allTimeRange": "224 ~ 1348",
-          "percentile": 84.09,
+          "percentile": 90.09,
           "fiveYearRange": "260 ~ 1348",
-          "signal": "中性",
+          "signal": "偏高",
           "lots": "1:1",
           "deviation": "34.14%",
           "notional": "6万",
@@ -45440,6 +45692,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 473.0
+              },
+              {
+                "label": "97%",
+                "value": 1078.98
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -48136,9 +48400,9 @@
           "previous": "613",
           "change": "-2",
           "changeValue": -2.0,
-          "allTime": "87.40%",
+          "allTime": "89.42%",
           "allTimeRange": "-149 ~ 856",
-          "percentile": 79.2,
+          "percentile": 82.91,
           "fiveYearRange": "-149 ~ 856",
           "signal": "中性",
           "lots": "1:1",
@@ -48161,6 +48425,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2258,
+            "renderPointCount": 635,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 255.71
+              },
+              {
+                "label": "97%",
+                "value": 704.29
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -50828,6 +51104,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.981612
+          },
+          {
+            "label": "97%",
+            "value": 1.487767
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -52978,10 +53266,10 @@
           "previous": "1.2120",
           "change": "-0.0063",
           "changeValue": -0.00632839,
-          "allTime": "64.32%",
-          "allTimeRange": "0.8387 ~ 1.5524",
-          "percentile": 60.73,
-          "fiveYearRange": "0.9865 ~ 1.5524",
+          "allTime": "61.54%",
+          "allTimeRange": "0.8387 ~ 1.5615",
+          "percentile": 56.65,
+          "fiveYearRange": "0.9865 ~ 1.5615",
           "signal": "中性",
           "lots": "5:6",
           "deviation": "0.47%",
@@ -53003,6 +53291,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2379,
+            "renderPointCount": 667,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.986994
+              },
+              {
+                "label": "97%",
+                "value": 1.42386
+              }
+            ],
             "series": [
               {
                 "expiry": "1711",
@@ -55751,9 +56051,9 @@
           "previous": "1.2210",
           "change": "-0.0093",
           "changeValue": -0.00927355,
-          "allTime": "66.06%",
+          "allTime": "64.50%",
           "allTimeRange": "0.8797 ~ 1.6205",
-          "percentile": 64.2,
+          "percentile": 62.59,
           "fiveYearRange": "1.0129 ~ 1.6205",
           "signal": "中性",
           "lots": "14:17",
@@ -55776,6 +56076,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.988359
+              },
+              {
+                "label": "97%",
+                "value": 1.430614
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -58472,10 +58784,10 @@
           "previous": "1.3562",
           "change": "-0.0152",
           "changeValue": -0.0151878,
-          "allTime": "73.62%",
+          "allTime": "76.52%",
           "allTimeRange": "1.0396 ~ 1.9312",
-          "percentile": 81.48,
-          "fiveYearRange": "1.0782 ~ 1.6888",
+          "percentile": 83.82,
+          "fiveYearRange": "1.0782 ~ 1.6923",
           "signal": "中性",
           "lots": "3:4",
           "deviation": "0.57%",
@@ -58497,6 +58809,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2249,
+            "renderPointCount": 633,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.098962
+              },
+              {
+                "label": "97%",
+                "value": 1.54141
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -61109,10 +61433,10 @@
           "previous": "1.3781",
           "change": "-0.0128",
           "changeValue": -0.01284739,
-          "allTime": "21.74%",
-          "allTimeRange": "1.3457 ~ 1.4307",
-          "percentile": 21.74,
-          "fiveYearRange": "1.3457 ~ 1.4307",
+          "allTime": "45.45%",
+          "allTimeRange": "1.3441 ~ 1.4307",
+          "percentile": 45.45,
+          "fiveYearRange": "1.3441 ~ 1.4307",
           "signal": "中性",
           "lots": "11:15",
           "deviation": "0.12%",
@@ -61134,6 +61458,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 33,
+            "renderPointCount": 23,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.345659
+              },
+              {
+                "label": "97%",
+                "value": 1.429741
+              }
+            ],
             "series": [
               {
                 "expiry": "2707",
@@ -61290,6 +61626,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.745986
+          },
+          {
+            "label": "97%",
+            "value": 0.962283
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -63440,10 +63788,10 @@
           "previous": "0.8543",
           "change": "+0.0109",
           "changeValue": 0.01091587,
-          "allTime": "55.72%",
-          "allTimeRange": "0.6874 ~ 0.9655",
-          "percentile": 53.89,
-          "fiveYearRange": "0.7192 ~ 0.9647",
+          "allTime": "56.27%",
+          "allTimeRange": "0.6818 ~ 0.9693",
+          "percentile": 53.01,
+          "fiveYearRange": "0.7167 ~ 0.9647",
           "signal": "中性",
           "lots": "15:13",
           "deviation": "0.17%",
@@ -63465,6 +63813,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.736777
+              },
+              {
+                "label": "97%",
+                "value": 0.947184
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -66237,9 +66597,9 @@
           "previous": "0.8716",
           "change": "+0.0072",
           "changeValue": 0.00719244,
-          "allTime": "67.58%",
+          "allTime": "63.73%",
           "allTimeRange": "0.7071 ~ 1.0080",
-          "percentile": 62.22,
+          "percentile": 57.23,
           "fiveYearRange": "0.7071 ~ 1.0080",
           "signal": "中性",
           "lots": "17:15",
@@ -66262,6 +66622,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.757511
+              },
+              {
+                "label": "97%",
+                "value": 0.949111
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -68958,9 +69330,9 @@
           "previous": "0.8642",
           "change": "+0.0088",
           "changeValue": 0.00880452,
-          "allTime": "66.93%",
+          "allTime": "66.65%",
           "allTimeRange": "0.6893 ~ 1.0157",
-          "percentile": 60.11,
+          "percentile": 59.62,
           "fiveYearRange": "0.6893 ~ 1.0157",
           "signal": "中性",
           "lots": "8:7",
@@ -68983,6 +69355,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2258,
+            "renderPointCount": 635,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.757701
+              },
+              {
+                "label": "97%",
+                "value": 0.94331
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -71650,6 +72034,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": -2688.38
+          },
+          {
+            "label": "97%",
+            "value": -539.0
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -73800,9 +74196,9 @@
           "previous": "-1599",
           "change": "+20",
           "changeValue": 20.0,
-          "allTime": "34.18%",
+          "allTime": "34.33%",
           "allTimeRange": "-3240 ~ -217",
-          "percentile": 38.9,
+          "percentile": 40.38,
           "fiveYearRange": "-3240 ~ -298",
           "signal": "中性",
           "lots": "1:1",
@@ -73825,6 +74221,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -2625.8
+              },
+              {
+                "label": "97%",
+                "value": -480.36
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -76597,9 +77005,9 @@
           "previous": "-1656",
           "change": "+17",
           "changeValue": 17.0,
-          "allTime": "27.52%",
+          "allTime": "27.32%",
           "allTimeRange": "-3457 ~ -115",
-          "percentile": 34.09,
+          "percentile": 35.59,
           "fiveYearRange": "-3457 ~ -557",
           "signal": "中性",
           "lots": "1:1",
@@ -76622,6 +77030,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -2592.92
+              },
+              {
+                "label": "97%",
+                "value": -366.02
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -79318,9 +79738,9 @@
           "previous": "-2137",
           "change": "+23",
           "changeValue": 23.0,
-          "allTime": "22.99%",
+          "allTime": "20.06%",
           "allTimeRange": "-3513 ~ -537",
-          "percentile": 19.66,
+          "percentile": 19.74,
           "fiveYearRange": "-3513 ~ -924",
           "signal": "中性",
           "lots": "1:1",
@@ -79343,6 +79763,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2258,
+            "renderPointCount": 635,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -2788.03
+              },
+              {
+                "label": "97%",
+                "value": -729.71
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -82010,6 +82442,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 1367,
+        "renderPointCount": 305,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 5.023044
+          },
+          {
+            "label": "97%",
+            "value": 9.897195
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -83272,9 +83716,9 @@
           "previous": "4.8806",
           "change": "+0.0154",
           "changeValue": 0.01538786,
-          "allTime": "2.11%",
-          "allTimeRange": "4.7069 ~ 10.70",
-          "percentile": 2.36,
+          "allTime": "0.98%",
+          "allTimeRange": "4.7069 ~ 10.81",
+          "percentile": 1.11,
           "fiveYearRange": "4.7069 ~ 9.0410",
           "signal": "极度偏低",
           "lots": "1:8",
@@ -83297,6 +83741,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1330,
+            "renderPointCount": 380,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 5.063088
+              },
+              {
+                "label": "97%",
+                "value": 10.031875
+              }
+            ],
             "series": [
               {
                 "expiry": "2109",
@@ -84869,9 +85325,9 @@
           "previous": "5.1858",
           "change": "+0.1038",
           "changeValue": 0.10376773,
-          "allTime": "3.95%",
-          "allTimeRange": "4.5610 ~ 10.41",
-          "percentile": 4.34,
+          "allTime": "2.72%",
+          "allTimeRange": "4.5610 ~ 10.42",
+          "percentile": 3.08,
           "fiveYearRange": "4.5610 ~ 9.5297",
           "signal": "极度偏低",
           "lots": "2:17",
@@ -84894,6 +85350,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1325,
+            "renderPointCount": 380,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 5.312163
+              },
+              {
+                "label": "97%",
+                "value": 9.788821
+              }
+            ],
             "series": [
               {
                 "expiry": "2111",
@@ -86466,11 +86934,11 @@
           "previous": "5.4203",
           "change": "+0.1246",
           "changeValue": 0.12462244,
-          "allTime": "20.84%",
-          "allTimeRange": "4.4696 ~ 10.37",
-          "percentile": 22.77,
-          "fiveYearRange": "4.4696 ~ 8.6299",
-          "signal": "中性",
+          "allTime": "9.69%",
+          "allTimeRange": "4.4696 ~ 10.50",
+          "percentile": 10.92,
+          "fiveYearRange": "4.4696 ~ 8.6977",
+          "signal": "偏低",
           "lots": "1:9",
           "deviation": "1.43%",
           "notional": "41万",
@@ -86491,6 +86959,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1331,
+            "renderPointCount": 379,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 5.164793
+              },
+              {
+                "label": "97%",
+                "value": 9.847927
+              }
+            ],
             "series": [
               {
                 "expiry": "2201",
@@ -88059,10 +88539,10 @@
           "previous": "5.2769",
           "change": "+0.1206",
           "changeValue": 0.12063705,
-          "allTime": "27.17%",
-          "allTimeRange": "4.1400 ~ 9.2556",
-          "percentile": 28.9,
-          "fiveYearRange": "4.1400 ~ 7.4468",
+          "allTime": "18.33%",
+          "allTimeRange": "4.1400 ~ 9.3059",
+          "percentile": 19.98,
+          "fiveYearRange": "4.1400 ~ 7.4544",
           "signal": "中性",
           "lots": "2:17",
           "deviation": "1.59%",
@@ -88084,6 +88564,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1271,
+            "renderPointCount": 368,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 4.738613
+              },
+              {
+                "label": "97%",
+                "value": 7.63337
+              }
+            ],
             "series": [
               {
                 "expiry": "2203",
@@ -89655,6 +90147,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": -1194.0
+          },
+          {
+            "label": "97%",
+            "value": 1288.0
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -91805,10 +92309,10 @@
           "previous": "-784",
           "change": "+39",
           "changeValue": 39.0,
-          "allTime": "12.04%",
-          "allTimeRange": "-1314 ~ 2130",
-          "percentile": 23.34,
-          "fiveYearRange": "-1314 ~ 2130",
+          "allTime": "9.61%",
+          "allTimeRange": "-1344 ~ 2130",
+          "percentile": 19.16,
+          "fiveYearRange": "-1344 ~ 2130",
           "signal": "中性",
           "lots": "1:1",
           "deviation": "8.02%",
@@ -91830,6 +92334,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -988.32
+              },
+              {
+                "label": "97%",
+                "value": 1257.16
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -94602,11 +95118,11 @@
           "previous": "-1217",
           "change": "+11",
           "changeValue": 11.0,
-          "allTime": "8.10%",
-          "allTimeRange": "-2540 ~ 1800",
-          "percentile": 15.06,
-          "fiveYearRange": "-2540 ~ 1800",
-          "signal": "中性",
+          "allTime": "4.50%",
+          "allTimeRange": "-2540 ~ 1830",
+          "percentile": 8.67,
+          "fiveYearRange": "-2540 ~ 1830",
+          "signal": "偏低",
           "lots": "1:1",
           "deviation": "12.60%",
           "notional": "19万",
@@ -94627,6 +95143,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -1276.98
+              },
+              {
+                "label": "97%",
+                "value": 1345.96
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -97323,11 +97851,11 @@
           "previous": "-1721",
           "change": "+4",
           "changeValue": 4.0,
-          "allTime": "3.31%",
-          "allTimeRange": "-4038 ~ 1484",
-          "percentile": 5.98,
-          "fiveYearRange": "-4038 ~ 1126",
-          "signal": "偏低",
+          "allTime": "0.93%",
+          "allTimeRange": "-4038 ~ 1730",
+          "percentile": 1.73,
+          "fiveYearRange": "-4038 ~ 1172",
+          "signal": "极度偏低",
           "lots": "1:1",
           "deviation": "17.80%",
           "notional": "19万",
@@ -97348,6 +97876,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2258,
+            "renderPointCount": 635,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -1482.16
+              },
+              {
+                "label": "97%",
+                "value": 1100.0
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -100015,6 +100555,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 3.096649
+          },
+          {
+            "label": "97%",
+            "value": 4.317485
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -102165,10 +102717,10 @@
           "previous": "4.5627",
           "change": "+0.0061",
           "changeValue": 0.00606362,
-          "allTime": "99.85%",
-          "allTimeRange": "2.9607 ~ 4.5954",
-          "percentile": 99.71,
-          "fiveYearRange": "3.0245 ~ 4.5954",
+          "allTime": "99.92%",
+          "allTimeRange": "2.9525 ~ 4.5954",
+          "percentile": 99.83,
+          "fiveYearRange": "3.0163 ~ 4.5954",
           "signal": "极度偏高",
           "lots": "2:9",
           "deviation": "1.52%",
@@ -102190,6 +102742,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2414,
+            "renderPointCount": 674,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 3.149001
+              },
+              {
+                "label": "97%",
+                "value": 4.296274
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -104966,9 +105530,9 @@
           "previous": "4.5466",
           "change": "+0.0061",
           "changeValue": 0.00607609,
-          "allTime": "99.85%",
+          "allTime": "99.87%",
           "allTimeRange": "2.9217 ~ 4.5770",
-          "percentile": 99.71,
+          "percentile": 99.75,
           "fiveYearRange": "2.9217 ~ 4.5770",
           "signal": "极度偏高",
           "lots": "2:9",
@@ -104991,6 +105555,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2399,
+            "renderPointCount": 664,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 3.146719
+              },
+              {
+                "label": "97%",
+                "value": 4.299706
+              }
+            ],
             "series": [
               {
                 "expiry": "1710",
@@ -107727,10 +108303,10 @@
           "previous": "4.5414",
           "change": "+0.0022",
           "changeValue": 0.00222272,
-          "allTime": "99.85%",
-          "allTimeRange": "2.9909 ~ 4.5709",
-          "percentile": 99.72,
-          "fiveYearRange": "2.9909 ~ 4.5709",
+          "allTime": "99.87%",
+          "allTimeRange": "2.9149 ~ 4.5709",
+          "percentile": 99.75,
+          "fiveYearRange": "2.9149 ~ 4.5709",
           "signal": "极度偏高",
           "lots": "2:9",
           "deviation": "0.96%",
@@ -107752,6 +108328,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2378,
+            "renderPointCount": 668,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 3.165208
+              },
+              {
+                "label": "97%",
+                "value": 4.299233
+              }
+            ],
             "series": [
               {
                 "expiry": "1711",
@@ -110504,10 +111092,10 @@
           "previous": "4.5389",
           "change": "+0.0018",
           "changeValue": 0.00181839,
-          "allTime": "99.70%",
-          "allTimeRange": "2.9946 ~ 4.5700",
-          "percentile": 99.44,
-          "fiveYearRange": "2.9946 ~ 4.5700",
+          "allTime": "99.87%",
+          "allTimeRange": "2.9151 ~ 4.5700",
+          "percentile": 99.75,
+          "fiveYearRange": "2.9151 ~ 4.5700",
           "signal": "极度偏高",
           "lots": "2:9",
           "deviation": "0.90%",
@@ -110529,6 +111117,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2356,
+            "renderPointCount": 664,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 3.159655
+              },
+              {
+                "label": "97%",
+                "value": 4.296339
+              }
+            ],
             "series": [
               {
                 "expiry": "1712",
@@ -113312,6 +113912,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": -123.38
+          },
+          {
+            "label": "97%",
+            "value": 370.0
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -115462,9 +116074,9 @@
           "previous": "254",
           "change": "+5",
           "changeValue": 5.0,
-          "allTime": "87.65%",
+          "allTime": "90.29%",
           "allTimeRange": "-455 ~ 660",
-          "percentile": 87.39,
+          "percentile": 93.64,
           "fiveYearRange": "-126 ~ 660",
           "signal": "偏高",
           "lots": "1:1",
@@ -115487,6 +116099,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2399,
+            "renderPointCount": 664,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -136.06
+              },
+              {
+                "label": "97%",
+                "value": 360.06
+              }
+            ],
             "series": [
               {
                 "expiry": "1710",
@@ -118223,11 +118847,11 @@
           "previous": "236",
           "change": "+15",
           "changeValue": 15.0,
-          "allTime": "85.78%",
+          "allTime": "89.02%",
           "allTimeRange": "-609 ~ 898",
-          "percentile": 84.79,
+          "percentile": 92.32,
           "fiveYearRange": "-196 ~ 898",
-          "signal": "中性",
+          "signal": "偏高",
           "lots": "1:1",
           "deviation": "7.72%",
           "notional": "6万",
@@ -118248,6 +118872,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2378,
+            "renderPointCount": 668,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -145.76
+              },
+              {
+                "label": "97%",
+                "value": 349.38
+              }
+            ],
             "series": [
               {
                 "expiry": "1711",
@@ -121000,9 +121636,9 @@
           "previous": "219",
           "change": "-4",
           "changeValue": -4.0,
-          "allTime": "87.33%",
-          "allTimeRange": "-540 ~ 477",
-          "percentile": 92.07,
+          "allTime": "88.69%",
+          "allTimeRange": "-540 ~ 515",
+          "percentile": 93.97,
           "fiveYearRange": "-142 ~ 408",
           "signal": "偏高",
           "lots": "1:1",
@@ -121025,6 +121661,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 655,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -133.94
+              },
+              {
+                "label": "97%",
+                "value": 323.98
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -123725,9 +124373,9 @@
           "previous": "213",
           "change": "-6",
           "changeValue": -6.0,
-          "allTime": "82.10%",
-          "allTimeRange": "-233 ~ 493",
-          "percentile": 87.01,
+          "allTime": "84.42%",
+          "allTimeRange": "-233 ~ 533",
+          "percentile": 90.5,
           "fiveYearRange": "-95 ~ 462",
           "signal": "偏高",
           "lots": "1:1",
@@ -123750,6 +124398,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2298,
+            "renderPointCount": 648,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -52.0
+              },
+              {
+                "label": "97%",
+                "value": 350.09
+              }
+            ],
             "series": [
               {
                 "expiry": "1803",
@@ -126469,6 +127129,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 749,
+        "renderPointCount": 175,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.80872
+          },
+          {
+            "label": "97%",
+            "value": 1.181456
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -127211,10 +127883,10 @@
           "previous": "1.0874",
           "change": "+0.0030",
           "changeValue": 0.00304363,
-          "allTime": "81.54%",
-          "allTimeRange": "0.8310 ~ 1.2092",
-          "percentile": 81.54,
-          "fiveYearRange": "0.8310 ~ 1.2092",
+          "allTime": "79.37%",
+          "allTimeRange": "0.8257 ~ 1.2279",
+          "percentile": 79.37,
+          "fiveYearRange": "0.8257 ~ 1.2279",
           "signal": "中性",
           "lots": "6:13",
           "deviation": "0.66%",
@@ -127236,6 +127908,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 698,
+            "renderPointCount": 195,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.851206
+              },
+              {
+                "label": "97%",
+                "value": 1.172026
+              }
+            ],
             "series": [
               {
                 "expiry": "2410",
@@ -128047,11 +128731,11 @@
           "previous": "1.1146",
           "change": "+0.0033",
           "changeValue": 0.00325585,
-          "allTime": "79.79%",
-          "allTimeRange": "0.8402 ~ 1.2252",
-          "percentile": 79.79,
-          "fiveYearRange": "0.8402 ~ 1.2252",
-          "signal": "中性",
+          "allTime": "87.28%",
+          "allTimeRange": "0.8374 ~ 1.2438",
+          "percentile": 87.28,
+          "fiveYearRange": "0.8374 ~ 1.2438",
+          "signal": "偏高",
           "lots": "9:20",
           "deviation": "0.61%",
           "notional": "288万",
@@ -128072,6 +128756,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 676,
+            "renderPointCount": 193,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.860357
+              },
+              {
+                "label": "97%",
+                "value": 1.176054
+              }
+            ],
             "series": [
               {
                 "expiry": "2411",
@@ -128875,11 +129571,11 @@
           "previous": "1.1200",
           "change": "-0.0006",
           "changeValue": -0.00056042,
-          "allTime": "75.66%",
-          "allTimeRange": "0.8327 ~ 1.2239",
-          "percentile": 75.66,
-          "fiveYearRange": "0.8327 ~ 1.2239",
-          "signal": "中性",
+          "allTime": "86.54%",
+          "allTimeRange": "0.8327 ~ 1.2447",
+          "percentile": 86.54,
+          "fiveYearRange": "0.8327 ~ 1.2447",
+          "signal": "偏高",
           "lots": "4:9",
           "deviation": "0.50%",
           "notional": "128万",
@@ -128900,6 +129596,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 654,
+            "renderPointCount": 189,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.864563
+              },
+              {
+                "label": "97%",
+                "value": 1.184215
+              }
+            ],
             "series": [
               {
                 "expiry": "2412",
@@ -129687,11 +130395,11 @@
           "previous": "1.1238",
           "change": "-0.0022",
           "changeValue": -0.00218378,
-          "allTime": "83.56%",
-          "allTimeRange": "0.7835 ~ 1.2207",
-          "percentile": 83.56,
-          "fiveYearRange": "0.7835 ~ 1.2207",
-          "signal": "中性",
+          "allTime": "87.05%",
+          "allTimeRange": "0.7282 ~ 1.2362",
+          "percentile": 87.05,
+          "fiveYearRange": "0.7282 ~ 1.2362",
+          "signal": "偏高",
           "lots": "4:9",
           "deviation": "0.30%",
           "notional": "128万",
@@ -129712,6 +130420,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 749,
+            "renderPointCount": 225,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.826249
+              },
+              {
+                "label": "97%",
+                "value": 1.182219
+              }
+            ],
             "series": [
               {
                 "expiry": "2401",
@@ -130697,6 +131417,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 714,
+        "renderPointCount": 168,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 233.3106
+          },
+          {
+            "label": "97%",
+            "value": 479.8825
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -131412,10 +132144,10 @@
           "previous": "425",
           "change": "-16",
           "changeValue": -15.9,
-          "allTime": "69.59%",
-          "allTimeRange": "183 ~ 568",
-          "percentile": 69.59,
-          "fiveYearRange": "183 ~ 568",
+          "allTime": "76.22%",
+          "allTimeRange": "150 ~ 621",
+          "percentile": 76.22,
+          "fiveYearRange": "150 ~ 621",
           "signal": "中性",
           "lots": "20:13",
           "deviation": "8.12%",
@@ -131437,6 +132169,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 694,
+            "renderPointCount": 194,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 224.0187
+              },
+              {
+                "label": "97%",
+                "value": 504.4373
+              }
+            ],
             "series": [
               {
                 "expiry": "2410",
@@ -132247,10 +132991,10 @@
           "previous": "410",
           "change": "-0",
           "changeValue": -0.18,
-          "allTime": "66.32%",
-          "allTimeRange": "117 ~ 633",
-          "percentile": 66.32,
-          "fiveYearRange": "117 ~ 633",
+          "allTime": "75.04%",
+          "allTimeRange": "51 ~ 633",
+          "percentile": 75.04,
+          "fiveYearRange": "51 ~ 633",
           "signal": "中性",
           "lots": "20:13",
           "deviation": "8.20%",
@@ -132272,6 +133016,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 677,
+            "renderPointCount": 193,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 221.8292
+              },
+              {
+                "label": "97%",
+                "value": 493.64
+              }
+            ],
             "series": [
               {
                 "expiry": "2411",
@@ -133078,10 +133834,10 @@
           "previous": "406",
           "change": "+6",
           "changeValue": 5.75,
-          "allTime": "71.28%",
-          "allTimeRange": "187 ~ 706",
-          "percentile": 71.28,
-          "fiveYearRange": "187 ~ 706",
+          "allTime": "78.63%",
+          "allTimeRange": "1 ~ 706",
+          "percentile": 78.63,
+          "fiveYearRange": "1 ~ 706",
           "signal": "中性",
           "lots": "20:13",
           "deviation": "8.30%",
@@ -133103,6 +133859,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 655,
+            "renderPointCount": 188,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 210.4166
+              },
+              {
+                "label": "97%",
+                "value": 471.0952
+              }
+            ],
             "series": [
               {
                 "expiry": "2412",
@@ -133889,11 +134657,11 @@
           "previous": "401",
           "change": "+18",
           "changeValue": 17.61,
-          "allTime": "84.78%",
+          "allTime": "86.28%",
           "allTimeRange": "63 ~ 514",
-          "percentile": 84.78,
+          "percentile": 86.28,
           "fiveYearRange": "63 ~ 514",
-          "signal": "中性",
+          "signal": "偏高",
           "lots": "20:13",
           "deviation": "8.49%",
           "notional": "108万",
@@ -133914,6 +134682,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 634,
+            "renderPointCount": 184,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 215.9055
+              },
+              {
+                "label": "97%",
+                "value": 459.3853
+              }
+            ],
             "series": [
               {
                 "expiry": "2501",
@@ -134731,6 +135511,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 1632,
+        "renderPointCount": 361,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.581258
+          },
+          {
+            "label": "97%",
+            "value": 1.224047
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -136240,6 +137032,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1632,
+            "renderPointCount": 361,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 755.144
+              },
+              {
+                "label": "97%",
+                "value": 2207.712
+              }
+            ],
             "series": [
               {
                 "expiry": "加权",
@@ -137703,9 +138507,9 @@
           "previous": "0.9095",
           "change": "-0.0120",
           "changeValue": -0.01203341,
-          "allTime": "60.52%",
+          "allTime": "60.23%",
           "allTimeRange": "0.5220 ~ 1.3774",
-          "percentile": 74.35,
+          "percentile": 73.16,
           "fiveYearRange": "0.5220 ~ 1.2651",
           "signal": "中性",
           "lots": "10:9",
@@ -137728,6 +138532,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1632,
+            "renderPointCount": 461,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.590303
+              },
+              {
+                "label": "97%",
+                "value": 1.259858
+              }
+            ],
             "series": [
               {
                 "expiry": "2009",
@@ -139631,10 +140447,10 @@
           "previous": "0.8957",
           "change": "-0.0128",
           "changeValue": -0.0127598,
-          "allTime": "57.83%",
+          "allTime": "54.84%",
           "allTimeRange": "0.4902 ~ 1.3771",
-          "percentile": 69.77,
-          "fiveYearRange": "0.4902 ~ 1.1330",
+          "percentile": 67.05,
+          "fiveYearRange": "0.4902 ~ 1.1346",
           "signal": "中性",
           "lots": "17:15",
           "deviation": "0.07%",
@@ -139656,6 +140472,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1632,
+            "renderPointCount": 460,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.59999
+              },
+              {
+                "label": "97%",
+                "value": 1.192681
+              }
+            ],
             "series": [
               {
                 "expiry": "2011",
@@ -141555,9 +142383,9 @@
           "previous": "0.9118",
           "change": "-0.0144",
           "changeValue": -0.01438254,
-          "allTime": "59.04%",
+          "allTime": "54.86%",
           "allTimeRange": "0.5022 ~ 1.5122",
-          "percentile": 70.9,
+          "percentile": 65.81,
           "fiveYearRange": "0.5022 ~ 1.0809",
           "signal": "中性",
           "lots": "10:9",
@@ -141580,6 +142408,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1626,
+            "renderPointCount": 459,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.605993
+              },
+              {
+                "label": "97%",
+                "value": 1.162329
+              }
+            ],
             "series": [
               {
                 "expiry": "2012",
@@ -143475,9 +144315,9 @@
           "previous": "0.8991",
           "change": "-0.0137",
           "changeValue": -0.01372297,
-          "allTime": "57.30%",
+          "allTime": "55.05%",
           "allTimeRange": "0.4593 ~ 1.4947",
-          "percentile": 68.47,
+          "percentile": 66.23,
           "fiveYearRange": "0.4593 ~ 1.0228",
           "signal": "中性",
           "lots": "17:15",
@@ -143500,6 +144340,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1604,
+            "renderPointCount": 452,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.560718
+              },
+              {
+                "label": "97%",
+                "value": 1.194796
+              }
+            ],
             "series": [
               {
                 "expiry": "2101",
@@ -145414,6 +146266,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 714,
+        "renderPointCount": 168,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 1.485089
+          },
+          {
+            "label": "97%",
+            "value": 2.398061
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -146128,10 +146992,10 @@
           "previous": "2.1353",
           "change": "-0.0103",
           "changeValue": -0.01034676,
-          "allTime": "58.76%",
-          "allTimeRange": "1.4516 ~ 2.5885",
-          "percentile": 58.76,
-          "fiveYearRange": "1.4516 ~ 2.5885",
+          "allTime": "74.21%",
+          "allTimeRange": "1.3546 ~ 2.5885",
+          "percentile": 74.21,
+          "fiveYearRange": "1.3546 ~ 2.5885",
           "signal": "中性",
           "lots": "5:16",
           "deviation": "0.39%",
@@ -146153,6 +147017,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 694,
+            "renderPointCount": 194,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.573649
+              },
+              {
+                "label": "97%",
+                "value": 2.449861
+              }
+            ],
             "series": [
               {
                 "expiry": "2410",
@@ -146960,10 +147836,10 @@
           "previous": "2.1390",
           "change": "-0.0131",
           "changeValue": -0.01314786,
-          "allTime": "53.37%",
-          "allTimeRange": "1.4712 ~ 2.7983",
-          "percentile": 53.37,
-          "fiveYearRange": "1.4712 ~ 2.7983",
+          "allTime": "66.77%",
+          "allTimeRange": "1.3727 ~ 2.7983",
+          "percentile": 66.77,
+          "fiveYearRange": "1.3727 ~ 2.7983",
           "signal": "中性",
           "lots": "5:16",
           "deviation": "0.35%",
@@ -146985,6 +147861,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 677,
+            "renderPointCount": 193,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.595158
+              },
+              {
+                "label": "97%",
+                "value": 2.506136
+              }
+            ],
             "series": [
               {
                 "expiry": "2411",
@@ -147788,10 +148676,10 @@
           "previous": "2.0978",
           "change": "-0.0198",
           "changeValue": -0.01983463,
-          "allTime": "56.38%",
-          "allTimeRange": "1.5705 ~ 2.4130",
-          "percentile": 56.38,
-          "fiveYearRange": "1.5705 ~ 2.4130",
+          "allTime": "67.94%",
+          "allTimeRange": "1.5356 ~ 2.4130",
+          "percentile": 67.94,
+          "fiveYearRange": "1.5356 ~ 2.4130",
           "signal": "中性",
           "lots": "6:19",
           "deviation": "1.58%",
@@ -147813,6 +148701,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 655,
+            "renderPointCount": 188,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.615048
+              },
+              {
+                "label": "97%",
+                "value": 2.301862
+              }
+            ],
             "series": [
               {
                 "expiry": "2412",
@@ -148596,10 +149496,10 @@
           "previous": "2.1342",
           "change": "-0.0231",
           "changeValue": -0.02310231,
-          "allTime": "69.02%",
-          "allTimeRange": "1.5675 ~ 2.3757",
-          "percentile": 69.02,
-          "fiveYearRange": "1.5675 ~ 2.3757",
+          "allTime": "72.08%",
+          "allTimeRange": "1.5304 ~ 2.4055",
+          "percentile": 72.08,
+          "fiveYearRange": "1.5304 ~ 2.4055",
           "signal": "中性",
           "lots": "6:19",
           "deviation": "0.00%",
@@ -148621,6 +149521,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 634,
+            "renderPointCount": 184,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.664632
+              },
+              {
+                "label": "97%",
+                "value": 2.29509
+              }
+            ],
             "series": [
               {
                 "expiry": "2501",
@@ -149446,6 +150358,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 1415,
+        "renderPointCount": 314,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 750.5168
+          },
+          {
+            "label": "97%",
+            "value": 1704.876
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -150724,9 +151648,9 @@
           "previous": "837",
           "change": "-16",
           "changeValue": -16.22,
-          "allTime": "10.23%",
-          "allTimeRange": "652 ~ 1979",
-          "percentile": 11.53,
+          "allTime": "6.50%",
+          "allTimeRange": "652 ~ 2096",
+          "percentile": 7.63,
           "fiveYearRange": "652 ~ 1525",
           "signal": "偏低",
           "lots": "6:5:1",
@@ -150752,6 +151676,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1399,
+            "renderPointCount": 391,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 796.94
+              },
+              {
+                "label": "97%",
+                "value": 1576.394
+              }
+            ],
             "series": [
               {
                 "expiry": "2110",
@@ -152380,10 +153316,10 @@
           "previous": "885",
           "change": "-12",
           "changeValue": -12.48,
-          "allTime": "22.28%",
-          "allTimeRange": "717 ~ 2154",
-          "percentile": 24.86,
-          "fiveYearRange": "717 ~ 1597",
+          "allTime": "20.52%",
+          "allTimeRange": "606 ~ 2154",
+          "percentile": 23.78,
+          "fiveYearRange": "606 ~ 1597",
           "signal": "中性",
           "lots": "6:5:1",
           "deviation": "3.10%",
@@ -152408,6 +153344,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1355,
+            "renderPointCount": 386,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 792.4804
+              },
+              {
+                "label": "97%",
+                "value": 1582.5048
+              }
+            ],
             "series": [
               {
                 "expiry": "2111",
@@ -154016,10 +154964,10 @@
           "previous": "873",
           "change": "-2",
           "changeValue": -1.52,
-          "allTime": "27.11%",
-          "allTimeRange": "690 ~ 2093",
-          "percentile": 29.86,
-          "fiveYearRange": "690 ~ 1413",
+          "allTime": "23.95%",
+          "allTimeRange": "685 ~ 2113",
+          "percentile": 27.3,
+          "fiveYearRange": "685 ~ 1413",
           "signal": "中性",
           "lots": "6:5:1",
           "deviation": "3.10%",
@@ -154044,6 +154992,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1328,
+            "renderPointCount": 380,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 791.2384
+              },
+              {
+                "label": "97%",
+                "value": 1570.4422
+              }
+            ],
             "series": [
               {
                 "expiry": "2112",
@@ -155628,9 +156588,9 @@
           "previous": "912",
           "change": "-7",
           "changeValue": -7.0,
-          "allTime": "40.74%",
-          "allTimeRange": "350 ~ 1955",
-          "percentile": 44.38,
+          "allTime": "37.76%",
+          "allTimeRange": "350 ~ 1957",
+          "percentile": 42.34,
           "fiveYearRange": "350 ~ 1328",
           "signal": "中性",
           "lots": "6:5:1",
@@ -155656,6 +156616,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1324,
+            "renderPointCount": 378,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 799.9996
+              },
+              {
+                "label": "97%",
+                "value": 1561.0412
+              }
+            ],
             "series": [
               {
                 "expiry": "2201",
@@ -157279,6 +158251,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 3.971649
+          },
+          {
+            "label": "97%",
+            "value": 8.166038
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -159429,9 +160413,9 @@
           "previous": "4.1400",
           "change": "-0.0037",
           "changeValue": -0.00373849,
-          "allTime": "16.69%",
+          "allTime": "10.39%",
           "allTimeRange": "3.4553 ~ 10.04",
-          "percentile": 26.59,
+          "percentile": 18.89,
           "fiveYearRange": "3.4553 ~ 8.5434",
           "signal": "中性",
           "lots": "17:7",
@@ -159454,6 +160438,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2407,
+            "renderPointCount": 671,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 4.00622
+              },
+              {
+                "label": "97%",
+                "value": 8.255736
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -162218,9 +163214,9 @@
           "previous": "4.3643",
           "change": "+0.0036",
           "changeValue": 0.00364072,
-          "allTime": "27.68%",
+          "allTime": "19.58%",
           "allTimeRange": "3.6080 ~ 9.1243",
-          "percentile": 44.6,
+          "percentile": 34.63,
           "fiveYearRange": "3.6080 ~ 8.7091",
           "signal": "中性",
           "lots": "16:7",
@@ -162243,6 +163239,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2334,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 3.911192
+              },
+              {
+                "label": "97%",
+                "value": 8.256102
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -164939,9 +165947,9 @@
           "previous": "4.4692",
           "change": "+0.0122",
           "changeValue": 0.01218036,
-          "allTime": "36.18%",
+          "allTime": "28.86%",
           "allTimeRange": "3.7365 ~ 8.7189",
-          "percentile": 55.71,
+          "percentile": 46.04,
           "fiveYearRange": "3.7365 ~ 8.4260",
           "signal": "中性",
           "lots": "20:9",
@@ -164964,6 +165972,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2242,
+            "renderPointCount": 633,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 3.940571
+              },
+              {
+                "label": "97%",
+                "value": 7.867821
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -167623,6 +168643,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 2.85952
+          },
+          {
+            "label": "97%",
+            "value": 4.026807
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -169796,6 +170828,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2428,
+            "renderPointCount": 527,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -371.38
+              },
+              {
+                "label": "97%",
+                "value": 1975.19
+              }
+            ],
             "series": [
               {
                 "expiry": "加权",
@@ -171923,10 +172967,10 @@
           "previous": "3.0708",
           "change": "-0.0380",
           "changeValue": -0.03797559,
-          "allTime": "18.57%",
-          "allTimeRange": "2.8558 ~ 4.6133",
-          "percentile": 34.58,
-          "fiveYearRange": "2.8558 ~ 3.4665",
+          "allTime": "21.20%",
+          "allTimeRange": "2.8408 ~ 4.6133",
+          "percentile": 41.87,
+          "fiveYearRange": "2.8408 ~ 3.5013",
           "signal": "中性",
           "lots": "2:3",
           "deviation": "1.09%",
@@ -171948,6 +172992,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 2.916526
+              },
+              {
+                "label": "97%",
+                "value": 4.220551
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -174720,10 +175776,10 @@
           "previous": "3.0281",
           "change": "-0.0210",
           "changeValue": -0.0210355,
-          "allTime": "25.64%",
+          "allTime": "21.96%",
           "allTimeRange": "2.4522 ~ 4.5011",
-          "percentile": 45.43,
-          "fiveYearRange": "2.4522 ~ 3.4278",
+          "percentile": 42.44,
+          "fiveYearRange": "2.4522 ~ 3.4768",
           "signal": "中性",
           "lots": "2:3",
           "deviation": "0.23%",
@@ -174745,6 +175801,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2395,
+            "renderPointCount": 663,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 2.881585
+              },
+              {
+                "label": "97%",
+                "value": 4.121255
+              }
+            ],
             "series": [
               {
                 "expiry": "1710",
@@ -177477,10 +178545,10 @@
           "previous": "3.0177",
           "change": "-0.0163",
           "changeValue": -0.016265,
-          "allTime": "26.54%",
-          "allTimeRange": "2.5562 ~ 4.3395",
-          "percentile": 47.46,
-          "fiveYearRange": "2.5562 ~ 3.3534",
+          "allTime": "24.55%",
+          "allTimeRange": "2.4718 ~ 4.3395",
+          "percentile": 47.07,
+          "fiveYearRange": "2.4718 ~ 3.4839",
           "signal": "中性",
           "lots": "2:3",
           "deviation": "0.05%",
@@ -177502,6 +178570,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2379,
+            "renderPointCount": 667,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 2.865581
+              },
+              {
+                "label": "97%",
+                "value": 4.114685
+              }
+            ],
             "series": [
               {
                 "expiry": "1711",
@@ -180250,10 +181330,10 @@
           "previous": "2.9772",
           "change": "-0.0077",
           "changeValue": -0.00773014,
-          "allTime": "28.59%",
-          "allTimeRange": "2.6026 ~ 4.0490",
-          "percentile": 45.74,
-          "fiveYearRange": "2.6026 ~ 3.3866",
+          "allTime": "26.04%",
+          "allTimeRange": "2.4835 ~ 4.0490",
+          "percentile": 46.33,
+          "fiveYearRange": "2.4835 ~ 3.3866",
           "signal": "中性",
           "lots": "2:3",
           "deviation": "1.02%",
@@ -180275,6 +181355,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 2.823286
+              },
+              {
+                "label": "97%",
+                "value": 3.873506
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -183018,6 +184110,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2236,
+        "renderPointCount": 488,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 0.67273
+          },
+          {
+            "label": "97%",
+            "value": 1.595515
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -185012,9 +186116,9 @@
           "previous": "0.8621",
           "change": "-0.0219",
           "changeValue": -0.02189549,
-          "allTime": "47.95%",
-          "allTimeRange": "0.6171 ~ 1.8182",
-          "percentile": 44.2,
+          "allTime": "53.20%",
+          "allTimeRange": "0.6126 ~ 1.8182",
+          "percentile": 50.14,
           "fiveYearRange": "0.6815 ~ 1.1845",
           "signal": "中性",
           "lots": "19:16",
@@ -185037,6 +186141,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1549,
+            "renderPointCount": 488,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.681645
+              },
+              {
+                "label": "97%",
+                "value": 1.541734
+              }
+            ],
             "series": [
               {
                 "expiry": "1710",
@@ -187069,9 +188185,9 @@
           "previous": "0.8437",
           "change": "-0.0276",
           "changeValue": -0.0276029,
-          "allTime": "32.64%",
-          "allTimeRange": "0.5839 ~ 1.7481",
-          "percentile": 28.09,
+          "allTime": "38.42%",
+          "allTimeRange": "0.5839 ~ 1.7525",
+          "percentile": 32.43,
           "fiveYearRange": "0.5839 ~ 1.1761",
           "signal": "中性",
           "lots": "11:9",
@@ -187094,6 +188210,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1520,
+            "renderPointCount": 481,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.689853
+              },
+              {
+                "label": "97%",
+                "value": 1.590842
+              }
+            ],
             "series": [
               {
                 "expiry": "1711",
@@ -189098,10 +190226,10 @@
           "previous": "0.8677",
           "change": "-0.0222",
           "changeValue": -0.02218267,
-          "allTime": "46.19%",
-          "allTimeRange": "0.5892 ~ 1.6254",
-          "percentile": 37.85,
-          "fiveYearRange": "0.6916 ~ 1.0794",
+          "allTime": "51.24%",
+          "allTimeRange": "0.5892 ~ 1.6338",
+          "percentile": 44.67,
+          "fiveYearRange": "0.6916 ~ 1.1062",
           "signal": "中性",
           "lots": "13:11",
           "deviation": "0.07%",
@@ -189123,6 +190251,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2262,
+            "renderPointCount": 643,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.708161
+              },
+              {
+                "label": "97%",
+                "value": 1.517928
+              }
+            ],
             "series": [
               {
                 "expiry": "1712",
@@ -191775,9 +192915,9 @@
           "previous": "0.8957",
           "change": "-0.0198",
           "changeValue": -0.01984071,
-          "allTime": "55.22%",
+          "allTime": "54.53%",
           "allTimeRange": "0.6030 ~ 1.6274",
-          "percentile": 54.49,
+          "percentile": 54.22,
           "fiveYearRange": "0.6264 ~ 1.0546",
           "signal": "中性",
           "lots": "8:7",
@@ -191800,6 +192940,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1590,
+            "renderPointCount": 498,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 0.687682
+              },
+              {
+                "label": "97%",
+                "value": 1.5484
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -193919,6 +195071,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 1.26504
+          },
+          {
+            "label": "97%",
+            "value": 1.769326
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -196092,6 +197256,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2428,
+            "renderPointCount": 527,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -91.72
+              },
+              {
+                "label": "97%",
+                "value": 625.007
+              }
+            ],
             "series": [
               {
                 "expiry": "加权",
@@ -198219,10 +199395,10 @@
           "previous": "1.2255",
           "change": "-0.0411",
           "changeValue": -0.04107559,
-          "allTime": "0.74%",
+          "allTime": "0.21%",
           "allTimeRange": "1.0788 ~ 2.3007",
-          "percentile": 1.15,
-          "fiveYearRange": "1.0788 ~ 1.8017",
+          "percentile": 0.33,
+          "fiveYearRange": "1.0788 ~ 1.8067",
           "signal": "极度偏低",
           "lots": "1:2",
           "deviation": "1.31%",
@@ -198244,6 +199420,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.265686
+              },
+              {
+                "label": "97%",
+                "value": 1.757341
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -201016,9 +202204,9 @@
           "previous": "1.3272",
           "change": "-0.0052",
           "changeValue": -0.0052452,
-          "allTime": "19.11%",
+          "allTime": "17.39%",
           "allTimeRange": "1.0161 ~ 2.0961",
-          "percentile": 34.09,
+          "percentile": 31.96,
           "fiveYearRange": "1.0161 ~ 1.8593",
           "signal": "中性",
           "lots": "5:11",
@@ -201041,6 +202229,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.251722
+              },
+              {
+                "label": "97%",
+                "value": 1.804179
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -203737,10 +204937,10 @@
           "previous": "1.3696",
           "change": "-0.0143",
           "changeValue": -0.01431713,
-          "allTime": "14.02%",
-          "allTimeRange": "1.1451 ~ 2.0763",
-          "percentile": 23.93,
-          "fiveYearRange": "1.1451 ~ 2.0763",
+          "allTime": "14.17%",
+          "allTimeRange": "1.1358 ~ 2.0763",
+          "percentile": 24.94,
+          "fiveYearRange": "1.1358 ~ 2.0763",
           "signal": "中性",
           "lots": "4:9",
           "deviation": "0.39%",
@@ -203762,6 +204962,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2258,
+            "renderPointCount": 635,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.270547
+              },
+              {
+                "label": "97%",
+                "value": 1.794369
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -206429,6 +207641,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 1679,
+        "renderPointCount": 371,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 7.608584
+          },
+          {
+            "label": "97%",
+            "value": 12.187857
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -207955,11 +209179,11 @@
           "previous": "9.2013",
           "change": "-0.0362",
           "changeValue": -0.0362339,
-          "allTime": "36.02%",
-          "allTimeRange": "7.3468 ~ 12.67",
-          "percentile": 17.48,
-          "fiveYearRange": "7.3584 ~ 12.67",
-          "signal": "中性",
+          "allTime": "34.43%",
+          "allTimeRange": "7.3468 ~ 13.94",
+          "percentile": 14.04,
+          "fiveYearRange": "7.3584 ~ 13.94",
+          "signal": "偏低",
           "lots": "6:11",
           "deviation": "0.02%",
           "notional": "154万",
@@ -207980,6 +209204,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1679,
+            "renderPointCount": 472,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 7.686329
+              },
+              {
+                "label": "97%",
+                "value": 11.864305
+              }
+            ],
             "series": [
               {
                 "expiry": "2009",
@@ -209927,11 +211163,11 @@
           "previous": "9.1816",
           "change": "-0.0231",
           "changeValue": -0.02313291,
-          "allTime": "35.28%",
-          "allTimeRange": "6.5572 ~ 12.69",
-          "percentile": 18.34,
-          "fiveYearRange": "6.5572 ~ 12.69",
-          "signal": "中性",
+          "allTime": "33.43%",
+          "allTimeRange": "6.5572 ~ 13.03",
+          "percentile": 13.13,
+          "fiveYearRange": "6.5572 ~ 13.03",
+          "signal": "偏低",
           "lots": "6:11",
           "deviation": "0.09%",
           "notional": "154万",
@@ -209952,6 +211188,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1669,
+            "renderPointCount": 462,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 7.673229
+              },
+              {
+                "label": "97%",
+                "value": 11.855161
+              }
+            ],
             "series": [
               {
                 "expiry": "2010",
@@ -211859,11 +213107,11 @@
           "previous": "9.1870",
           "change": "-0.0224",
           "changeValue": -0.02238523,
-          "allTime": "34.48%",
-          "allTimeRange": "6.6415 ~ 12.49",
-          "percentile": 18.31,
-          "fiveYearRange": "6.6415 ~ 12.49",
-          "signal": "中性",
+          "allTime": "31.83%",
+          "allTimeRange": "6.6415 ~ 12.68",
+          "percentile": 12.14,
+          "fiveYearRange": "6.6415 ~ 12.68",
+          "signal": "偏低",
           "lots": "6:11",
           "deviation": "0.02%",
           "notional": "154万",
@@ -211884,6 +213132,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1646,
+            "renderPointCount": 464,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 7.599979
+              },
+              {
+                "label": "97%",
+                "value": 11.842043
+              }
+            ],
             "series": [
               {
                 "expiry": "2011",
@@ -213799,11 +215059,11 @@
           "previous": "9.1976",
           "change": "-0.0170",
           "changeValue": -0.01695933,
-          "allTime": "33.48%",
-          "allTimeRange": "6.7627 ~ 13.05",
-          "percentile": 18.87,
-          "fiveYearRange": "6.7627 ~ 13.05",
-          "signal": "中性",
+          "allTime": "32.18%",
+          "allTimeRange": "6.7520 ~ 13.91",
+          "percentile": 13.71,
+          "fiveYearRange": "6.7520 ~ 13.91",
+          "signal": "偏低",
           "lots": "6:11",
           "deviation": "0.15%",
           "notional": "155万",
@@ -213824,6 +215084,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 1625,
+            "renderPointCount": 460,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 7.654862
+              },
+              {
+                "label": "97%",
+                "value": 11.87792
+              }
+            ],
             "series": [
               {
                 "expiry": "2012",
@@ -215770,6 +217042,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": -743.0
+          },
+          {
+            "label": "97%",
+            "value": 1191.0
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -217921,10 +219205,10 @@
           "previous": "-612",
           "change": "+1",
           "changeValue": 1.0,
-          "allTime": "9.96%",
+          "allTime": "6.25%",
           "allTimeRange": "-1580 ~ 1403",
-          "percentile": 2.59,
-          "fiveYearRange": "-865 ~ 901",
+          "percentile": 2.23,
+          "fiveYearRange": "-893 ~ 923",
           "signal": "极度偏低",
           "lots": "1:1",
           "deviation": "7.20%",
@@ -217946,6 +219230,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -761.58
+              },
+              {
+                "label": "97%",
+                "value": 1164.58
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -220728,10 +222024,10 @@
           "previous": "-496",
           "change": "+20",
           "changeValue": 20.0,
-          "allTime": "17.95%",
-          "allTimeRange": "-1362 ~ 1406",
-          "percentile": 2.57,
-          "fiveYearRange": "-673 ~ 904",
+          "allTime": "13.78%",
+          "allTimeRange": "-1398 ~ 1493",
+          "percentile": 2.06,
+          "fiveYearRange": "-728 ~ 926",
           "signal": "极度偏低",
           "lots": "1:1",
           "deviation": "5.73%",
@@ -220753,6 +222049,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2395,
+            "renderPointCount": 663,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -944.18
+              },
+              {
+                "label": "97%",
+                "value": 1116.44
+              }
+            ],
             "series": [
               {
                 "expiry": "1710",
@@ -223495,10 +224803,10 @@
           "previous": "-375",
           "change": "+16",
           "changeValue": 16.0,
-          "allTime": "22.34%",
-          "allTimeRange": "-1528 ~ 1587",
-          "percentile": 2.54,
-          "fiveYearRange": "-555 ~ 913",
+          "allTime": "19.67%",
+          "allTimeRange": "-1528 ~ 1607",
+          "percentile": 2.48,
+          "fiveYearRange": "-590 ~ 913",
           "signal": "极度偏低",
           "lots": "1:1",
           "deviation": "4.42%",
@@ -223520,6 +224828,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2379,
+            "renderPointCount": 667,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -1045.0
+              },
+              {
+                "label": "97%",
+                "value": 1184.0
+              }
+            ],
             "series": [
               {
                 "expiry": "1711",
@@ -226278,10 +227598,10 @@
           "previous": "-256",
           "change": "-12",
           "changeValue": -12.0,
-          "allTime": "21.56%",
-          "allTimeRange": "-871 ~ 1235",
-          "percentile": 2.56,
-          "fiveYearRange": "-383 ~ 1204",
+          "allTime": "20.90%",
+          "allTimeRange": "-924 ~ 1290",
+          "percentile": 2.81,
+          "fiveYearRange": "-430 ~ 1204",
           "signal": "极度偏低",
           "lots": "1:1",
           "deviation": "3.41%",
@@ -226303,6 +227623,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": -732.98
+              },
+              {
+                "label": "97%",
+                "value": 1031.96
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -229056,6 +230388,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 1.831909
+          },
+          {
+            "label": "97%",
+            "value": 2.900758
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -231206,10 +232550,10 @@
           "previous": "2.6522",
           "change": "+0.0410",
           "changeValue": 0.04101048,
-          "allTime": "83.06%",
-          "allTimeRange": "1.7205 ~ 2.9413",
-          "percentile": 67.15,
-          "fiveYearRange": "1.7205 ~ 2.9413",
+          "allTime": "84.02%",
+          "allTimeRange": "1.7205 ~ 2.9680",
+          "percentile": 68.13,
+          "fiveYearRange": "1.7205 ~ 2.9680",
           "signal": "中性",
           "lots": "7:19",
           "deviation": "0.78%",
@@ -231231,6 +232575,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2415,
+            "renderPointCount": 673,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.798329
+              },
+              {
+                "label": "97%",
+                "value": 2.838824
+              }
+            ],
             "series": [
               {
                 "expiry": "1709",
@@ -234003,10 +235359,10 @@
           "previous": "2.6313",
           "change": "+0.0528",
           "changeValue": 0.05283516,
-          "allTime": "81.96%",
-          "allTimeRange": "1.6703 ~ 3.1511",
-          "percentile": 67.61,
-          "fiveYearRange": "1.9333 ~ 3.1511",
+          "allTime": "81.41%",
+          "allTimeRange": "1.6694 ~ 3.2249",
+          "percentile": 64.49,
+          "fiveYearRange": "1.9333 ~ 3.2249",
           "signal": "中性",
           "lots": "3:8",
           "deviation": "0.65%",
@@ -234028,6 +235384,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2335,
+            "renderPointCount": 654,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.79029
+              },
+              {
+                "label": "97%",
+                "value": 2.881944
+              }
+            ],
             "series": [
               {
                 "expiry": "1801",
@@ -236724,11 +238092,11 @@
           "previous": "2.8483",
           "change": "+0.0635",
           "changeValue": 0.06354755,
-          "allTime": "90.71%",
-          "allTimeRange": "1.7718 ~ 3.0676",
-          "percentile": 83.19,
-          "fiveYearRange": "1.9794 ~ 3.0676",
-          "signal": "中性",
+          "allTime": "92.43%",
+          "allTimeRange": "1.7619 ~ 3.1356",
+          "percentile": 85.96,
+          "fiveYearRange": "1.9794 ~ 3.1356",
+          "signal": "偏高",
           "lots": "7:20",
           "deviation": "1.90%",
           "notional": "122万",
@@ -236749,6 +238117,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2258,
+            "renderPointCount": 635,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 1.942773
+              },
+              {
+                "label": "97%",
+                "value": 2.966368
+              }
+            ],
             "series": [
               {
                 "expiry": "1805",
@@ -239416,6 +240796,18 @@
         "endDate": "2026-08-28",
         "source": "xtdata",
         "grain": "更早周频 · 最近20个交易日日线收盘",
+        "statisticsPointCount": 2428,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 55.416326
+          },
+          {
+            "label": "97%",
+            "value": 93.685558
+          }
+        ],
         "series": [
           {
             "expiry": "加权",
@@ -241566,10 +242958,10 @@
           "previous": "59.50",
           "change": "-1.4520",
           "changeValue": -1.45199153,
-          "allTime": "3.46%",
-          "allTimeRange": "43.59 ~ 108.09",
-          "percentile": 6.59,
-          "fiveYearRange": "43.59 ~ 96.69",
+          "allTime": "4.25%",
+          "allTimeRange": "41.09 ~ 114.52",
+          "percentile": 8.42,
+          "fiveYearRange": "41.09 ~ 101.53",
           "signal": "偏低",
           "lots": "5:19",
           "deviation": "1.82%",
@@ -241591,6 +242983,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2399,
+            "renderPointCount": 664,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 55.783133
+              },
+              {
+                "label": "97%",
+                "value": 93.711611
+              }
+            ],
             "series": [
               {
                 "expiry": "1710",
@@ -244327,10 +245731,10 @@
           "previous": "59.51",
           "change": "-1.4696",
           "changeValue": -1.4696371,
-          "allTime": "3.31%",
-          "allTimeRange": "43.68 ~ 107.78",
-          "percentile": 6.2,
-          "fiveYearRange": "43.68 ~ 96.58",
+          "allTime": "4.24%",
+          "allTimeRange": "41.19 ~ 114.17",
+          "percentile": 8.26,
+          "fiveYearRange": "41.19 ~ 101.45",
           "signal": "偏低",
           "lots": "5:19",
           "deviation": "1.82%",
@@ -244352,6 +245756,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2356,
+            "renderPointCount": 664,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 55.801402
+              },
+              {
+                "label": "97%",
+                "value": 93.692989
+              }
+            ],
             "series": [
               {
                 "expiry": "1712",
@@ -247088,10 +248504,10 @@
           "previous": "59.52",
           "change": "-1.4761",
           "changeValue": -1.47610373,
-          "allTime": "6.31%",
-          "allTimeRange": "38.81 ~ 108.40",
-          "percentile": 11.61,
-          "fiveYearRange": "38.81 ~ 96.49",
+          "allTime": "4.57%",
+          "allTimeRange": "38.81 ~ 113.98",
+          "percentile": 8.75,
+          "fiveYearRange": "38.81 ~ 101.37",
           "signal": "偏低",
           "lots": "5:19",
           "deviation": "1.81%",
@@ -247113,6 +248529,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2318,
+            "renderPointCount": 650,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 55.211345
+              },
+              {
+                "label": "97%",
+                "value": 93.711634
+              }
+            ],
             "series": [
               {
                 "expiry": "1802",
@@ -249793,10 +251221,10 @@
           "previous": "59.53",
           "change": "-1.4859",
           "changeValue": -1.48591837,
-          "allTime": "6.22%",
-          "allTimeRange": "41.57 ~ 114.50",
-          "percentile": 11.33,
-          "fiveYearRange": "41.57 ~ 96.25",
+          "allTime": "4.83%",
+          "allTimeRange": "40.44 ~ 114.50",
+          "percentile": 9.08,
+          "fiveYearRange": "40.44 ~ 101.24",
           "signal": "偏低",
           "lots": "5:19",
           "deviation": "1.81%",
@@ -249818,6 +251246,18 @@
             "endDate": "2026-08-28",
             "source": "xtdata",
             "grain": "更早周频 · 最近20个交易日日线收盘",
+            "statisticsPointCount": 2277,
+            "renderPointCount": 643,
+            "quantileThresholds": [
+              {
+                "label": "3%",
+                "value": 54.816205
+              },
+              {
+                "label": "97%",
+                "value": 93.823801
+              }
+            ],
             "series": [
               {
                 "expiry": "1804",
@@ -252501,6 +253941,18 @@
         "endDate": "2026-08-28",
         "source": "CBOT美豆油与美豆粕：新浪外盘期货（AKShare）；报价统一换算为美元/短吨",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 仅向后匹配已公布数据",
+        "statisticsPointCount": 2540,
+        "renderPointCount": 538,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 1.686656
+          },
+          {
+            "label": "97%",
+            "value": 4.247632
+          }
+        ],
         "series": [
           {
             "expiry": "外盘",
@@ -254707,6 +256159,18 @@
         "endDate": "2026-08-28",
         "source": "马盘FCPO与CBOT美豆油：新浪外盘期货（AKShare）；直接使用两市场原始报价相除，不做单位或汇率换算",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 仅向后匹配已公布数据",
+        "statisticsPointCount": 1672,
+        "renderPointCount": 363,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 57.719131
+          },
+          {
+            "label": "97%",
+            "value": 105.74742
+          }
+        ],
         "series": [
           {
             "expiry": "跨市场",
@@ -256219,6 +257683,18 @@
         "endDate": "2026-08-28",
         "source": "国内：xtdata 00主力连续；外盘：AKShare/新浪 LME三个月电子盘；汇率：AKShare/国家外汇管理局",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 比价不做汇率换算 · 汇率仅作右轴参考",
+        "statisticsPointCount": 2373,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 6.522329
+          },
+          {
+            "label": "97%",
+            "value": 8.599041
+          }
+        ],
         "series": [
           {
             "expiry": "内外盘比价（左轴）",
@@ -260502,6 +261978,18 @@
         "endDate": "2026-08-28",
         "source": "国内：xtdata 00主力连续；外盘：AKShare/新浪 LME三个月电子盘；汇率：AKShare/国家外汇管理局",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 比价不做汇率换算 · 汇率仅作右轴参考",
+        "statisticsPointCount": 2373,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 7.215141
+          },
+          {
+            "label": "97%",
+            "value": 8.292414
+          }
+        ],
         "series": [
           {
             "expiry": "内外盘比价（左轴）",
@@ -264785,6 +266273,18 @@
         "endDate": "2026-08-28",
         "source": "国内：xtdata 00主力连续；外盘：AKShare/新浪 LME三个月电子盘；汇率：AKShare/国家外汇管理局",
         "grain": "更早周频 · 最近20个交易日日线收盘 · 比价不做汇率换算 · 汇率仅作右轴参考",
+        "statisticsPointCount": 2373,
+        "renderPointCount": 527,
+        "quantileThresholds": [
+          {
+            "label": "3%",
+            "value": 6.843746
+          },
+          {
+            "label": "97%",
+            "value": 8.611854
+          }
+        ],
         "series": [
           {
             "expiry": "内外盘比价（左轴）",
