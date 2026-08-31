@@ -6,6 +6,9 @@
 $ErrorActionPreference = "Stop"
 $env:GIT_TERMINAL_PROMPT = "0"
 $env:GCM_INTERACTIVE = "Never"
+$utf8Encoding = New-Object System.Text.UTF8Encoding($false)
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $runtimeDirectory = Join-Path $projectRoot ".runtime"
 $outputPath = Join-Path $projectRoot "app\data\arbitrage.json"
@@ -274,10 +277,12 @@ function Wait-ForCloudflareSnapshot {
 }
 
 trap {
-  $message = $_.Exception.Message
+  $rawMessage = $_.Exception.Message
+  $message = if ($rawMessage.Length -gt 1000) { $rawMessage.Substring(0, 1000) + "…" } else { $rawMessage }
+  $notificationMessage = if ($message.Length -gt 180) { $message.Substring(0, 180) + "…" } else { $message }
   Write-PublishLog "失败：$message"
   Write-RunStatus -Status "failed" -Message $message -DataDate $currentDataDate
-  Show-DashboardNotification -Title "套利看板自动更新失败" -Message $message
+  Show-DashboardNotification -Title "套利看板自动更新失败" -Message $notificationMessage
   exit 1
 }
 

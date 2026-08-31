@@ -976,6 +976,8 @@ test("scheduled publishing isolates development work and rejects stale domestic 
   assert.match(publisher, /externalRowDatesComplete/);
   assert.match(publisher, /Get-NormalizedJsonHash/);
   assert.match(publisher, /Show-DashboardNotification/);
+  assert.match(publisher, /\[Console\]::OutputEncoding = \$utf8Encoding/);
+  assert.match(publisher, /Substring\(0, 180\)/);
   assert.match(publisher, /restore.*app\/data\/arbitrage\.json/s);
   assert.match(publisher, /HEAD:main/);
   assert.match(updater, /dashboard_domestic_latest_date/);
