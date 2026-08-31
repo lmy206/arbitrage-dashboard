@@ -540,16 +540,14 @@ tbody th {
 }
 
 .external-source-date {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 5px;
-  border: 1px solid #d7c8f0;
-  border-radius: 999px;
-  color: #6e4aa6;
-  background: #f7f2ff;
+  display: block;
+  padding: 0;
+  border: 0;
+  color: #8a94a3;
+  background: transparent;
   font-size: 9px;
-  font-weight: 650;
-  line-height: 1.2;
+  font-weight: 500;
+  line-height: 1.1;
   white-space: nowrap;
 }
 
