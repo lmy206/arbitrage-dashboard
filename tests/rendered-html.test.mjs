@@ -855,7 +855,7 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
     assert.match(row.mainHistoryChart.grain, new RegExp(`外部数据截至${row.externalSourceDate}`));
     assert.match(row.mainHistoryChart.grain, /^更早周频 · 最近20个交易日日线收盘/);
     assert.ok(row.mainHistoryChart.series[0].points.length >= 300);
-    assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
+    assertIncreasingHistory(row.mainHistoryChart.series[0].points, row.pair);
     assert.ok(row.mainHistoryChart.series[0].points.every((point) => point.date <= payload.dataDate));
   }
 
