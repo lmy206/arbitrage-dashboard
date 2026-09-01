@@ -3776,7 +3776,13 @@ def write_outputs(
         row.get("externalSourceDate")
         and pd.Timestamp(row["externalSourceDate"]) <= pd.Timestamp(data_date)
         and row.get("mainHistoryChart") is not None
+        and pd.Timestamp(row["externalSourceDate"])
+        <= pd.Timestamp(row["mainHistoryChart"]["endDate"])
         and pd.Timestamp(row["mainHistoryChart"]["endDate"]) <= pd.Timestamp(data_date)
+        and (
+            pd.Timestamp(row["mainHistoryChart"]["endDate"])
+            - pd.Timestamp(row["externalSourceDate"])
+        ).days <= int(row["externalSourceMaxLagDays"])
         for row in external_rows
     )
     expected_external_symbols = {

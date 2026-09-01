@@ -841,7 +841,13 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
     assert.equal(row.contracts.length, 0);
     assert.ok(row.mainHistoryChart);
     assert.ok(row.externalSourceDate <= payload.dataDate);
-    assert.equal(row.mainHistoryChart.endDate, row.externalSourceDate);
+    assert.ok(row.externalSourceDate <= row.mainHistoryChart.endDate);
+    assert.ok(row.mainHistoryChart.endDate <= payload.dataDate);
+    const sourceLagDays = (
+      Date.parse(`${row.mainHistoryChart.endDate}T00:00:00Z`)
+      - Date.parse(`${row.externalSourceDate}T00:00:00Z`)
+    ) / DAY_MS;
+    assert.ok(sourceLagDays >= 0 && sourceLagDays <= row.externalSourceMaxLagDays);
     assert.match(row.mainHistoryChart.grain, new RegExp(`外部数据截至${row.externalSourceDate}`));
     assert.match(row.mainHistoryChart.grain, /^更早周频 · 最近20个交易日日线收盘/);
     assert.ok(row.mainHistoryChart.series[0].points.length >= 300);
