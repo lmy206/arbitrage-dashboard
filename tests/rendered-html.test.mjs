@@ -24,12 +24,16 @@ function weekEndingFriday(date) {
   return value.toISOString().slice(0, 10);
 }
 
-function assertHybridHistory(points, label = "history chart") {
+function assertIncreasingHistory(points, label = "history chart") {
   assert.ok(points.length >= 2, `${label} should include at least two points`);
   assert.ok(points.every((point, index) => (
     Number.isFinite(point.value)
     && (index === 0 || point.date > points[index - 1].date)
   )), `${label} dates should be unique and increasing`);
+}
+
+function assertHybridHistory(points, label = "history chart") {
+  assertIncreasingHistory(points, label);
   if (points.length <= 20) return;
 
   const older = points.slice(0, -20);
@@ -815,7 +819,7 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assert.equal(row.mainHistoryChart.overlaySeries.points.at(-1).date, payload.dataDate);
     assert.equal(row.mainHistoryChart.endDate, payload.dataDate);
     assert.ok(row.mainHistoryChart.series[0].points.length >= 300);
-    assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
+    assertIncreasingHistory(row.mainHistoryChart.series[0].points, row.pair);
   }
 
   assert.equal(payload.externalSources.length, 15);
