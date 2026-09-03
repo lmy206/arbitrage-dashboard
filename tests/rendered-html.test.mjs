@@ -73,6 +73,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /IM期限套/);
   assert.match(html, /title="\(IM当月 − IM下季\) × 12 \/ 月差 \/ 中证1000"/);
   assert.match(html, /展开IM期限套观察口径/);
+  assert.match(html, /IC期限套/);
+  assert.match(html, /title="\(IC当月 − IC下季\) × 12 \/ 月差 \/ 中证500"/);
+  assert.match(html, /展开IC期限套观察口径/);
   assert.match(html, /title="IM00\.IF − IC00\.IF"/);
   assert.doesNotMatch(html, /title="IM00\.IF \/ IC00\.IF"/);
   assert.match(html, /title="IC00\.IF \/ IF00\.IF"/);
@@ -275,13 +278,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 37);
-  assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
+  assert.equal(payload.rows.length, 38);
+  assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 29);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
@@ -663,80 +666,85 @@ test("spot-reference pairs include expandable xtdata history charts", async () =
   }
 });
 
-test("IM term spread exposes down-quarter and skip-quarter observations without future data", async () => {
+test("IM and IC term spreads expose down-quarter and skip-quarter observations without future data", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  const row = payload.rows.find((item) => item.pair === "IM期限套");
+  const configurations = [
+    { pair: "IM期限套", root: "IM", spotSymbol: "000852.SH", spotLabel: "中证1000", startDate: "2022-07-22" },
+    { pair: "IC期限套", root: "IC", spotSymbol: "000905.SH", spotLabel: "中证500", startDate: "2015-04-16" },
+  ];
 
-  assert.ok(row);
-  assert.equal(row.pairType, "期限套利");
-  assert.equal(row.seriesMode, "term");
-  assert.equal(row.denominatorSymbol, "000852.SH");
-  assert.equal(row.rollTradingDays, undefined);
-  assert.equal(row.rollRule, "当月合约正常跟踪至到期，到期后自然切换为次月合约");
-  assert.equal(row.formulaLabel, "(IM当月 − IM下季) × 12 / 月差 / 中证1000");
-  assert.match(row.leftSymbol, /^IM\d{4}\.IF$/);
-  assert.match(row.rightSymbol, /^IM\d{4}\.IF$/);
-  assert.ok(row.leftSymbol < row.rightSymbol);
-  assert.equal(row.contracts.length, 0);
-  assert.equal(row.leftStructure, null);
-  assert.equal(row.rightStructure, null);
-  assert.equal(row.spotObservation, null);
-  assert.ok(Number.isFinite(row.nearPrice));
-  assert.ok(Number.isFinite(row.farPrice));
-  assert.ok(Number.isFinite(row.spotPrice));
-  const expirySerial = (symbol) => {
-    const match = symbol.match(/^IM(\d{2})(\d{2})\.IF$/);
-    assert.ok(match, `${symbol} should be a concrete IM contract`);
-    return Number(match[1]) * 12 + Number(match[2]);
-  };
-  const expectedMonthGap = expirySerial(row.rightSymbol) - expirySerial(row.leftSymbol);
-  assert.equal(row.monthGap, expectedMonthGap);
-  const expectedCurrent = (row.nearPrice - row.farPrice) * 12 / row.monthGap / row.spotPrice;
-  assert.equal(row.current, `${(expectedCurrent * 100).toFixed(2)}%`);
-  assert.match(row.previous, /^-?\d+\.\d{2}%$/);
-  assert.match(row.change, /^[+-]\d+\.\d{2}%$/);
-  assert.match(row.allTimeRange, /^-?\d+\.\d{2}% ~ -?\d+\.\d{2}%$/);
-  assert.match(row.fiveYearRange, /^-?\d+\.\d{2}% ~ -?\d+\.\d{2}%$/);
-  assert.deepEqual(row.termObservations.map((item) => [item.key, item.label]), [
-    ["term-down", "下季"],
-    ["term-skip", "隔季"],
-  ]);
-  assert.equal(row.termObservations[0].rightSymbol, row.rightSymbol);
-  assert.deepEqual(row.mainHistoryChart, row.termObservations[0].historyChart);
+  for (const configuration of configurations) {
+    const row = payload.rows.find((item) => item.pair === configuration.pair);
+    assert.ok(row);
+    assert.equal(row.pairType, "期限套利");
+    assert.equal(row.seriesMode, "term");
+    assert.equal(row.denominatorSymbol, configuration.spotSymbol);
+    assert.equal(row.rollTradingDays, undefined);
+    assert.equal(row.rollRule, "当月合约正常跟踪至到期，到期后自然切换为次月合约");
+    assert.equal(row.formulaLabel, `(${configuration.root}当月 − ${configuration.root}下季) × 12 / 月差 / ${configuration.spotLabel}`);
+    assert.match(row.leftSymbol, new RegExp(`^${configuration.root}\\d{4}\\.IF$`));
+    assert.match(row.rightSymbol, new RegExp(`^${configuration.root}\\d{4}\\.IF$`));
+    assert.ok(row.leftSymbol < row.rightSymbol);
+    assert.equal(row.contracts.length, 0);
+    assert.equal(row.leftStructure, null);
+    assert.equal(row.rightStructure, null);
+    assert.equal(row.spotObservation, null);
+    assert.ok(Number.isFinite(row.nearPrice));
+    assert.ok(Number.isFinite(row.farPrice));
+    assert.ok(Number.isFinite(row.spotPrice));
+    const expirySerial = (symbol) => {
+      const match = symbol.match(new RegExp(`^${configuration.root}(\\d{2})(\\d{2})\\.IF$`));
+      assert.ok(match, `${symbol} should be a concrete ${configuration.root} contract`);
+      return Number(match[1]) * 12 + Number(match[2]);
+    };
+    assert.equal(row.monthGap, expirySerial(row.rightSymbol) - expirySerial(row.leftSymbol));
+    const expectedCurrent = (row.nearPrice - row.farPrice) * 12 / row.monthGap / row.spotPrice;
+    assert.equal(row.current, `${(expectedCurrent * 100).toFixed(2)}%`);
+    assert.match(row.previous, /^-?\d+\.\d{2}%$/);
+    assert.match(row.change, /^[+-]\d+\.\d{2}%$/);
+    assert.match(row.allTimeRange, /^-?\d+\.\d{2}% ~ -?\d+\.\d{2}%$/);
+    assert.match(row.fiveYearRange, /^-?\d+\.\d{2}% ~ -?\d+\.\d{2}%$/);
+    assert.deepEqual(row.termObservations.map((item) => [item.key, item.label]), [
+      ["term-down", "下季"],
+      ["term-skip", "隔季"],
+    ]);
+    assert.equal(row.termObservations[0].rightSymbol, row.rightSymbol);
+    assert.deepEqual(row.mainHistoryChart, row.termObservations[0].historyChart);
 
-  const [down, skip] = row.termObservations;
-  assert.equal(expirySerial(skip.rightSymbol) - expirySerial(down.rightSymbol), 3);
+    const [down, skip] = row.termObservations;
+    assert.equal(expirySerial(skip.rightSymbol) - expirySerial(down.rightSymbol), 3);
 
-  for (const observation of row.termObservations) {
-    assert.equal(observation.denominatorSymbol, "000852.SH");
-    assert.equal(observation.leftSymbol, row.leftSymbol);
-    assert.match(observation.formulaLabel, /^\(IM当月 − IM(下季|隔季)\) × 12 \/ 月差 \/ 中证1000$/);
-    assert.equal(observation.monthGap, expirySerial(observation.rightSymbol) - expirySerial(observation.leftSymbol));
-    const observationCurrent = (observation.nearPrice - observation.farPrice) * 12 / observation.monthGap / observation.spotPrice;
-    assert.equal(observation.current, `${(observationCurrent * 100).toFixed(2)}%`);
-    assert.match(observation.previous, /^-?\d+\.\d{2}%$/);
-    assert.match(observation.change, /^[+-]\d+\.\d{2}%$/);
-    assert.match(observation.allTimeRange, /^-?\d+\.\d{2}% ~ -?\d+\.\d{2}%$/);
-    assert.match(observation.fiveYearRange, /^-?\d+\.\d{2}% ~ -?\d+\.\d{2}%$/);
-    const chart = observation.historyChart;
-    assert.ok(chart);
-    assert.equal(chart.title, `IM期限套（当月-${observation.label}）走势`);
-    assert.equal(chart.unit, "百分比");
-    assert.equal(chart.source, "xtdata");
-    assert.equal(chart.grain, HYBRID_CHART_GRAIN);
-    assert.equal(chart.series.length, 1);
-    assert.equal(chart.series[0].expiry, observation.label);
-    assert.ok(chart.series[0].points.length >= 180);
-    assertHybridHistory(chart.series[0].points, `IM期限套 ${observation.label}`);
-    assert.ok(chart.series[0].points[0].date >= "2022-07-22");
-    assert.equal(chart.startDate, chart.series[0].points[0].date);
-    assert.equal(chart.series[0].points.at(-1).date, payload.dataDate);
-    assert.ok(Math.abs(chart.series[0].points.at(-1).value - observationCurrent) <= 0.0000005);
-    assert.ok(chart.series[0].points.every((point, index) => (
-      Number.isFinite(point.value)
-      && point.date <= payload.dataDate
-      && (index === 0 || point.date > chart.series[0].points[index - 1].date)
-    )));
+    for (const observation of row.termObservations) {
+      assert.equal(observation.denominatorSymbol, configuration.spotSymbol);
+      assert.equal(observation.leftSymbol, row.leftSymbol);
+      assert.equal(observation.formulaLabel, `(${configuration.root}当月 − ${configuration.root}${observation.label}) × 12 / 月差 / ${configuration.spotLabel}`);
+      assert.equal(observation.monthGap, expirySerial(observation.rightSymbol) - expirySerial(observation.leftSymbol));
+      const observationCurrent = (observation.nearPrice - observation.farPrice) * 12 / observation.monthGap / observation.spotPrice;
+      assert.equal(observation.current, `${(observationCurrent * 100).toFixed(2)}%`);
+      assert.match(observation.previous, /^-?\d+\.\d{2}%$/);
+      assert.match(observation.change, /^[+-]\d+\.\d{2}%$/);
+      assert.match(observation.allTimeRange, /^-?\d+\.\d{2}% ~ -?\d+\.\d{2}%$/);
+      assert.match(observation.fiveYearRange, /^-?\d+\.\d{2}% ~ -?\d+\.\d{2}%$/);
+      const chart = observation.historyChart;
+      assert.ok(chart);
+      assert.equal(chart.title, `${configuration.pair}（当月-${observation.label}）走势`);
+      assert.equal(chart.unit, "百分比");
+      assert.equal(chart.source, "xtdata");
+      assert.equal(chart.grain, HYBRID_CHART_GRAIN);
+      assert.equal(chart.series.length, 1);
+      assert.equal(chart.series[0].expiry, observation.label);
+      assert.ok(chart.series[0].points.length >= 180);
+      assertHybridHistory(chart.series[0].points, `${configuration.pair} ${observation.label}`);
+      assert.ok(chart.series[0].points[0].date >= configuration.startDate);
+      assert.equal(chart.startDate, chart.series[0].points[0].date);
+      assert.equal(chart.series[0].points.at(-1).date, payload.dataDate);
+      assert.ok(Math.abs(chart.series[0].points.at(-1).value - observationCurrent) <= 0.0000005);
+      assert.ok(chart.series[0].points.every((point, index) => (
+        Number.isFinite(point.value)
+        && point.date <= payload.dataDate
+        && (index === 0 || point.date > chart.series[0].points[index - 1].date)
+      )));
+    }
   }
 });
 

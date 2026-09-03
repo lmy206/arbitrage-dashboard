@@ -45,8 +45,8 @@ CONTRACT_HISTORY_MAX_SPAN_DAYS = 400
 RECENT_DAILY_TRADING_DAYS = 20
 FUTURE_XTDATA_ROWS_DISCARDED = 0
 HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘"
-IM_TERM_START_DATE = pd.Timestamp("2022-07-22")
-IM_TERM_SPOT_SYMBOL = "000852.SH"
+INDEX_TERM_CALENDAR_START = pd.Timestamp("2015-04-16")
+INDEX_TERM_ROLL_RULE = "当月合约正常跟踪至到期，到期后自然切换为次月合约"
 USD_CNY_MID_SYMBOL = "USDCNY_MID.SAFE"
 CSI300_PE_SYMBOL = "CSI300_PE_TTM.CSINDEX"
 CN10Y_SYMBOL = "CN10Y.CHINABOND"
@@ -396,7 +396,23 @@ PAIRS: list[dict[str, Any]] = [
         "right": "IM00.IF",
         "formula": ratio,
         "kind": "ratio",
-        "custom_builder": "im_term",
+        "custom_builder": "index_term",
+        "term_root": "IM",
+        "term_spot_symbol": "000852.SH",
+        "term_spot_label": "中证1000",
+        "term_start_date": "2022-07-22",
+    },
+    {
+        "pair": "IC期限套",
+        "left": "IC00.IF",
+        "right": "IC00.IF",
+        "formula": ratio,
+        "kind": "ratio",
+        "custom_builder": "index_term",
+        "term_root": "IC",
+        "term_spot_symbol": "000905.SH",
+        "term_spot_label": "中证500",
+        "term_start_date": "2015-04-16",
     },
     {"pair": "豆一豆二比", "left": "aJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
@@ -964,7 +980,7 @@ def fetch_history() -> tuple[
         pd.to_datetime(
             xtdata.get_trading_calendar(
                 "SH",
-                start_time=IM_TERM_START_DATE.strftime("%Y%m%d"),
+                start_time=INDEX_TERM_CALENDAR_START.strftime("%Y%m%d"),
                 end_time=calendar_end,
             ),
             format="%Y%m%d",
@@ -1008,18 +1024,26 @@ def fetch_history() -> tuple[
                         contract_symbol_for_expiry(continuous_symbol, historical_expiry)
                     )
 
-    # IM期限套需要按历史时点选择具体的当月、下季与隔季合约。这里一次性补齐
-    # IM上市以来的月度合约，选择规则在后续计算中只依赖已知交易日历，
+    # 股指期限套需要按历史时点选择具体的当月、下季与隔季合约。这里一次性
+    # 补齐各品种上市以来的月度合约；选择规则只依赖已知交易日历，
     # 不按未来成交量倒推主力合约。
     latest_term_period = im_skip_quarter_period(common_latest_date)
-    for period in pd.period_range(
-        IM_TERM_START_DATE.to_period("M"),
-        latest_term_period,
-        freq="M",
+    for term_definition in (
+        definition
+        for definition in PAIRS
+        if definition.get("custom_builder") == "index_term"
     ):
-        archive_symbols.add(
-            contract_symbol_for_expiry("IM00.IF", period.strftime("%y%m"))
-        )
+        for period in pd.period_range(
+            pd.Timestamp(term_definition["term_start_date"]).to_period("M"),
+            latest_term_period,
+            freq="M",
+        ):
+            archive_symbols.add(
+                contract_symbol_for_expiry(
+                    term_definition["left"],
+                    period.strftime("%y%m"),
+                )
+            )
 
     archive_symbols.difference_update(monthly_histories)
     archive_start = (
@@ -2563,18 +2587,22 @@ def build_main_continuous_observation(
     }
 
 
-def build_im_term_series(
+def build_index_term_series(
+    definition: dict[str, Any],
     histories: dict[str, pd.Series],
     monthly_histories: dict[str, pd.DataFrame],
     common_latest_date: pd.Timestamp,
     trading_calendar: pd.DatetimeIndex,
     far_rank: int,
 ) -> tuple[pd.Series, dict[pd.Timestamp, dict[str, Any]]]:
-    """Build a month-gap-adjusted IM calendar spread without future-price use."""
-    spot = histories[IM_TERM_SPOT_SYMBOL].dropna().sort_index()
+    """Build a month-gap-adjusted equity-index calendar spread without future-price use."""
+    continuous_symbol = definition["left"]
+    spot_symbol = definition["term_spot_symbol"]
+    start_date = pd.Timestamp(definition["term_start_date"])
+    spot = histories[spot_symbol].dropna().sort_index()
     spot_dates = pd.DatetimeIndex(spot.index.unique()).sort_values()
     trading_dates = spot_dates[
-        (spot_dates >= IM_TERM_START_DATE)
+        (spot_dates >= start_date)
         & (spot_dates <= common_latest_date)
     ]
     observations: dict[pd.Timestamp, float] = {}
@@ -2584,10 +2612,10 @@ def build_im_term_series(
         near_period = im_near_contract_period(trading_date, trading_calendar)
         far_period = im_far_quarter_period(trading_date, far_rank)
         near_symbol = contract_symbol_for_expiry(
-            "IM00.IF", near_period.strftime("%y%m")
+            continuous_symbol, near_period.strftime("%y%m")
         )
         far_symbol = contract_symbol_for_expiry(
-            "IM00.IF", far_period.strftime("%y%m")
+            continuous_symbol, far_period.strftime("%y%m")
         )
         near_frame = monthly_histories.get(near_symbol)
         far_frame = monthly_histories.get(far_symbol)
@@ -2614,7 +2642,7 @@ def build_im_term_series(
         legs_by_date[pd.Timestamp(trading_date)] = {
             "nearSymbol": near_symbol,
             "farSymbol": far_symbol,
-            "spotSymbol": IM_TERM_SPOT_SYMBOL,
+            "spotSymbol": spot_symbol,
             "nearPrice": near_price,
             "farPrice": far_price,
             "spotPrice": spot_price,
@@ -2625,12 +2653,12 @@ def build_im_term_series(
     if len(values) < 2 or values.index[-1] != common_latest_date:
         latest = values.index[-1].strftime("%Y-%m-%d") if len(values) else "无"
         raise RuntimeError(
-            f"IM期限套远季{far_rank}有效共同交易日不足或未覆盖数据日，最新值={latest}"
+            f"{definition['pair']}远季{far_rank}有效共同交易日不足或未覆盖数据日，最新值={latest}"
         )
     return values, legs_by_date
 
 
-def build_im_term_observation(
+def build_index_term_observation(
     definition: dict[str, Any],
     histories: dict[str, pd.Series],
     monthly_histories: dict[str, pd.DataFrame],
@@ -2642,7 +2670,8 @@ def build_im_term_observation(
     label: str,
     far_rank: int,
 ) -> tuple[dict[str, Any], pd.Timestamp]:
-    values, legs_by_date = build_im_term_series(
+    values, legs_by_date = build_index_term_series(
+        definition,
         histories,
         monthly_histories,
         common_latest_date,
@@ -2656,9 +2685,12 @@ def build_im_term_observation(
     change = current - previous
     five_year = values[values.index >= latest_date - pd.DateOffset(years=5)]
     five_year_percentile = percentile(five_year)
+    continuous_symbol = definition["left"]
+    term_root = definition["term_root"]
+    spot_label = definition["term_spot_label"]
     lots, deviation, notional, margin = balance_metrics(
-        "IM00.IF",
-        "IM00.IF",
+        continuous_symbol,
+        continuous_symbol,
         latest_legs["nearPrice"],
         latest_legs["farPrice"],
         force_one_to_one=True,
@@ -2672,11 +2704,11 @@ def build_im_term_observation(
         common_latest_date,
     )
     if chart is None:
-        raise RuntimeError(f"IM期限套{label}历史折线图数据不足")
-    chart["title"] = f"IM期限套（当月-{label}）走势"
+        raise RuntimeError(f"{definition['pair']}{label}历史折线图数据不足")
+    chart["title"] = f"{definition['pair']}（当月-{label}）走势"
     chart["unit"] = "百分比"
     chart["startDate"] = chart["series"][0]["points"][0]["date"]
-    formula_label = f"(IM当月 − IM{label}) × 12 / 月差 / 中证1000"
+    formula_label = f"({term_root}当月 − {term_root}{label}) × 12 / 月差 / {spot_label}"
     near_history = monthly_histories[latest_legs["nearSymbol"]]["close"]
     far_history = monthly_histories[latest_legs["farSymbol"]]["close"]
 
@@ -2714,7 +2746,7 @@ def build_im_term_observation(
     )
 
 
-def build_im_term_row(
+def build_index_term_row(
     definition: dict[str, Any],
     histories: dict[str, pd.Series],
     monthly_histories: dict[str, pd.DataFrame],
@@ -2722,7 +2754,7 @@ def build_im_term_row(
     trading_calendar: pd.DatetimeIndex,
     source_validation: dict[str, Any],
 ) -> tuple[dict[str, Any], pd.Timestamp]:
-    down, down_latest_date = build_im_term_observation(
+    down, down_latest_date = build_index_term_observation(
         definition,
         histories,
         monthly_histories,
@@ -2733,7 +2765,7 @@ def build_im_term_row(
         label="下季",
         far_rank=1,
     )
-    skip, skip_latest_date = build_im_term_observation(
+    skip, skip_latest_date = build_index_term_observation(
         definition,
         histories,
         monthly_histories,
@@ -2745,7 +2777,7 @@ def build_im_term_row(
         far_rank=2,
     )
     if down_latest_date != skip_latest_date:
-        raise RuntimeError("IM期限套下季与隔季最新交易日不一致")
+        raise RuntimeError(f"{definition['pair']}下季与隔季最新交易日不一致")
 
     return (
         {
@@ -2772,7 +2804,7 @@ def build_im_term_row(
             "seriesMode": "term",
             "pairType": "期限套利",
             "formulaLabel": down["formulaLabel"],
-            "rollRule": "当月合约正常跟踪至到期，到期后自然切换为次月合约",
+            "rollRule": INDEX_TERM_ROLL_RULE,
             "nearPrice": down["nearPrice"],
             "farPrice": down["farPrice"],
             "spotPrice": down["spotPrice"],
@@ -3287,8 +3319,8 @@ def build_rows(
     }
 
     for definition in PAIRS:
-        if definition.get("custom_builder") == "im_term":
-            row, latest_date = build_im_term_row(
+        if definition.get("custom_builder") == "index_term":
+            row, latest_date = build_index_term_row(
                 definition,
                 histories,
                 monthly_histories,
@@ -3564,7 +3596,7 @@ def write_outputs(
         "externalSources": external_sources,
         "externalSourcePolicy": "看板主数据日使用国内xtdata最新完整交易日；外盘与外部指标保留各自实际来源日期，不阻塞国内数据更新。铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元银行融资压力代理使用纽约联储OBFR减美联储理事会准备金管理利率并换算为基点，2021-07-29起使用IORB、此前使用IOER，只作为银行广义无担保隔夜融资相对准备金管理利率的压力代理；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
-        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
+        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",
         "rows": rows,
         "charts": charts,
@@ -3576,7 +3608,10 @@ def write_outputs(
     latest = pd.Timestamp(data_date).date()
     lag_days = (now.date() - latest).days
     expected_domestic_date = expected_domestic_data_date(trading_calendar, now)
-    domestic_freshness_complete = pd.Timestamp(data_date) == expected_domestic_date
+    domestic_freshness_complete = (
+        pd.Timestamp(data_date) >= expected_domestic_date
+        and pd.Timestamp(data_date) <= pd.Timestamp(now.date())
+    )
     tradable_rows = [row for row in rows if row["pairType"] == "期货套利"]
     definitions_by_pair = {definition["pair"]: definition for definition in PAIRS}
     contract_rows_complete = all(
@@ -3722,33 +3757,48 @@ def write_outputs(
         len(definition_symbols(definitions_by_pair[row["pair"]]))
         for row in tradable_rows
     )
-    im_term_rows = [row for row in rows if row["pairType"] == "期限套利"]
-    im_term_observations = (
-        im_term_rows[0].get("termObservations", []) if im_term_rows else []
-    )
-    im_term_history_complete = (
-        len(im_term_rows) == 1
-        and im_term_rows[0]["pair"] == "IM期限套"
-        and im_term_rows[0]["contracts"] == []
-        and im_term_rows[0]["denominatorSymbol"] == IM_TERM_SPOT_SYMBOL
-        and im_term_rows[0]["rollRule"] == "当月合约正常跟踪至到期，到期后自然切换为次月合约"
-        and [item["key"] for item in im_term_observations]
-        == ["term-down", "term-skip"]
-        and [item["label"] for item in im_term_observations] == ["下季", "隔季"]
-        and all(
-            item["denominatorSymbol"] == IM_TERM_SPOT_SYMBOL
-            and item["historyChart"] is not None
-            and item["historyChart"]["endDate"] == data_date
-            and len(item["historyChart"]["series"]) == 1
-            and len(item["historyChart"]["series"][0]["points"]) >= 8
-            and chart_statistics_complete(item["historyChart"])
+    index_term_definitions = {
+        definition["pair"]: definition
+        for definition in PAIRS
+        if definition.get("custom_builder") == "index_term"
+    }
+    index_term_rows = [row for row in rows if row["pairType"] == "期限套利"]
+
+    def index_term_row_complete(row: dict[str, Any]) -> bool:
+        definition = index_term_definitions.get(row["pair"])
+        observations = row.get("termObservations", [])
+        return bool(
+            definition
+            and row["contracts"] == []
+            and row["denominatorSymbol"] == definition["term_spot_symbol"]
+            and row["rollRule"] == INDEX_TERM_ROLL_RULE
+            and [item["key"] for item in observations] == ["term-down", "term-skip"]
+            and [item["label"] for item in observations] == ["下季", "隔季"]
             and all(
-                point["date"] <= data_date
-                for point in item["historyChart"]["series"][0]["points"]
+                item["denominatorSymbol"] == definition["term_spot_symbol"]
+                and item["historyChart"] is not None
+                and item["historyChart"]["endDate"] == data_date
+                and len(item["historyChart"]["series"]) == 1
+                and len(item["historyChart"]["series"][0]["points"]) >= 8
+                and chart_statistics_complete(item["historyChart"])
+                and all(
+                    point["date"] <= data_date
+                    for point in item["historyChart"]["series"][0]["points"]
+                )
+                for item in observations
             )
-            for item in im_term_observations
         )
+
+    index_term_history_complete = (
+        {row["pair"] for row in index_term_rows} == set(index_term_definitions)
+        and all(index_term_row_complete(row) for row in index_term_rows)
     )
+    im_term_rows = [row for row in index_term_rows if row["pair"] == "IM期限套"]
+    ic_term_rows = [row for row in index_term_rows if row["pair"] == "IC期限套"]
+    im_term_observations = im_term_rows[0].get("termObservations", []) if im_term_rows else []
+    ic_term_observations = ic_term_rows[0].get("termObservations", []) if ic_term_rows else []
+    im_term_history_complete = len(im_term_rows) == 1 and index_term_row_complete(im_term_rows[0])
+    ic_term_history_complete = len(ic_term_rows) == 1 and index_term_row_complete(ic_term_rows[0])
     full_daily_chart_statistics_complete = all(
         (
             weighted_observation_histories_complete,
@@ -3756,7 +3806,7 @@ def write_outputs(
             contract_history_charts_complete,
             equity_index_observation_histories_complete,
             spot_reference_histories_complete,
-            im_term_history_complete,
+            index_term_history_complete,
         )
     )
     charts_complete = len(charts) == len(HISTORY_CHARTS) and all(len(chart["points"]) >= 12 for chart in charts)
@@ -3828,7 +3878,7 @@ def write_outputs(
         full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
         term_structure_count == expected_term_structure_count,
-        im_term_history_complete,
+        index_term_history_complete,
         charts_complete,
         cross_market_rows_complete,
         external_row_dates_complete,
@@ -3841,6 +3891,7 @@ def write_outputs(
         "dataDate": data_date,
         "domesticDataDate": data_date,
         "expectedDomesticDataDate": expected_domestic_date.strftime("%Y-%m-%d"),
+        "minimumExpectedDomesticDataDate": expected_domestic_date.strftime("%Y-%m-%d"),
         "domesticFreshnessComplete": domestic_freshness_complete,
         "calendarLagDays": lag_days,
         "pairCount": len(rows),
@@ -3882,6 +3933,17 @@ def write_outputs(
         "expectedSpotObservationCount": len(SPOT_OBSERVATIONS),
         "termStructureCount": term_structure_count,
         "expectedTermStructureCount": expected_term_structure_count,
+        "indexTermRowCount": len(index_term_rows),
+        "expectedIndexTermRowCount": len(index_term_definitions),
+        "indexTermHistoryComplete": index_term_history_complete,
+        "indexTermHistoryPointCounts": {
+            row["pair"]: {
+                item["label"]: len(item["historyChart"]["series"][0]["points"])
+                for item in row.get("termObservations", [])
+                if item.get("historyChart")
+            }
+            for row in index_term_rows
+        },
         "imTermHistoryComplete": im_term_history_complete,
         "imTermHistoryPointCounts": {
             item["label"]: len(item["historyChart"]["series"][0]["points"])
@@ -3895,9 +3957,34 @@ def write_outputs(
             if len(im_term_observations) == 2
             else None
         ),
-        "imTermSpotSymbol": IM_TERM_SPOT_SYMBOL,
+        "imTermSpotSymbol": (
+            index_term_definitions["IM期限套"]["term_spot_symbol"]
+            if "IM期限套" in index_term_definitions
+            else None
+        ),
         "imTermRollRule": (
             im_term_rows[0]["rollRule"] if im_term_rows else None
+        ),
+        "icTermHistoryComplete": ic_term_history_complete,
+        "icTermHistoryPointCounts": {
+            item["label"]: len(item["historyChart"]["series"][0]["points"])
+            for item in ic_term_observations
+            if item.get("historyChart")
+        },
+        "icTermLatestNear": ic_term_rows[0]["leftSymbol"] if ic_term_rows else None,
+        "icTermLatestFar": ic_term_rows[0]["rightSymbol"] if ic_term_rows else None,
+        "icTermLatestSkipFar": (
+            ic_term_observations[1]["rightSymbol"]
+            if len(ic_term_observations) == 2
+            else None
+        ),
+        "icTermSpotSymbol": (
+            index_term_definitions["IC期限套"]["term_spot_symbol"]
+            if "IC期限套" in index_term_definitions
+            else None
+        ),
+        "icTermRollRule": (
+            ic_term_rows[0]["rollRule"] if ic_term_rows else None
         ),
         "chartCount": len(charts),
         "expectedChartCount": len(HISTORY_CHARTS),
