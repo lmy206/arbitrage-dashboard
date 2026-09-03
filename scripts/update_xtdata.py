@@ -111,8 +111,6 @@ CONTRACTS: dict[str, dict[str, float]] = {
     "MA00.ZF": {"multiplier": 10, "margin_rate": 0.10},
     "TA00.ZF": {"multiplier": 5, "margin_rate": 0.09},
     "PX00.ZF": {"multiplier": 5, "margin_rate": 0.10},
-    "PF00.ZF": {"multiplier": 5, "margin_rate": 0.07},
-    "eg00.DF": {"multiplier": 10, "margin_rate": 0.07},
     "lh00.DF": {"multiplier": 16, "margin_rate": 0.08},
     "c00.DF": {"multiplier": 10, "margin_rate": 0.07},
 }
@@ -285,15 +283,6 @@ def mto_screen_margin(polypropylene: pd.Series, methanol: pd.Series) -> pd.Serie
 def pta_processing_fee(pta: pd.Series, paraxylene: pd.Series) -> pd.Series:
     """PTA screen processing fee using the common 0.655 PX consumption factor."""
     return pta - 0.655 * paraxylene
-
-
-def polyester_staple_profit(
-    staple_fiber: pd.Series,
-    pta: pd.Series,
-    monoethylene_glycol: pd.Series,
-) -> pd.Series:
-    """Per-ton PF screen margin using the common 0.86 PTA and 0.34 MEG factors."""
-    return staple_fiber - 0.86 * pta - 0.34 * monoethylene_glycol
 
 
 def glass_production_profit(glass: pd.Series, soda_ash: pd.Series) -> pd.Series:
@@ -477,18 +466,6 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "spread",
         "fixed_lots": (20, 13),
         "formula_label": "PTA − 0.655 × PX（未扣其他成本）",
-    },
-    {
-        "pair": "涤纶短纤生产利润价差",
-        "left": "PFJQ00.ZF",
-        "right": "TAJQ00.ZF",
-        "third": "egJQ00.DF",
-        "formula": polyester_staple_profit,
-        "kind": "spread",
-        "right_factor": 0.86,
-        "third_factor": 0.34,
-        "fixed_lots_3": (6, 5, 1),
-        "formula_label": "PF − 0.86 × PTA − 0.34 × MEG（未扣能源、人工等成本）",
     },
     {"pair": "猪肉/玉米比价", "left": "lhJQ00.DF", "right": "cJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "豆粕价差", "left": "mJQ00.DF", "right": "aJQ00.DF", "formula": spread, "kind": "spread", "contract_months": OILSEED_CONTRACT_MONTHS},
@@ -1721,8 +1698,6 @@ def build_xtdata_only_validation(
                 "ss00.SF": "不锈钢",
                 "l00.DF": "聚乙烯",
                 "pp00.DF": "聚丙烯",
-                "PF00.ZF": "涤纶短纤",
-                "eg00.DF": "乙二醇",
                 "lh00.DF": "生猪",
                 "c00.DF": "玉米",
             }.get(base_symbol, base_symbol)
