@@ -864,8 +864,13 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.equal(dollarFunding.formulaLabel, "（OBFR − IORB/IOER）× 100 基点");
   assert.equal(dollarFunding.mainHistoryChart.unit, "基点");
   assert.equal(dollarFunding.mainHistoryChart.startDate, dollarFunding.mainHistoryChart.series[0].points[0].date);
-  assert.ok(dollarFunding.mainHistoryChart.startDate >= "2016-08-25");
-  assert.ok(dollarFunding.mainHistoryChart.startDate <= "2016-09-05");
+  const fundingHistoryWindowStart = new Date(`${dollarFunding.mainHistoryChart.endDate}T00:00:00Z`);
+  fundingHistoryWindowStart.setUTCFullYear(fundingHistoryWindowStart.getUTCFullYear() - 10);
+  const fundingHistoryStartLagDays = (
+    Date.parse(`${dollarFunding.mainHistoryChart.startDate}T00:00:00Z`)
+    - fundingHistoryWindowStart.getTime()
+  ) / DAY_MS;
+  assert.ok(fundingHistoryStartLagDays >= 0 && fundingHistoryStartLagDays <= 7);
   assert.ok(dollarFunding.mainHistoryChart.series[0].points.length >= 500);
   assert.equal(dollarFunding.mainHistoryChart.series[0].expiry, "美元融资压力（左轴）");
   assert.equal(dollarFunding.mainHistoryChart.overlaySeries.label, "标普500指数（右轴）");
