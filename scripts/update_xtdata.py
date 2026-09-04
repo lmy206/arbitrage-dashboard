@@ -352,7 +352,7 @@ RELATED_OBSERVATIONS: dict[str, list[dict[str, Any]]] = {
             "formula_label": "FG − 0.2 × SA（未扣燃料与其他成本）",
         }
     ],
-    "焦炭/焦煤比": [
+    "焦炭/焦煤比价": [
         {
             "key": "coking-profit",
             "pair": "焦化利润",
@@ -402,7 +402,7 @@ PAIRS: list[dict[str, Any]] = [
         "term_spot_label": "中证500",
         "term_start_date": "2015-04-16",
     },
-    {"pair": "豆一豆二比", "left": "aJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio"},
+    {"pair": "豆一/豆二比价", "left": "aJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"pair": "卷-螺价差", "left": "hcJQ00.SF", "right": "rbJQ00.SF", "formula": spread, "kind": "spread"},
     {"pair": "铜/铝比价", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
@@ -416,12 +416,12 @@ PAIRS: list[dict[str, Any]] = [
         }
         for definition in LME_CROSS_MARKET_PAIRS
     ],
-    {"pair": "棕榈油菜油比", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
+    {"pair": "棕榈油/菜油比价", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "棕榈油/豆油比价", "left": "pJQ00.DF", "right": "yJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"pair": "玻璃/纯碱比价", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {
-        "pair": "焦炭/焦煤比",
+        "pair": "焦炭/焦煤比价",
         "left": "jJQ00.DF",
         "right": "jmJQ00.DF",
         "formula": ratio,
@@ -429,7 +429,7 @@ PAIRS: list[dict[str, Any]] = [
         "contract_months": {1, 5, 9},
     },
     {"pair": "油/粕比价", "left": "yJQ00.DF", "right": "mJQ00.DF", "formula": ratio, "kind": "ratio", "strategy_type": "趋势", "contract_months": OILSEED_CONTRACT_MONTHS},
-    {"pair": "豆油菜油比", "left": "yJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
+    {"pair": "菜油/豆油比价", "left": "OIJQ00.ZF", "right": "yJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {
         "pair": "螺/矿比价",
         "left": "rbJQ00.SF",

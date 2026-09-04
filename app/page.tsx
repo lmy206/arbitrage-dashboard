@@ -198,15 +198,21 @@ const hasExternalSources = externalSources.length > 0;
 const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
 const favoriteStorageKey = "arbitrage-favorites-v1";
 const legacyPairNamesByCurrent: Record<string, string[]> = {
+  "棕榈油/菜油比价": ["棕榈油菜油比"],
+  "菜油/豆油比价": ["豆油菜油比"],
+  "豆一/豆二比价": ["豆一豆二比"],
   "螺/矿比价": ["螺矿比"],
   "油/粕比价": ["油粕比"],
   "卷-螺价差": ["卷螺价差"],
   "铜/铝比价": ["铜铝比"],
   "金/银比价": ["金银比"],
   "玻璃/纯碱比价": ["玻璃/纯碱比", "玻璃纯碱比", "纯碱玻璃比"],
-  "焦炭/焦煤比": ["焦炭焦煤比"],
+  "焦炭/焦煤比价": ["焦炭/焦煤比", "焦炭焦煤比"],
 };
 const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
+  "棕榈油/菜油比价": ["棕榈油菜油比"],
+  "菜油/豆油比价": ["豆油菜油比"],
+  "豆一/豆二比价": ["豆一豆二比"],
   "聚丙烯/甲醇比价": ["MTO盘面利润"],
   "螺/矿比价": ["螺矿比"],
   "油/粕比价": ["油粕比"],
@@ -214,7 +220,7 @@ const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
   "铜/铝比价": ["铜铝比"],
   "金/银比价": ["金银比"],
   "玻璃/纯碱比价": ["玻璃/纯碱比", "玻璃纯碱比", "纯碱玻璃比", "玻璃生产利润"],
-  "焦炭/焦煤比": ["焦炭焦煤比", "焦化利润"],
+  "焦炭/焦煤比价": ["焦炭/焦煤比", "焦炭焦煤比", "焦化利润"],
 };
 
 type SortKey = "pair" | "current" | "previous" | "change" | "allTime" | "percentile" | "lots" | "deviation" | "notional" | "margin";

@@ -85,7 +85,10 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /豆粕价差/);
   assert.match(html, /蛋白质价差/);
   assert.doesNotMatch(html, /豆粕菜粕差/);
-  assert.match(html, /焦炭\/焦煤比/);
+  assert.match(html, /焦炭\/焦煤比价/);
+  assert.match(html, /棕榈油\/菜油比价/);
+  assert.match(html, /菜油\/豆油比价/);
+  assert.match(html, /豆一\/豆二比价/);
   assert.match(html, /燃料油\/沥青比价/);
   assert.match(html, /20号胶\/BR橡胶比价/);
   assert.match(html, /烧碱\/玻璃比价/);
@@ -217,10 +220,13 @@ test("expanded contract lists omit the extra main-continuous observation", async
   assert.match(pageSource, /"金\/银比价": \["金银比"\]/);
   assert.match(pageSource, /"聚丙烯\/甲醇比价": \["MTO盘面利润"\]/);
   assert.match(pageSource, /"玻璃\/纯碱比价": \["玻璃\/纯碱比", "玻璃纯碱比", "纯碱玻璃比"\]/);
-  assert.match(pageSource, /"焦炭\/焦煤比": \["焦炭焦煤比"\]/);
+  assert.match(pageSource, /"焦炭\/焦煤比价": \["焦炭\/焦煤比", "焦炭焦煤比"\]/);
+  assert.match(pageSource, /"棕榈油\/菜油比价": \["棕榈油菜油比"\]/);
+  assert.match(pageSource, /"菜油\/豆油比价": \["豆油菜油比"\]/);
+  assert.match(pageSource, /"豆一\/豆二比价": \["豆一豆二比"\]/);
   assert.doesNotMatch(pageSource, /"塑料-聚丙烯价差"/);
   assert.match(pageSource, /"玻璃\/纯碱比价": \["玻璃\/纯碱比", "玻璃纯碱比", "纯碱玻璃比", "玻璃生产利润"\]/);
-  assert.match(pageSource, /"焦炭\/焦煤比": \["焦炭焦煤比", "焦化利润"\]/);
+  assert.match(pageSource, /"焦炭\/焦煤比价": \["焦炭\/焦煤比", "焦炭焦煤比", "焦化利润"\]/);
   assert.match(pageSource, /row\.relatedObservations\?\.find/);
   assert.match(pageSource, /\.\.\.related,\s*defaultObservation/);
   assert.match(pageSource, /baseRow\.thirdSymbol/);
@@ -297,15 +303,15 @@ test("monthly contract details contain only current values and liquidity", async
   };
 
   const oilseedMonthPairs = new Set([
-    "棕榈油菜油比",
+    "棕榈油/菜油比价",
     "棕榈油/豆油比价",
     "油/粕比价",
-    "豆油菜油比",
+    "菜油/豆油比价",
     "豆粕价差",
     "蛋白质价差",
     "豆棕价差",
   ]);
-  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺/矿比价", "焦炭/焦煤比"]);
+  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺/矿比价", "焦炭/焦煤比价"]);
 
   for (const row of payload.rows) {
     const isEquityIndex = [row.leftSymbol, row.rightSymbol].some((symbol) => /^(IC|IM|IF)00\.IF$/.test(symbol));
@@ -432,15 +438,15 @@ test("monthly contract details contain only current values and liquidity", async
   );
   assert.equal(proteinJanuary.historyChart.title, "蛋白质价差历年1月合约");
 
-  const cokeCoal = payload.rows.find((row) => row.pair === "焦炭/焦煤比");
-  assert.ok(cokeCoal, "焦炭/焦煤比 should be present");
+  const cokeCoal = payload.rows.find((row) => row.pair === "焦炭/焦煤比价");
+  assert.ok(cokeCoal, "焦炭/焦煤比价 should be present");
   assert.equal(cokeCoal.leftSymbol, "jJQ00.DF");
   assert.equal(cokeCoal.rightSymbol, "jmJQ00.DF");
   assert.equal(cokeCoal.current, (Number(cokeCoal.current)).toFixed(4));
   assert.ok(cokeCoal.contracts.length > 0 && cokeCoal.contracts.length <= 4);
   assert.ok(
     cokeCoal.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))),
-    "焦炭/焦煤比 should only show weighted and 1/5/9 contract observations",
+    "焦炭/焦煤比价 should only show weighted and 1/5/9 contract observations",
   );
 
   const oilMeal = payload.rows.find((row) => row.pair === "油/粕比价");
@@ -457,7 +463,10 @@ test("monthly contract details contain only current values and liquidity", async
   assert.ok(Math.abs(fullDaily97 - 2.966376) < 0.01);
 
   const addedRatios = new Map([
+    ["棕榈油/菜油比价", ["pJQ00.DF", "OIJQ00.ZF"]],
     ["棕榈油/豆油比价", ["pJQ00.DF", "yJQ00.DF"]],
+    ["菜油/豆油比价", ["OIJQ00.ZF", "yJQ00.DF"]],
+    ["豆一/豆二比价", ["aJQ00.DF", "bJQ00.DF"]],
     ["燃料油/沥青比价", ["fuJQ00.SF", "buJQ00.SF"]],
     ["20号胶/BR橡胶比价", ["nrJQ00.INE", "brJQ00.SF"]],
     ["烧碱/玻璃比价", ["SHJQ00.ZF", "FGJQ00.ZF"]],
@@ -486,7 +495,7 @@ test("monthly contract details contain only current values and liquidity", async
   const relatedObservations = new Map([
     ["聚丙烯/甲醇比价", ["mto-screen-margin", "MTO盘面利润", "ppJQ00.DF", "MAJQ00.ZF", "聚丙烯 − 3 × 甲醇（未扣加工费等）", "2:3"]],
     ["玻璃/纯碱比价", ["glass-production-profit", "玻璃生产利润", "FGJQ00.ZF", "SAJQ00.ZF", "FG − 0.2 × SA（未扣燃料与其他成本）", "5:1"]],
-    ["焦炭/焦煤比", ["coking-profit", "焦化利润", "jJQ00.DF", "jmJQ00.DF", "J − 1.3 × JM（未扣其他成本）", "6:13"]],
+    ["焦炭/焦煤比价", ["coking-profit", "焦化利润", "jJQ00.DF", "jmJQ00.DF", "J − 1.3 × JM（未扣其他成本）", "6:13"]],
   ]);
   for (const [parentPair, [key, label, leftSymbol, rightSymbol, formulaLabel, lots]] of relatedObservations) {
     const parent = payload.rows.find((row) => row.pair === parentPair);
