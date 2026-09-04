@@ -205,7 +205,6 @@ const legacyPairNamesByCurrent: Record<string, string[]> = {
   "金/银比价": ["金银比"],
   "玻璃/纯碱比价": ["玻璃/纯碱比", "玻璃纯碱比", "纯碱玻璃比"],
   "焦炭/焦煤比": ["焦炭焦煤比"],
-  "塑料-聚丙烯价差": ["聚乙烯-聚丙烯价差"],
 };
 const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
   "聚丙烯/甲醇比价": ["MTO盘面利润"],
@@ -216,7 +215,6 @@ const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
   "金/银比价": ["金银比"],
   "玻璃/纯碱比价": ["玻璃/纯碱比", "玻璃纯碱比", "纯碱玻璃比", "玻璃生产利润"],
   "焦炭/焦煤比": ["焦炭焦煤比", "焦化利润"],
-  "塑料-聚丙烯价差": ["聚乙烯-聚丙烯价差"],
 };
 
 type SortKey = "pair" | "current" | "previous" | "change" | "allTime" | "percentile" | "lots" | "deviation" | "notional" | "margin";
@@ -276,7 +274,6 @@ function pairCodeFormula(
 }
 
 const codeOnlyFormulaPairs = new Set([
-  "塑料-聚丙烯价差",
   "PTA盘面加工费",
 ]);
 
