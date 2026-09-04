@@ -469,7 +469,6 @@ PAIRS: list[dict[str, Any]] = [
         "kind": "spread",
         "contract_months": OILSEED_CONTRACT_MONTHS,
     },
-    {"pair": "豆棕价差", "left": "yJQ00.DF", "right": "pJQ00.DF", "formula": spread, "kind": "spread", "contract_months": OILSEED_CONTRACT_MONTHS},
     {
         "pair": "科创50/上证50",
         "left": "000688.SH",

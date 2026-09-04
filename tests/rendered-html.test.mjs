@@ -285,13 +285,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 37);
+  assert.equal(payload.rows.length, 36);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
@@ -309,7 +309,6 @@ test("monthly contract details contain only current values and liquidity", async
     "菜油/豆油比价",
     "豆粕价差",
     "蛋白质价差",
-    "豆棕价差",
   ]);
   const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺/矿比价", "焦炭/焦煤比价"]);
 
