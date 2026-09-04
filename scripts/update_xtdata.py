@@ -564,6 +564,9 @@ SPOT_OBSERVATIONS: dict[str, dict[str, str]] = {
         "left": "000852.SH",
         "right": "000300.SH",
         "label": "中证1000/沪深300",
+        "overlay": "000852.SH",
+        "overlay_label": "中证1000现货（右轴）",
+        "overlay_unit": "点位",
     },
     "IM-IC价差": {
         "left": "000852.SH",
@@ -2456,6 +2459,36 @@ def build_spot_observation(
         force_one_to_one=definition["kind"] == "spread",
         fixed_lots=definition.get("fixed_lots"),
     )
+    history_chart = build_observation_history_chart(
+        definition,
+        "现货指数",
+        left,
+        right,
+        values,
+        common_latest_date,
+    )
+    if history_chart is None:
+        raise RuntimeError(f"{definition['pair']} 的现货指数历史折线图数据不足")
+    overlay_symbol = spot_definition.get("overlay")
+    if overlay_symbol:
+        chart_dates = pd.DatetimeIndex(
+            [point["date"] for point in history_chart["series"][0]["points"]]
+        )
+        overlay_values = histories[overlay_symbol].reindex(chart_dates).dropna()
+        if len(overlay_values) != len(chart_dates):
+            raise RuntimeError(f"{definition['pair']} 的现货叠加线日期未完全对齐")
+        history_chart["overlaySeries"] = {
+            "label": spot_definition["overlay_label"],
+            "symbol": overlay_symbol,
+            "unit": spot_definition["overlay_unit"],
+            "points": [
+                {
+                    "date": timestamp.strftime("%Y-%m-%d"),
+                    "value": round(float(value), 4),
+                }
+                for timestamp, value in overlay_values.items()
+            ],
+        }
     return {
         "key": "spot",
         "label": spot_definition["label"],
@@ -2477,14 +2510,7 @@ def build_spot_observation(
         "rightSymbol": right,
         "leftChangePct": latest_leg_change_pct(aligned[left], latest_date),
         "rightChangePct": latest_leg_change_pct(aligned[right], latest_date),
-        "historyChart": build_observation_history_chart(
-            definition,
-            "现货指数",
-            left,
-            right,
-            values,
-            common_latest_date,
-        ),
+        "historyChart": history_chart,
     }
 
 
@@ -3711,6 +3737,20 @@ def write_outputs(
         and funding_pressure_rows[0]["mainHistoryChart"].get("overlaySeries", {}).get("unit") == "点位"
         and len(funding_pressure_rows[0]["mainHistoryChart"].get("overlaySeries", {}).get("points", [])) >= 8
     )
+    im_if_rows = [row for row in rows if row["pair"] == "IM/IF比价"]
+    im_if_spot_chart = (
+        (im_if_rows[0].get("spotObservation") or {}).get("historyChart")
+        if len(im_if_rows) == 1
+        else None
+    )
+    im_if_spot_overlay_complete = (
+        im_if_spot_chart is not None
+        and im_if_spot_chart.get("overlaySeries", {}).get("label") == "中证1000现货（右轴）"
+        and im_if_spot_chart.get("overlaySeries", {}).get("symbol") == "000852.SH"
+        and im_if_spot_chart.get("overlaySeries", {}).get("unit") == "点位"
+        and len(im_if_spot_chart.get("overlaySeries", {}).get("points", []))
+        == len(im_if_spot_chart["series"][0]["points"])
+    )
     spot_observation_count = sum(row["spotObservation"] is not None for row in rows)
     term_structure_count = sum(
         row[side] is not None
@@ -3840,6 +3880,7 @@ def write_outputs(
         equity_index_observation_histories_complete,
         spot_reference_histories_complete,
         funding_pressure_overlay_complete,
+        im_if_spot_overlay_complete,
         full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
         term_structure_count == expected_term_structure_count,
@@ -3893,6 +3934,7 @@ def write_outputs(
         "expectedSpotReferenceHistoryCount": len(spot_reference_history_charts),
         "spotReferenceHistoriesComplete": spot_reference_histories_complete,
         "fundingPressureOverlayComplete": funding_pressure_overlay_complete,
+        "imIfSpotOverlayComplete": im_if_spot_overlay_complete,
         "fullDailyChartStatisticsComplete": full_daily_chart_statistics_complete,
         "spotObservationCount": spot_observation_count,
         "expectedSpotObservationCount": len(SPOT_OBSERVATIONS),

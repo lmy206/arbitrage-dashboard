@@ -593,6 +593,19 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
     }
     assert.ok(row.contracts.every((contract) => contract.historyChart === null));
   }
+  const imIfRow = payload.rows.find((row) => row.pair === "IM/IF比价");
+  const imIfSpotChart = imIfRow.spotObservation.historyChart;
+  assert.equal(imIfSpotChart.overlaySeries.label, "中证1000现货（右轴）");
+  assert.equal(imIfSpotChart.overlaySeries.symbol, "000852.SH");
+  assert.equal(imIfSpotChart.overlaySeries.unit, "点位");
+  assert.deepEqual(
+    imIfSpotChart.overlaySeries.points.map((point) => point.date),
+    imIfSpotChart.series[0].points.map((point) => point.date),
+  );
+  assert.ok(imIfSpotChart.overlaySeries.points.every((point) => point.value > 0));
+  assert.equal(imIfRow.mainHistoryChart.overlaySeries, undefined);
+  assert.equal(payload.rows.find((row) => row.pair === "IC/IF比价").spotObservation.historyChart.overlaySeries, undefined);
+  assert.equal(payload.rows.find((row) => row.pair === "IM-IC价差").spotObservation.historyChart.overlaySeries, undefined);
   assert.equal(payload.rows.filter((row) => row.spotObservation !== null).length, expected.size);
 });
 
