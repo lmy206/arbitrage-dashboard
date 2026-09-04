@@ -24,7 +24,7 @@
 
 1. 运行 `D:\anaconda\python.exe scripts\update_xtdata.py`。
 2. 读取 `E:\data\reports\arbitrage_dashboard_integrity.json`。
-3. 只有在 `status=ok`、`pairCount=expectedPairCount=36`、`indexTermHistoryComplete=true`、`domesticFreshnessComplete=true`、`externalRowDatesComplete=true`、`futureDataDetected=false`、`hierarchySorted=true`、`relatedObservationsComplete=true`、`fundingPressureOverlayComplete=true`、`fullDailyChartStatisticsComplete=true` 且 `externalSourcesComplete=true` 时，才运行：
+3. 只有在 `status=ok`、`pairCount=expectedPairCount=37`、`indexTermHistoryComplete=true`、`domesticFreshnessComplete=true`、`externalRowDatesComplete=true`、`futureDataDetected=false`、`hierarchySorted=true`、`relatedObservationsComplete=true`、`fundingPressureOverlayComplete=true`、`fullDailyChartStatisticsComplete=true` 且 `externalSourcesComplete=true` 时，才运行：
    - 本地验证：`npm run build` 和 `node --test tests\rendered-html.test.mjs`
    - Cloudflare 静态发布验证：`npm run test:pages`
 4. `scripts/update-and-publish.ps1` 仅在规范化后的数据内容相对 `HEAD` 有实质变化、上述校验通过、当前分支为 `main` 或 `automation/publisher`、本地与 `origin/main` 可安全同步，且没有其他已跟踪文件修改时，才提交 `app/data/arbitrage.json` 并推送 `main`；仅 `updatedAt` 变化时必须恢复生成文件并退出。
