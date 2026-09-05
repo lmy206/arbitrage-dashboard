@@ -279,11 +279,6 @@ def mto_screen_margin(polypropylene: pd.Series, methanol: pd.Series) -> pd.Serie
     return polypropylene - 3 * methanol
 
 
-def pta_processing_fee(pta: pd.Series, paraxylene: pd.Series) -> pd.Series:
-    """PTA screen processing fee using the common 0.655 PX consumption factor."""
-    return pta - 0.655 * paraxylene
-
-
 def glass_production_profit(glass: pd.Series, soda_ash: pd.Series) -> pd.Series:
     """Simplified glass production profit proxy before fuel and other costs."""
     return glass - 0.2 * soda_ash
@@ -449,15 +444,6 @@ PAIRS: list[dict[str, Any]] = [
         "right": "MAJQ00.ZF",
         "formula": ratio,
         "kind": "ratio",
-    },
-    {
-        "pair": "PTA盘面加工费",
-        "left": "TAJQ00.ZF",
-        "right": "PXJQ00.ZF",
-        "formula": pta_processing_fee,
-        "kind": "spread",
-        "fixed_lots": (20, 13),
-        "formula_label": "PTA − 0.655 × PX（未扣其他成本）",
     },
     {"pair": "猪肉/玉米比价", "left": "lhJQ00.DF", "right": "cJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "豆粕/豆二比价", "left": "mJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},

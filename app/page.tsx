@@ -282,21 +282,14 @@ function pairCodeFormula(
   if (thirdSymbol) {
     return `${leftSymbol} − 0.86 × ${rightSymbol} − 0.34 × ${thirdSymbol}`;
   }
-  if (row.pair === "PTA盘面加工费") {
-    return `${leftSymbol} − 0.655 × ${rightSymbol}`;
-  }
   const operator = row.formulaKind === "spread" ? "−" : "/";
   return `${leftSymbol} ${operator} ${rightSymbol}`;
 }
 
-const codeOnlyFormulaPairs = new Set([
-  "PTA盘面加工费",
-]);
-
 function pairHoverFormula(
   row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol" | "thirdSymbol" | "formulaLabel">,
 ) {
-  if (row.formulaLabel && !codeOnlyFormulaPairs.has(row.pair)) {
+  if (row.formulaLabel) {
     return row.formulaLabel;
   }
   return pairCodeFormula(row);

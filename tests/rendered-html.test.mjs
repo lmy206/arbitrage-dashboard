@@ -102,7 +102,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.doesNotMatch(html, /MTO盘面利润/);
   assert.match(html, /聚丙烯\/甲醇比价/);
   assert.match(html, /title="ppJQ00\.DF \/ MAJQ00\.ZF"/);
-  assert.match(html, /PTA盘面加工费/);
+  assert.doesNotMatch(html, /PTA盘面加工费/);
   assert.doesNotMatch(html, /涤纶短纤生产利润价差/);
   assert.doesNotMatch(html, /玻璃生产利润/);
   assert.doesNotMatch(html, /焦化利润/);
@@ -112,7 +112,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.doesNotMatch(html, /纯碱玻璃差/);
   assert.doesNotMatch(html, /title="lJQ00\.DF − ppJQ00\.DF"/);
   assert.doesNotMatch(html, /title="ppJQ00\.DF − 3 × MAJQ00\.ZF"/);
-  assert.match(html, /title="TAJQ00\.ZF − 0\.655 × PXJQ00\.ZF"/);
+  assert.doesNotMatch(html, /title="TAJQ00\.ZF − 0\.655 × PXJQ00\.ZF"/);
   assert.match(html, /猪肉\/玉米比价/);
   assert.match(html, /卷-螺价差/);
   assert.match(html, /铜\/铝比价/);
@@ -289,13 +289,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 36);
+  assert.equal(payload.rows.length, 35);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 26);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
@@ -536,21 +536,8 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(payload.rows.some((row) => row.pair === "焦化利润"), false);
   assert.equal(payload.rows.some((row) => row.pair === "MTO盘面利润"), false);
 
-  const replacementSpreads = new Map([
-    ["PTA盘面加工费", ["TAJQ00.ZF", "PXJQ00.ZF", "PTA − 0.655 × PX（未扣其他成本）", "20:13"]],
-  ]);
+  assert.equal(payload.rows.some((row) => row.pair === "PTA盘面加工费"), false);
   assert.equal(payload.rows.some((row) => row.pair === "塑料-聚丙烯价差"), false);
-  for (const [pair, [leftSymbol, rightSymbol, formulaLabel, expectedLots]] of replacementSpreads) {
-    const row = payload.rows.find((item) => item.pair === pair);
-    assert.ok(row, `${pair} should be present`);
-    assert.equal(row.leftSymbol, leftSymbol);
-    assert.equal(row.rightSymbol, rightSymbol);
-    assert.equal(row.formulaLabel, formulaLabel);
-    assert.equal(row.lots, expectedLots);
-    assert.ok(row.contracts.every((contract) => contract.lots === expectedLots));
-    assert.match(row.current, /^-?\d+$/);
-    assert.ok(row.mainHistoryChart, `${pair} should include a weighted-index chart`);
-  }
 
   assert.equal(payload.rows.some((row) => row.pair === "涤纶短纤生产利润价差"), false);
 
