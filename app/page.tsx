@@ -206,6 +206,7 @@ const hasExternalSources = externalSources.length > 0;
 const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
 const favoriteStorageKey = "arbitrage-favorites-v1";
 const legacyPairNamesByCurrent: Record<string, string[]> = {
+  "豆粕/豆二比价": ["豆粕价差"],
   "棕榈油/菜油比价": ["棕榈油菜油比"],
   "菜油/豆油比价": ["豆油菜油比"],
   "豆一/豆二比价": ["豆一豆二比"],
@@ -218,6 +219,7 @@ const legacyPairNamesByCurrent: Record<string, string[]> = {
   "焦炭/焦煤比价": ["焦炭/焦煤比", "焦炭焦煤比"],
 };
 const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
+  "豆粕/豆二比价": ["豆粕价差"],
   "棕榈油/菜油比价": ["棕榈油菜油比"],
   "菜油/豆油比价": ["豆油菜油比"],
   "豆一/豆二比价": ["豆一豆二比"],

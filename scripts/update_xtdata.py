@@ -460,7 +460,7 @@ PAIRS: list[dict[str, Any]] = [
         "formula_label": "PTA − 0.655 × PX（未扣其他成本）",
     },
     {"pair": "猪肉/玉米比价", "left": "lhJQ00.DF", "right": "cJQ00.DF", "formula": ratio, "kind": "ratio"},
-    {"pair": "豆粕价差", "left": "mJQ00.DF", "right": "aJQ00.DF", "formula": spread, "kind": "spread", "contract_months": OILSEED_CONTRACT_MONTHS},
+    {"pair": "豆粕/豆二比价", "left": "mJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {
         "pair": "蛋白质价差",
         "left": "mJQ00.DF",

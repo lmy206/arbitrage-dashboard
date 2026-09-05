@@ -82,7 +82,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /title="mJQ00\.DF − RMJQ00\.ZF"/);
   assert.match(html, /title="rbJQ00\.SF \/ iJQ00\.DF"/);
   assert.match(html, /展开IM-IC价差合约月份/);
-  assert.match(html, /豆粕价差/);
+  assert.match(html, /豆粕\/豆二比价/);
+  assert.match(html, /title="mJQ00\.DF \/ bJQ00\.DF"/);
+  assert.doesNotMatch(html, /豆粕价差/);
   assert.match(html, /蛋白质价差/);
   assert.doesNotMatch(html, /豆粕菜粕差/);
   assert.match(html, /焦炭\/焦煤比价/);
@@ -309,10 +311,25 @@ test("monthly contract details contain only current values and liquidity", async
     "棕榈油/豆油比价",
     "油/粕比价",
     "菜油/豆油比价",
-    "豆粕价差",
+    "豆粕/豆二比价",
     "蛋白质价差",
   ]);
   const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺/矿比价", "焦炭/焦煤比价"]);
+
+  const mealBeanRatio = payload.rows.find((row) => row.pair === "豆粕/豆二比价");
+  assert.equal(mealBeanRatio.leftSymbol, "mJQ00.DF");
+  assert.equal(mealBeanRatio.rightSymbol, "bJQ00.DF");
+  assert.equal(mealBeanRatio.mainHistoryChart.unit, "比值");
+  assert.equal(mealBeanRatio.mainHistoryChart.series[0].rightSymbol, "bJQ00.DF");
+  for (const contract of mealBeanRatio.contracts) {
+    assert.equal(contract.leftSymbol, `m${contract.expiry}.DF`);
+    assert.equal(contract.rightSymbol, `b${contract.expiry}.DF`);
+    assert.equal(contract.historyChart.unit, "比值");
+    for (const series of contract.historyChart.series) {
+      assert.equal(series.leftSymbol, `m${series.expiry}.DF`);
+      assert.equal(series.rightSymbol, `b${series.expiry}.DF`);
+    }
+  }
 
   for (const row of payload.rows) {
     const isEquityIndex = [row.leftSymbol, row.rightSymbol].some((symbol) => /^(IC|IM|IF)00\.IF$/.test(symbol));
