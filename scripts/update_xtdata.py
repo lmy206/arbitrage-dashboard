@@ -572,6 +572,9 @@ SPOT_OBSERVATIONS: dict[str, dict[str, str]] = {
         "left": "000852.SH",
         "right": "000905.SH",
         "label": "中证1000-中证500",
+        "overlay": "000852.SH",
+        "overlay_label": "中证1000现货（右轴）",
+        "overlay_unit": "点位",
     },
 }
 
@@ -3751,6 +3754,20 @@ def write_outputs(
         and len(im_if_spot_chart.get("overlaySeries", {}).get("points", []))
         == len(im_if_spot_chart["series"][0]["points"])
     )
+    im_ic_rows = [row for row in rows if row["pair"] == "IM-IC价差"]
+    im_ic_spot_chart = (
+        (im_ic_rows[0].get("spotObservation") or {}).get("historyChart")
+        if len(im_ic_rows) == 1
+        else None
+    )
+    im_ic_spot_overlay_complete = (
+        im_ic_spot_chart is not None
+        and im_ic_spot_chart.get("overlaySeries", {}).get("label") == "中证1000现货（右轴）"
+        and im_ic_spot_chart.get("overlaySeries", {}).get("symbol") == "000852.SH"
+        and im_ic_spot_chart.get("overlaySeries", {}).get("unit") == "点位"
+        and len(im_ic_spot_chart.get("overlaySeries", {}).get("points", []))
+        == len(im_ic_spot_chart["series"][0]["points"])
+    )
     spot_observation_count = sum(row["spotObservation"] is not None for row in rows)
     term_structure_count = sum(
         row[side] is not None
@@ -3881,6 +3898,7 @@ def write_outputs(
         spot_reference_histories_complete,
         funding_pressure_overlay_complete,
         im_if_spot_overlay_complete,
+        im_ic_spot_overlay_complete,
         full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
         term_structure_count == expected_term_structure_count,
@@ -3935,6 +3953,7 @@ def write_outputs(
         "spotReferenceHistoriesComplete": spot_reference_histories_complete,
         "fundingPressureOverlayComplete": funding_pressure_overlay_complete,
         "imIfSpotOverlayComplete": im_if_spot_overlay_complete,
+        "imIcSpotOverlayComplete": im_ic_spot_overlay_complete,
         "fullDailyChartStatisticsComplete": full_daily_chart_statistics_complete,
         "spotObservationCount": spot_observation_count,
         "expectedSpotObservationCount": len(SPOT_OBSERVATIONS),
