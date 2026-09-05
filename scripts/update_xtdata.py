@@ -2492,6 +2492,55 @@ def build_spot_observation(
                 for timestamp, value in overlay_values.items()
             ],
         }
+        correlation_start = common_latest_date - pd.DateOffset(years=SEASONAL_CONTRACT_YEARS)
+        correlation_frame = pd.concat(
+            [
+                values.rename("relative_value"),
+                histories[overlay_symbol].rename("spot_index"),
+            ],
+            axis=1,
+            join="inner",
+        ).dropna()
+        correlation_frame = correlation_frame[
+            (correlation_frame.index >= correlation_start)
+            & (correlation_frame.index <= common_latest_date)
+        ]
+        if definition["kind"] == "ratio":
+            relative_change = correlation_frame["relative_value"].pct_change(fill_method=None)
+            change_method = "Pearson（比价日收益率 vs 中证1000日收益率）"
+        else:
+            relative_change = correlation_frame["relative_value"].diff()
+            change_method = "Pearson（价差一阶差分 vs 中证1000日收益率）"
+        change_frame = pd.concat(
+            [
+                relative_change.rename("relative_change"),
+                correlation_frame["spot_index"].pct_change(fill_method=None).rename("spot_return"),
+            ],
+            axis=1,
+        ).dropna()
+        level_correlation = correlation_frame["relative_value"].corr(correlation_frame["spot_index"])
+        change_correlation = change_frame["relative_change"].corr(change_frame["spot_return"])
+        if (
+            len(correlation_frame) < 30
+            or len(change_frame) < 29
+            or not math.isfinite(float(level_correlation))
+            or not math.isfinite(float(change_correlation))
+        ):
+            raise RuntimeError(f"{definition['pair']} 的现货相关性样本不足")
+        history_chart["correlations"] = [
+            {
+                "label": "10年水平相关",
+                "value": round(float(level_correlation), 4),
+                "sampleSize": len(correlation_frame),
+                "method": "Pearson（完整日频水平值）",
+            },
+            {
+                "label": "日变动相关",
+                "value": round(float(change_correlation), 4),
+                "sampleSize": len(change_frame),
+                "method": change_method,
+            },
+        ]
     return {
         "key": "spot",
         "label": spot_definition["label"],
@@ -3768,6 +3817,19 @@ def write_outputs(
         and len(im_ic_spot_chart.get("overlaySeries", {}).get("points", []))
         == len(im_ic_spot_chart["series"][0]["points"])
     )
+    spot_correlation_metrics_complete = all(
+        chart is not None
+        and [metric.get("label") for metric in chart.get("correlations", [])]
+        == ["10年水平相关", "日变动相关"]
+        and all(
+            isinstance(metric.get("value"), (int, float))
+            and -1 <= metric["value"] <= 1
+            and metric.get("sampleSize", 0) >= 29
+            and "Pearson" in metric.get("method", "")
+            for metric in chart["correlations"]
+        )
+        for chart in (im_if_spot_chart, im_ic_spot_chart)
+    )
     spot_observation_count = sum(row["spotObservation"] is not None for row in rows)
     term_structure_count = sum(
         row[side] is not None
@@ -3899,6 +3961,7 @@ def write_outputs(
         funding_pressure_overlay_complete,
         im_if_spot_overlay_complete,
         im_ic_spot_overlay_complete,
+        spot_correlation_metrics_complete,
         full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
         term_structure_count == expected_term_structure_count,
@@ -3954,6 +4017,7 @@ def write_outputs(
         "fundingPressureOverlayComplete": funding_pressure_overlay_complete,
         "imIfSpotOverlayComplete": im_if_spot_overlay_complete,
         "imIcSpotOverlayComplete": im_ic_spot_overlay_complete,
+        "spotCorrelationMetricsComplete": spot_correlation_metrics_complete,
         "fullDailyChartStatisticsComplete": full_daily_chart_statistics_complete,
         "spotObservationCount": spot_observation_count,
         "expectedSpotObservationCount": len(SPOT_OBSERVATIONS),

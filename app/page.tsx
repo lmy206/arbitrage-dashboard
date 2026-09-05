@@ -38,6 +38,13 @@ type ContractHistoryOverlaySeries = {
   points: ContractHistoryPoint[];
 };
 
+type ContractHistoryCorrelation = {
+  label: string;
+  value: number;
+  sampleSize: number;
+  method: string;
+};
+
 type ContractHistoryChartData = {
   title: string;
   unit: "比值" | "点差" | "百分比" | "基点";
@@ -51,6 +58,7 @@ type ContractHistoryChartData = {
   quantileThresholds?: { label: string; value: number }[];
   series: ContractHistorySeries[];
   overlaySeries?: ContractHistoryOverlaySeries;
+  correlations?: ContractHistoryCorrelation[];
   fixedThresholds?: { label: string; value: number }[];
 };
 
@@ -488,6 +496,10 @@ function overlayTooltipLabel(label: string) {
   return label.replace(/（右轴）$/, "");
 }
 
+function formatCorrelation(value: number) {
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
+}
+
 function quantile(values: number[], percentile: number) {
   const sorted = [...values].sort((left, right) => left - right);
   if (sorted.length === 0) return 0;
@@ -669,7 +681,23 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
           </h4>
           <p>{chart.startDate}—{chart.endDate} · {chart.grain} · {thresholdSummary} · 断档处不连线 · {chart.source}</p>
         </div>
-        <span>{isSeasonalHistory ? `${chart.series.length} 个历年合约` : chart.series.map((series) => series.expiry).join(" / ")}</span>
+        <div className="contract-history-header-meta">
+          <span className="contract-history-scope">{isSeasonalHistory ? `${chart.series.length} 个历年合约` : chart.series.map((series) => series.expiry).join(" / ")}</span>
+          {chart.correlations && (
+            <div className="chart-correlation-summary" aria-label="与中证1000现货的相关性">
+              {chart.correlations.map((correlation) => (
+                <span
+                  className="chart-correlation"
+                  key={correlation.label}
+                  title={`${correlation.method} · 完整日频样本 ${correlation.sampleSize}`}
+                >
+                  <small>{correlation.label}</small>
+                  <strong>{formatCorrelation(correlation.value)}</strong>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </header>
       <div className="contract-history-legend" aria-label="历年合约图例">
         {paths.map(({ series, style }) => (

@@ -770,10 +770,50 @@ tbody th {
   font-size: 9px;
 }
 
-.contract-history-chart header > span {
+.contract-history-scope {
   color: #637083;
   font-size: 10px;
   white-space: nowrap;
+}
+
+.contract-history-header-meta,
+.chart-correlation-summary {
+  display: flex;
+  align-items: center;
+}
+
+.contract-history-header-meta {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px 8px;
+}
+
+.chart-correlation-summary {
+  gap: 5px;
+}
+
+.chart-correlation {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 1px solid #dbe3ed;
+  border-radius: 5px;
+  color: #4c5d72;
+  background: #f5f8fc;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.chart-correlation small {
+  color: #738093;
+  font-size: 9px;
+}
+
+.chart-correlation strong {
+  color: #1d4f91;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
 }
 
 .contract-history-legend {

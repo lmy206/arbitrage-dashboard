@@ -263,6 +263,8 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /<ContractHistoryChart chart={option\.historyChart} formula={option\.detail} \/>/);
   assert.match(pageSource, /<ContractHistoryChart chart={standaloneHistoryChart} formula={baseRow\.formulaLabel} \/>/);
   assert.match(pageSource, /className="contract-history-formula">公式：{formula}/);
+  assert.match(pageSource, /chart\.correlations/);
+  assert.match(pageSource, /完整日频样本 \$\{correlation\.sampleSize\}/);
   assert.match(pageSource, /<span>近5年分位<\/span>/);
   assert.match(pageSource, /<span>判断<\/span>/);
   assert.match(pageSource, /当月涨跌幅/);
@@ -616,6 +618,17 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
   );
   assert.ok(imIcSpotChart.overlaySeries.points.every((point) => point.value > 0));
   assert.equal(imIcRow.mainHistoryChart.overlaySeries, undefined);
+  for (const [chart, pair] of [[imIfSpotChart, "IM/IF比价"], [imIcSpotChart, "IM-IC价差"]]) {
+    assert.deepEqual(chart.correlations.map((item) => item.label), ["10年水平相关", "日变动相关"]);
+    for (const correlation of chart.correlations) {
+      assert.ok(Number.isFinite(correlation.value), `${pair} ${correlation.label} should be finite`);
+      assert.ok(correlation.value >= -1 && correlation.value <= 1, `${pair} ${correlation.label} should be bounded`);
+      assert.ok(correlation.sampleSize > 2000, `${pair} ${correlation.label} should use full daily history`);
+      assert.match(correlation.method, /Pearson/);
+    }
+    assert.match(chart.correlations[1].method, pair === "IM/IF比价" ? /比价日收益率/ : /价差一阶差分/);
+  }
+  assert.equal(payload.rows.find((row) => row.pair === "IC/IF比价").spotObservation.historyChart.correlations, undefined);
   assert.equal(payload.rows.filter((row) => row.spotObservation !== null).length, expected.size);
 });
 

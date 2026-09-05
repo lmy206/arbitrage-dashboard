@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-09-04",
-  "updatedAt": "2026-09-05T08:20:20+08:00",
+  "updatedAt": "2026-09-05T08:36:47+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -35447,7 +35447,21 @@
                 "value": 7508.092
               }
             ]
-          }
+          },
+          "correlations": [
+            {
+              "label": "10年水平相关",
+              "value": 0.6816,
+              "sampleSize": 2428,
+              "method": "Pearson（完整日频水平值）"
+            },
+            {
+              "label": "日变动相关",
+              "value": 0.6426,
+              "sampleSize": 2427,
+              "method": "Pearson（比价日收益率 vs 中证1000日收益率）"
+            }
+          ]
         }
       },
       "mainContinuousObservation": null,
@@ -40808,7 +40822,21 @@
                 "value": 7508.092
               }
             ]
-          }
+          },
+          "correlations": [
+            {
+              "label": "10年水平相关",
+              "value": 0.5478,
+              "sampleSize": 2428,
+              "method": "Pearson（完整日频水平值）"
+            },
+            {
+              "label": "日变动相关",
+              "value": 0.5592,
+              "sampleSize": 2427,
+              "method": "Pearson（价差一阶差分 vs 中证1000日收益率）"
+            }
+          ]
         }
       },
       "mainContinuousObservation": null,
