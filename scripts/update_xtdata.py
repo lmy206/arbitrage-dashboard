@@ -559,6 +559,9 @@ SPOT_OBSERVATIONS: dict[str, dict[str, str]] = {
         "left": "000905.SH",
         "right": "000300.SH",
         "label": "中证500/沪深300",
+        "overlay": "000905.SH",
+        "overlay_label": "中证500现货（右轴）",
+        "overlay_unit": "点位",
     },
     "IM/IF比价": {
         "left": "000852.SH",
@@ -2505,12 +2508,13 @@ def build_spot_observation(
             (correlation_frame.index >= correlation_start)
             & (correlation_frame.index <= common_latest_date)
         ]
+        overlay_index_name = spot_definition["overlay_label"].removesuffix("（右轴）").removesuffix("现货")
         if definition["kind"] == "ratio":
             relative_change = correlation_frame["relative_value"].pct_change(fill_method=None)
-            change_method = "Pearson（比价日收益率 vs 中证1000日收益率）"
+            change_method = f"Pearson（比价日收益率 vs {overlay_index_name}日收益率）"
         else:
             relative_change = correlation_frame["relative_value"].diff()
-            change_method = "Pearson（价差一阶差分 vs 中证1000日收益率）"
+            change_method = f"Pearson（价差一阶差分 vs {overlay_index_name}日收益率）"
         change_frame = pd.concat(
             [
                 relative_change.rename("relative_change"),
@@ -3817,6 +3821,20 @@ def write_outputs(
         and len(im_ic_spot_chart.get("overlaySeries", {}).get("points", []))
         == len(im_ic_spot_chart["series"][0]["points"])
     )
+    ic_if_rows = [row for row in rows if row["pair"] == "IC/IF比价"]
+    ic_if_spot_chart = (
+        (ic_if_rows[0].get("spotObservation") or {}).get("historyChart")
+        if len(ic_if_rows) == 1
+        else None
+    )
+    ic_if_spot_overlay_complete = (
+        ic_if_spot_chart is not None
+        and ic_if_spot_chart.get("overlaySeries", {}).get("label") == "中证500现货（右轴）"
+        and ic_if_spot_chart.get("overlaySeries", {}).get("symbol") == "000905.SH"
+        and ic_if_spot_chart.get("overlaySeries", {}).get("unit") == "点位"
+        and [point["date"] for point in ic_if_spot_chart.get("overlaySeries", {}).get("points", [])]
+        == [point["date"] for point in ic_if_spot_chart["series"][0]["points"]]
+    )
     spot_correlation_metrics_complete = all(
         chart is not None
         and [metric.get("label") for metric in chart.get("correlations", [])]
@@ -3828,7 +3846,7 @@ def write_outputs(
             and "Pearson" in metric.get("method", "")
             for metric in chart["correlations"]
         )
-        for chart in (im_if_spot_chart, im_ic_spot_chart)
+        for chart in (im_if_spot_chart, im_ic_spot_chart, ic_if_spot_chart)
     )
     spot_observation_count = sum(row["spotObservation"] is not None for row in rows)
     term_structure_count = sum(
@@ -3961,6 +3979,7 @@ def write_outputs(
         funding_pressure_overlay_complete,
         im_if_spot_overlay_complete,
         im_ic_spot_overlay_complete,
+        ic_if_spot_overlay_complete,
         spot_correlation_metrics_complete,
         full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
@@ -4017,6 +4036,7 @@ def write_outputs(
         "fundingPressureOverlayComplete": funding_pressure_overlay_complete,
         "imIfSpotOverlayComplete": im_if_spot_overlay_complete,
         "imIcSpotOverlayComplete": im_ic_spot_overlay_complete,
+        "icIfSpotOverlayComplete": ic_if_spot_overlay_complete,
         "spotCorrelationMetricsComplete": spot_correlation_metrics_complete,
         "fullDailyChartStatisticsComplete": full_daily_chart_statistics_complete,
         "spotObservationCount": spot_observation_count,

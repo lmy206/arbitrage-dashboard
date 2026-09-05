@@ -684,7 +684,7 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
         <div className="contract-history-header-meta">
           <span className="contract-history-scope">{isSeasonalHistory ? `${chart.series.length} 个历年合约` : chart.series.map((series) => series.expiry).join(" / ")}</span>
           {chart.correlations && (
-            <div className="chart-correlation-summary" aria-label="与中证1000现货的相关性">
+            <div className="chart-correlation-summary" aria-label={`与${overlayTooltipLabel(overlaySeries?.label ?? "现货指数")}的相关性`}>
               {chart.correlations.map((correlation) => (
                 <span
                   className="chart-correlation"

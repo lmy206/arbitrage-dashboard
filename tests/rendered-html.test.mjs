@@ -606,7 +606,19 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
   );
   assert.ok(imIfSpotChart.overlaySeries.points.every((point) => point.value > 0));
   assert.equal(imIfRow.mainHistoryChart.overlaySeries, undefined);
-  assert.equal(payload.rows.find((row) => row.pair === "IC/IF比价").spotObservation.historyChart.overlaySeries, undefined);
+  const icIfRow = payload.rows.find((row) => row.pair === "IC/IF比价");
+  const icIfSpotChart = icIfRow.spotObservation.historyChart;
+  assert.equal(icIfSpotChart.overlaySeries.label, "中证500现货（右轴）");
+  assert.equal(icIfSpotChart.overlaySeries.symbol, "000905.SH");
+  assert.equal(icIfSpotChart.overlaySeries.unit, "点位");
+  assert.deepEqual(
+    icIfSpotChart.overlaySeries.points.map((point) => point.date),
+    icIfSpotChart.series[0].points.map((point) => point.date),
+  );
+  assert.ok(icIfSpotChart.overlaySeries.points.every((point) => Number.isFinite(point.value) && point.value > 0));
+  assert.equal(icIfRow.mainHistoryChart.overlaySeries, undefined);
+  assert.equal(icIfRow.mainHistoryChart.correlations, undefined);
+  assert.match(icIfSpotChart.correlations[1].method, /比价日收益率 vs 中证500日收益率/);
   const imIcRow = payload.rows.find((row) => row.pair === "IM-IC价差");
   const imIcSpotChart = imIcRow.spotObservation.historyChart;
   assert.equal(imIcSpotChart.overlaySeries.label, "中证1000现货（右轴）");
@@ -618,7 +630,7 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
   );
   assert.ok(imIcSpotChart.overlaySeries.points.every((point) => point.value > 0));
   assert.equal(imIcRow.mainHistoryChart.overlaySeries, undefined);
-  for (const [chart, pair] of [[imIfSpotChart, "IM/IF比价"], [imIcSpotChart, "IM-IC价差"]]) {
+  for (const [chart, pair] of [[imIfSpotChart, "IM/IF比价"], [imIcSpotChart, "IM-IC价差"], [icIfSpotChart, "IC/IF比价"]]) {
     assert.deepEqual(chart.correlations.map((item) => item.label), ["10年水平相关", "日变动相关"]);
     for (const correlation of chart.correlations) {
       assert.ok(Number.isFinite(correlation.value), `${pair} ${correlation.label} should be finite`);
@@ -626,9 +638,8 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
       assert.ok(correlation.sampleSize > 2000, `${pair} ${correlation.label} should use full daily history`);
       assert.match(correlation.method, /Pearson/);
     }
-    assert.match(chart.correlations[1].method, pair === "IM/IF比价" ? /比价日收益率/ : /价差一阶差分/);
+    assert.match(chart.correlations[1].method, pair === "IM-IC价差" ? /价差一阶差分/ : /比价日收益率/);
   }
-  assert.equal(payload.rows.find((row) => row.pair === "IC/IF比价").spotObservation.historyChart.correlations, undefined);
   assert.equal(payload.rows.filter((row) => row.spotObservation !== null).length, expected.size);
 });
 

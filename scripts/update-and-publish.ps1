@@ -235,6 +235,7 @@ function Assert-IntegrityReport {
     ($report.fundingPressureOverlayComplete -eq $true)
     ($report.imIfSpotOverlayComplete -eq $true)
     ($report.imIcSpotOverlayComplete -eq $true)
+    ($report.icIfSpotOverlayComplete -eq $true)
     ($report.spotCorrelationMetricsComplete -eq $true)
     ($report.fullDailyChartStatisticsComplete -eq $true)
     ($report.domesticFreshnessComplete -eq $true)
@@ -242,7 +243,7 @@ function Assert-IntegrityReport {
     ($report.externalSourcesComplete -eq $true)
   )
   if ($checks -contains $false) {
-    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，dataDate=$($report.dataDate)，expectedDomesticDataDate=$($report.expectedDomesticDataDate)，domesticFreshnessComplete=$($report.domesticFreshnessComplete)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，imIfSpotOverlayComplete=$($report.imIfSpotOverlayComplete)，imIcSpotOverlayComplete=$($report.imIcSpotOverlayComplete)，spotCorrelationMetricsComplete=$($report.spotCorrelationMetricsComplete)，fullDailyChartStatisticsComplete=$($report.fullDailyChartStatisticsComplete)，externalRowDatesComplete=$($report.externalRowDatesComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
+    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，dataDate=$($report.dataDate)，expectedDomesticDataDate=$($report.expectedDomesticDataDate)，domesticFreshnessComplete=$($report.domesticFreshnessComplete)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，imIfSpotOverlayComplete=$($report.imIfSpotOverlayComplete)，imIcSpotOverlayComplete=$($report.imIcSpotOverlayComplete)，icIfSpotOverlayComplete=$($report.icIfSpotOverlayComplete)，spotCorrelationMetricsComplete=$($report.spotCorrelationMetricsComplete)，fullDailyChartStatisticsComplete=$($report.fullDailyChartStatisticsComplete)，externalRowDatesComplete=$($report.externalRowDatesComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
   }
 
   if (-not (Test-Path -LiteralPath $outputPath)) {
