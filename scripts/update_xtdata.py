@@ -436,7 +436,7 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "金/银比价", "left": "auJQ00.SF", "right": "agJQ00.SF", "formula": gold_silver, "kind": "gold_silver", "strategy_type": "趋势"},
     {"pair": "燃料油/沥青比价", "left": "fuJQ00.SF", "right": "buJQ00.SF", "formula": ratio, "kind": "ratio"},
     {"pair": "20号胶/BR橡胶比价", "left": "nrJQ00.INE", "right": "brJQ00.SF", "formula": ratio, "kind": "ratio"},
-    {"pair": "烧碱/玻璃比价", "left": "SHJQ00.ZF", "right": "FGJQ00.ZF", "formula": ratio, "kind": "ratio"},
+    {"pair": "玻璃/烧碱比价", "left": "FGJQ00.ZF", "right": "SHJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {"pair": "镍/不锈钢比价", "left": "niJQ00.SF", "right": "ssJQ00.SF", "formula": ratio, "kind": "ratio"},
     {
         "pair": "聚丙烯/甲醇比价",

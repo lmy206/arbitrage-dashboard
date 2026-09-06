@@ -93,7 +93,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /豆一\/豆二比价/);
   assert.match(html, /燃料油\/沥青比价/);
   assert.match(html, /20号胶\/BR橡胶比价/);
-  assert.match(html, /烧碱\/玻璃比价/);
+  assert.match(html, /玻璃\/烧碱比价/);
+  assert.match(html, /title="FGJQ00\.ZF \/ SHJQ00\.ZF"/);
+  assert.doesNotMatch(html, /烧碱\/玻璃比价/);
   assert.match(html, /镍\/不锈钢比价/);
   assert.doesNotMatch(html, /玻璃\/聚乙烯比价/);
   assert.doesNotMatch(html, /玻璃\/聚丙烯比价/);
@@ -491,7 +493,7 @@ test("monthly contract details contain only current values and liquidity", async
     ["豆一/豆二比价", ["aJQ00.DF", "bJQ00.DF"]],
     ["燃料油/沥青比价", ["fuJQ00.SF", "buJQ00.SF"]],
     ["20号胶/BR橡胶比价", ["nrJQ00.INE", "brJQ00.SF"]],
-    ["烧碱/玻璃比价", ["SHJQ00.ZF", "FGJQ00.ZF"]],
+    ["玻璃/烧碱比价", ["FGJQ00.ZF", "SHJQ00.ZF"]],
     ["镍/不锈钢比价", ["niJQ00.SF", "ssJQ00.SF"]],
     ["猪肉/玉米比价", ["lhJQ00.DF", "cJQ00.DF"]],
     ["聚丙烯/甲醇比价", ["ppJQ00.DF", "MAJQ00.ZF"]],
