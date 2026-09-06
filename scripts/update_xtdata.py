@@ -540,7 +540,7 @@ PAIRS: list[dict[str, Any]] = [
 ]
 
 
-SPOT_OBSERVATIONS: dict[str, dict[str, str]] = {
+SPOT_OBSERVATIONS: dict[str, dict[str, Any]] = {
     "IC/IF比价": {
         "left": "000905.SH",
         "right": "000300.SH",
@@ -556,6 +556,13 @@ SPOT_OBSERVATIONS: dict[str, dict[str, str]] = {
         "overlay": "000852.SH",
         "overlay_label": "中证1000现货（右轴）",
         "overlay_unit": "点位",
+        "fixed_thresholds": [
+            {"label": "低位 1.4", "value": 1.4},
+            {"label": "高位 1.8", "value": 1.8},
+        ],
+        "overlay_thresholds": [
+            {"label": "高位 8500", "value": 8500},
+        ],
     },
     "IM-IC价差": {
         "left": "000852.SH",
@@ -2461,6 +2468,14 @@ def build_spot_observation(
     )
     if history_chart is None:
         raise RuntimeError(f"{definition['pair']} 的现货指数历史折线图数据不足")
+    if spot_definition.get("fixed_thresholds"):
+        history_chart["fixedThresholds"] = [
+            dict(threshold) for threshold in spot_definition["fixed_thresholds"]
+        ]
+    if spot_definition.get("overlay_thresholds"):
+        history_chart["overlayThresholds"] = [
+            dict(threshold) for threshold in spot_definition["overlay_thresholds"]
+        ]
     overlay_symbol = spot_definition.get("overlay")
     if overlay_symbol:
         chart_dates = pd.DatetimeIndex(
@@ -3793,6 +3808,18 @@ def write_outputs(
         and len(im_if_spot_chart.get("overlaySeries", {}).get("points", []))
         == len(im_if_spot_chart["series"][0]["points"])
     )
+    im_if_spot_thresholds_complete = (
+        im_if_spot_chart is not None
+        and im_if_spot_chart.get("fixedThresholds")
+        == [
+            {"label": "低位 1.4", "value": 1.4},
+            {"label": "高位 1.8", "value": 1.8},
+        ]
+        and im_if_spot_chart.get("overlayThresholds")
+        == [{"label": "高位 8500", "value": 8500}]
+        and [threshold.get("label") for threshold in im_if_spot_chart.get("quantileThresholds", [])]
+        == ["3%", "97%"]
+    )
     im_ic_rows = [row for row in rows if row["pair"] == "IM-IC价差"]
     im_ic_spot_chart = (
         (im_ic_rows[0].get("spotObservation") or {}).get("historyChart")
@@ -3964,6 +3991,7 @@ def write_outputs(
         spot_reference_histories_complete,
         funding_pressure_overlay_complete,
         im_if_spot_overlay_complete,
+        im_if_spot_thresholds_complete,
         im_ic_spot_overlay_complete,
         ic_if_spot_overlay_complete,
         spot_correlation_metrics_complete,
@@ -4021,6 +4049,7 @@ def write_outputs(
         "spotReferenceHistoriesComplete": spot_reference_histories_complete,
         "fundingPressureOverlayComplete": funding_pressure_overlay_complete,
         "imIfSpotOverlayComplete": im_if_spot_overlay_complete,
+        "imIfSpotThresholdsComplete": im_if_spot_thresholds_complete,
         "imIcSpotOverlayComplete": im_ic_spot_overlay_complete,
         "icIfSpotOverlayComplete": ic_if_spot_overlay_complete,
         "spotCorrelationMetricsComplete": spot_correlation_metrics_complete,

@@ -253,6 +253,10 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /quantile\(values, 0\.03\)/);
   assert.match(pageSource, /quantile\(values, 0\.97\)/);
   assert.match(pageSource, /chart\.fixedThresholds \?\? chart\.quantileThresholds \?\?/);
+  assert.match(pageSource, /chart\.overlayThresholds \?\? \[\]/);
+  assert.match(pageSource, /overlayScaleValues = \[\.\.\.overlayValues, \.\.\.overlayThresholds\.map/);
+  assert.match(pageSource, /contract-history-overlay-threshold-line/);
+  assert.match(pageSource, /contract-history-overlay-threshold-label/);
   assert.match(pageSource, /thresholds\.map\(\(threshold\) => threshold\.label\)\.join\(" \/ "\)/);
   assert.match(pageSource, /3%\/97%阈值按完整日频历史值/);
   assert.match(pageSource, /chart\.fixedThresholds\s*\? threshold\.label\s*:\s*`\$\{threshold\.label\}阈值/);
@@ -609,7 +613,17 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
     imIfSpotChart.series[0].points.map((point) => point.date),
   );
   assert.ok(imIfSpotChart.overlaySeries.points.every((point) => point.value > 0));
+  assert.deepEqual(imIfSpotChart.fixedThresholds, [
+    { label: "低位 1.4", value: 1.4 },
+    { label: "高位 1.8", value: 1.8 },
+  ]);
+  assert.deepEqual(imIfSpotChart.overlayThresholds, [
+    { label: "高位 8500", value: 8500 },
+  ]);
+  assert.deepEqual(imIfSpotChart.quantileThresholds.map((threshold) => threshold.label), ["3%", "97%"]);
   assert.equal(imIfRow.mainHistoryChart.overlaySeries, undefined);
+  assert.equal(imIfRow.mainHistoryChart.fixedThresholds, undefined);
+  assert.equal(imIfRow.mainHistoryChart.overlayThresholds, undefined);
   const icIfRow = payload.rows.find((row) => row.pair === "IC/IF比价");
   const icIfSpotChart = icIfRow.spotObservation.historyChart;
   assert.equal(icIfSpotChart.overlaySeries.label, "中证500现货（右轴）");
@@ -622,6 +636,8 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
   assert.ok(icIfSpotChart.overlaySeries.points.every((point) => Number.isFinite(point.value) && point.value > 0));
   assert.equal(icIfRow.mainHistoryChart.overlaySeries, undefined);
   assert.equal(icIfRow.mainHistoryChart.correlations, undefined);
+  assert.equal(icIfSpotChart.fixedThresholds, undefined);
+  assert.equal(icIfSpotChart.overlayThresholds, undefined);
   assert.match(icIfSpotChart.correlations[1].method, /比价日收益率 vs 中证500日收益率/);
   const imIcRow = payload.rows.find((row) => row.pair === "IM-IC价差");
   const imIcSpotChart = imIcRow.spotObservation.historyChart;
@@ -634,6 +650,8 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
   );
   assert.ok(imIcSpotChart.overlaySeries.points.every((point) => point.value > 0));
   assert.equal(imIcRow.mainHistoryChart.overlaySeries, undefined);
+  assert.equal(imIcSpotChart.fixedThresholds, undefined);
+  assert.equal(imIcSpotChart.overlayThresholds, undefined);
   for (const [chart, pair] of [[imIfSpotChart, "IM/IF比价"], [imIcSpotChart, "IM-IC价差"], [icIfSpotChart, "IC/IF比价"]]) {
     assert.deepEqual(chart.correlations.map((item) => item.label), ["10年水平相关", "日变动相关"]);
     for (const correlation of chart.correlations) {
@@ -1036,6 +1054,7 @@ test("scheduled publishing isolates development work and rejects stale domestic 
   assert.match(installer, /New-Item -ItemType Junction -Path \$publisherNodeModules -Target \$sourceNodeModules/);
   assert.match(publisher, /domesticFreshnessComplete/);
   assert.match(publisher, /externalRowDatesComplete/);
+  assert.match(publisher, /imIfSpotThresholdsComplete/);
   assert.match(publisher, /Get-NormalizedJsonHash/);
   assert.match(publisher, /Show-DashboardNotification/);
   assert.match(publisher, /\[Console\]::OutputEncoding = \$utf8Encoding/);

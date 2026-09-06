@@ -60,6 +60,7 @@ type ContractHistoryChartData = {
   overlaySeries?: ContractHistoryOverlaySeries;
   correlations?: ContractHistoryCorrelation[];
   fixedThresholds?: { label: string; value: number }[];
+  overlayThresholds?: { label: string; value: number }[];
 };
 
 type ContractRow = {
@@ -588,6 +589,7 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
   const width = 920;
   const height = 270;
   const overlaySeries = chart.overlaySeries;
+  const overlayThresholds = chart.overlayThresholds ?? [];
   const inset = { top: 18, right: overlaySeries ? 68 : 24, bottom: 32, left: 62 };
   const plotWidth = width - inset.left - inset.right;
   const plotHeight = height - inset.top - inset.bottom;
@@ -607,6 +609,9 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
     : chart.quantileThresholds
       ? "3%/97%阈值按完整日频历史值"
       : "3%/97%阈值按图内全部历史值";
+  const overlayThresholdSummary = overlayThresholds.length
+    ? ` · ${overlayThresholds.map((threshold) => threshold.label).join("/")}右轴固定阈值`
+    : "";
   const isSeasonalHistory = chart.series.every((series) => /^\d{4}$/.test(series.expiry));
   const rawMin = Math.min(...values, ...thresholds.map((threshold) => threshold.value));
   const rawMax = Math.max(...values, ...thresholds.map((threshold) => threshold.value));
@@ -616,8 +621,9 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
   const x = (date: string) => inset.left + ((Date.parse(date) - startTime) / timeRange) * plotWidth;
   const y = (value: number) => inset.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
   const overlayValues = overlaySeries?.points.map((point) => point.value) ?? [];
-  const overlayRawMin = overlayValues.length ? Math.min(...overlayValues) : 0;
-  const overlayRawMax = overlayValues.length ? Math.max(...overlayValues) : 1;
+  const overlayScaleValues = [...overlayValues, ...overlayThresholds.map((threshold) => threshold.value)];
+  const overlayRawMin = overlayScaleValues.length ? Math.min(...overlayScaleValues) : 0;
+  const overlayRawMax = overlayScaleValues.length ? Math.max(...overlayScaleValues) : 1;
   const overlayRawRange = overlayRawMax - overlayRawMin || Math.max(Math.abs(overlayRawMax) * 0.01, 0.01);
   const overlayYMin = overlayRawMin - overlayRawRange * 0.08;
   const overlayYMax = overlayRawMax + overlayRawRange * 0.08;
@@ -674,7 +680,7 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
             <span>{chart.title}</span>
             {formula && <span className="contract-history-formula">公式：{formula}</span>}
           </h4>
-          <p>{chart.startDate}—{chart.endDate} · {chart.grain} · {thresholdSummary} · 断档处不连线 · {chart.source}</p>
+          <p>{chart.startDate}—{chart.endDate} · {chart.grain} · {thresholdSummary}{overlayThresholdSummary} · 断档处不连线 · {chart.source}</p>
         </div>
         <div className="contract-history-header-meta">
           <span className="contract-history-scope">{isSeasonalHistory ? `${chart.series.length} 个历年合约` : chart.series.map((series) => series.expiry).join(" / ")}</span>
@@ -711,6 +717,12 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
             {overlaySeries.label}
           </span>
         )}
+        {overlaySeries && overlayThresholds.length > 0 && (
+          <span className="overlay-threshold-legend">
+            <i aria-hidden="true" />
+            {overlayTooltipLabel(overlaySeries.label)} {overlayThresholds.map((threshold) => threshold.label).join(" / ")}阈值
+          </span>
+        )}
         <span className="threshold-legend"><i aria-hidden="true" />{thresholds.map((threshold) => threshold.label).join(" / ")} 阈值</span>
       </div>
       <svg
@@ -718,7 +730,7 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
         className="contract-history-svg"
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={`${chart.title}折线图，包含${chart.series.map((series) => series.expiry).join("、")}${overlaySeries ? `、${overlaySeries.label}` : ""}`}
+        aria-label={`${chart.title}折线图，包含${chart.series.map((series) => series.expiry).join("、")}${overlaySeries ? `、${overlaySeries.label}` : ""}${overlayThresholds.length ? `、${overlayThresholds.map((threshold) => threshold.label).join("、")}右轴阈值` : ""}`}
         onPointerMove={(event) => updateHover(event.clientX)}
         onPointerLeave={() => setHovered(null)}
       >
@@ -742,6 +754,16 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
             x2={width - inset.right}
             y1={y(threshold.value)}
             y2={y(threshold.value)}
+          />
+        ))}
+        {overlayThresholds.map((threshold) => (
+          <line
+            className="contract-history-overlay-threshold-line"
+            key={`overlay-${threshold.label}-line`}
+            x1={inset.left}
+            x2={width - inset.right}
+            y1={overlayY(threshold.value)}
+            y2={overlayY(threshold.value)}
           />
         ))}
         {xTicks.map((tick, index) => (
@@ -772,6 +794,17 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
             {chart.fixedThresholds
               ? threshold.label
               : `${threshold.label}阈值 ${formatContractHistoryValue(threshold.value, chart.unit)}`}
+          </text>
+        ))}
+        {overlayThresholds.map((threshold) => (
+          <text
+            className="contract-history-overlay-threshold-label"
+            key={`overlay-${threshold.label}-label`}
+            x={width - inset.right - 4}
+            y={overlayY(threshold.value) - 5}
+            textAnchor="end"
+          >
+            {threshold.label}
           </text>
         ))}
         {hovered && (

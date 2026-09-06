@@ -846,6 +846,10 @@ tbody th {
   border-top: 2px dashed #d97706;
 }
 
+.contract-history-legend .overlay-threshold-legend i {
+  border-top: 1.5px dotted #a85f08;
+}
+
 .contract-history-svg {
   display: block;
   width: 100%;
@@ -887,8 +891,23 @@ tbody th {
   stroke-dasharray: 6 5;
 }
 
+.contract-history-overlay-threshold-line {
+  stroke: #a85f08;
+  stroke-width: 1.25;
+  stroke-dasharray: 2 5;
+}
+
 .contract-history-threshold-label {
   fill: #5f6c7c;
+  stroke: #fbfcfe;
+  stroke-width: 3px;
+  paint-order: stroke;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.contract-history-overlay-threshold-label {
+  fill: #a85f08;
   stroke: #fbfcfe;
   stroke-width: 3px;
   paint-order: stroke;
