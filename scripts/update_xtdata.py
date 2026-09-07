@@ -545,6 +545,7 @@ SPOT_OBSERVATIONS: dict[str, dict[str, Any]] = {
         "left": "000905.SH",
         "right": "000300.SH",
         "label": "中证500/沪深300",
+        "series_label": "比价",
         "overlay": "000905.SH",
         "overlay_label": "中证500现货（右轴）",
         "overlay_unit": "点位",
@@ -557,6 +558,7 @@ SPOT_OBSERVATIONS: dict[str, dict[str, Any]] = {
         "left": "000852.SH",
         "right": "000300.SH",
         "label": "中证1000/沪深300",
+        "series_label": "比价",
         "overlay": "000852.SH",
         "overlay_label": "中证1000现货（右轴）",
         "overlay_unit": "点位",
@@ -2472,6 +2474,9 @@ def build_spot_observation(
     )
     if history_chart is None:
         raise RuntimeError(f"{definition['pair']} 的现货指数历史折线图数据不足")
+    history_chart["series"][0]["expiry"] = spot_definition.get(
+        "series_label", history_chart["series"][0]["expiry"]
+    )
     if spot_definition.get("fixed_thresholds"):
         history_chart["fixedThresholds"] = [
             dict(threshold) for threshold in spot_definition["fixed_thresholds"]

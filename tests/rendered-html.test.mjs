@@ -579,19 +579,19 @@ test("monthly contract details contain only current values and liquidity", async
 test("equity-index futures pairs include a pinned spot observation", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   const expected = new Map([
-    ["IC/IF比价", ["中证500/沪深300", "000905.SH", "000300.SH"]],
-    ["IM/IF比价", ["中证1000/沪深300", "000852.SH", "000300.SH"]],
-    ["IM-IC价差", ["中证1000-中证500", "000852.SH", "000905.SH"]],
+    ["IC/IF比价", ["中证500/沪深300", "000905.SH", "000300.SH", "比价"]],
+    ["IM/IF比价", ["中证1000/沪深300", "000852.SH", "000300.SH", "比价"]],
+    ["IM-IC价差", ["中证1000-中证500", "000852.SH", "000905.SH", "现货指数"]],
   ]);
 
-  for (const [pair, [label, leftSymbol, rightSymbol]] of expected) {
+  for (const [pair, [label, leftSymbol, rightSymbol, spotSeriesLabel]] of expected) {
     const row = payload.rows.find((item) => item.pair === pair);
     assert.equal(row.spotObservation.label, label);
     assert.equal(row.spotObservation.leftSymbol, leftSymbol);
     assert.equal(row.spotObservation.rightSymbol, rightSymbol);
     assert.ok(row.spotObservation.percentile >= 0 && row.spotObservation.percentile <= 100);
     for (const [chart, seriesLabel] of [
-      [row.spotObservation.historyChart, "现货指数"],
+      [row.spotObservation.historyChart, spotSeriesLabel],
       [row.mainHistoryChart, "主连"],
     ]) {
       assert.ok(chart, `${pair} ${seriesLabel} chart should be present`);
