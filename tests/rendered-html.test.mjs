@@ -638,7 +638,11 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
   assert.ok(icIfSpotChart.overlaySeries.points.every((point) => Number.isFinite(point.value) && point.value > 0));
   assert.equal(icIfRow.mainHistoryChart.overlaySeries, undefined);
   assert.equal(icIfRow.mainHistoryChart.correlations, undefined);
-  assert.equal(icIfSpotChart.fixedThresholds, undefined);
+  assert.deepEqual(icIfSpotChart.fixedThresholds, [
+    { label: "低位 1.40", value: 1.4 },
+    { label: "高位 1.80", value: 1.8 },
+  ]);
+  assert.deepEqual(icIfSpotChart.quantileThresholds.map((threshold) => threshold.label), ["3%", "97%"]);
   assert.equal(icIfSpotChart.overlayThresholds, undefined);
   assert.match(icIfSpotChart.correlations[1].method, /比价日收益率 vs 中证500日收益率/);
   const imIcRow = payload.rows.find((row) => row.pair === "IM-IC价差");
@@ -1057,6 +1061,7 @@ test("scheduled publishing isolates development work and rejects stale domestic 
   assert.match(publisher, /domesticFreshnessComplete/);
   assert.match(publisher, /externalRowDatesComplete/);
   assert.match(publisher, /imIfSpotThresholdsComplete/);
+  assert.match(publisher, /icIfSpotThresholdsComplete/);
   assert.match(publisher, /Get-NormalizedJsonHash/);
   assert.match(publisher, /Show-DashboardNotification/);
   assert.match(publisher, /\[Console\]::OutputEncoding = \$utf8Encoding/);

@@ -548,6 +548,10 @@ SPOT_OBSERVATIONS: dict[str, dict[str, Any]] = {
         "overlay": "000905.SH",
         "overlay_label": "中证500现货（右轴）",
         "overlay_unit": "点位",
+        "fixed_thresholds": [
+            {"label": "低位 1.40", "value": 1.4},
+            {"label": "高位 1.80", "value": 1.8},
+        ],
     },
     "IM/IF比价": {
         "left": "000852.SH",
@@ -3848,6 +3852,17 @@ def write_outputs(
         and [point["date"] for point in ic_if_spot_chart.get("overlaySeries", {}).get("points", [])]
         == [point["date"] for point in ic_if_spot_chart["series"][0]["points"]]
     )
+    ic_if_spot_thresholds_complete = (
+        ic_if_spot_chart is not None
+        and ic_if_spot_chart.get("fixedThresholds")
+        == [
+            {"label": "低位 1.40", "value": 1.4},
+            {"label": "高位 1.80", "value": 1.8},
+        ]
+        and ic_if_spot_chart.get("overlayThresholds") is None
+        and [threshold.get("label") for threshold in ic_if_spot_chart.get("quantileThresholds", [])]
+        == ["3%", "97%"]
+    )
     spot_correlation_metrics_complete = all(
         chart is not None
         and [metric.get("label") for metric in chart.get("correlations", [])]
@@ -3994,6 +4009,7 @@ def write_outputs(
         im_if_spot_thresholds_complete,
         im_ic_spot_overlay_complete,
         ic_if_spot_overlay_complete,
+        ic_if_spot_thresholds_complete,
         spot_correlation_metrics_complete,
         full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
@@ -4052,6 +4068,7 @@ def write_outputs(
         "imIfSpotThresholdsComplete": im_if_spot_thresholds_complete,
         "imIcSpotOverlayComplete": im_ic_spot_overlay_complete,
         "icIfSpotOverlayComplete": ic_if_spot_overlay_complete,
+        "icIfSpotThresholdsComplete": ic_if_spot_thresholds_complete,
         "spotCorrelationMetricsComplete": spot_correlation_metrics_complete,
         "fullDailyChartStatisticsComplete": full_daily_chart_statistics_complete,
         "spotObservationCount": spot_observation_count,
