@@ -45,6 +45,7 @@ CONTRACT_HISTORY_MAX_SPAN_DAYS = 400
 RECENT_DAILY_TRADING_DAYS = 20
 FUTURE_XTDATA_ROWS_DISCARDED = 0
 HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘"
+FULL_DAILY_SINCE_LISTING_GRAIN = "上市以来日线收盘"
 INDEX_TERM_CALENDAR_START = pd.Timestamp("2015-04-16")
 INDEX_TERM_ROLL_RULE = "当月合约正常跟踪至到期，到期后自然切换为次月合约"
 USD_CNY_MID_SYMBOL = "USDCNY_MID.SAFE"
@@ -88,6 +89,7 @@ CONTRACTS: dict[str, dict[str, float]] = {
     "hc00.SF": {"multiplier": 10, "margin_rate": 0.09},
     "cu00.SF": {"multiplier": 5, "margin_rate": 0.10},
     "al00.SF": {"multiplier": 5, "margin_rate": 0.10},
+    "ad00.SF": {"multiplier": 10, "margin_rate": 0.09},
     "zn00.SF": {"multiplier": 5, "margin_rate": 0.10},
     "p00.DF": {"multiplier": 10, "margin_rate": 0.09},
     "SA00.ZF": {"multiplier": 20, "margin_rate": 0.10},
@@ -401,6 +403,18 @@ PAIRS: list[dict[str, Any]] = [
     {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"pair": "卷-螺价差", "left": "hcJQ00.SF", "right": "rbJQ00.SF", "formula": spread, "kind": "spread"},
     {"pair": "铜/铝比价", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
+    {
+        "pair": "铝合金-沪铝价差",
+        "left": "adJQ00.SF",
+        "right": "alJQ00.SF",
+        "formula": spread,
+        "kind": "spread",
+        "fixed_lots": (1, 2),
+        "contract_months": {1, 5, 9},
+        "history_start_date": "2025-06-10",
+        "full_daily_history": True,
+        "formula_label": "AD − AL（元/吨；未扣辅料与加工成本）",
+    },
     *[
         {
             **definition,
@@ -1696,6 +1710,7 @@ def build_xtdata_only_validation(
                 "ni00.SF": "沪镍",
                 "ss00.SF": "不锈钢",
                 "pp00.DF": "聚丙烯",
+                "ad00.SF": "铝合金",
                 "lh00.DF": "生猪",
                 "c00.DF": "玉米",
             }.get(base_symbol, base_symbol)
@@ -1942,6 +1957,8 @@ def build_contract_history_series(
     formula: Callable[..., pd.Series] = definition["formula"]
     third_continuous = definition.get("third")
     start_date = common_latest_date - pd.DateOffset(years=SEASONAL_CONTRACT_YEARS)
+    if definition.get("history_start_date"):
+        start_date = max(start_date, pd.Timestamp(definition["history_start_date"]))
     series: list[dict[str, Any]] = []
 
     for historical_expiry in seasonal_expiries(expiry):
@@ -1992,7 +2009,11 @@ def build_contract_history_series(
         if len(values) < 2:
             continue
         daily_values = values.round(6)
-        chart_values = sample_chart_history(daily_values).round(6)
+        chart_values = (
+            daily_values
+            if definition.get("full_daily_history")
+            else sample_chart_history(daily_values)
+        ).round(6)
 
         series.append(
             {
@@ -2029,14 +2050,23 @@ def build_contract_history_chart(
 
     month = expiry[-2:]
     statistical_values = pd.concat([item["values"] for item in series]).sort_index()
+    chart_start_date = (
+        min(item["chartValues"].index.min() for item in series)
+        if definition.get("full_daily_history")
+        else start_date
+    )
     return {
         "title": f"{definition['pair']}历年{int(month)}月合约",
         "unit": "点差" if definition["kind"] == "spread" else "比值",
         "month": month,
-        "startDate": start_date.strftime("%Y-%m-%d"),
+        "startDate": chart_start_date.strftime("%Y-%m-%d"),
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
         "source": "xtdata",
-        "grain": HYBRID_CHART_GRAIN,
+        "grain": (
+            FULL_DAILY_SINCE_LISTING_GRAIN
+            if definition.get("full_daily_history")
+            else HYBRID_CHART_GRAIN
+        ),
         "statisticsPointCount": len(statistical_values),
         "renderPointCount": sum(len(item["chartValues"]) for item in series),
         "quantileThresholds": quantile_thresholds(statistical_values),
@@ -2076,7 +2106,11 @@ def build_observation_history_chart(
     ].dropna()
     if len(window) < 2:
         return None
-    chart_values = sample_chart_history(window)
+    chart_values = (
+        window
+        if definition.get("full_daily_history")
+        else sample_chart_history(window)
+    )
     return {
         "title": f"{definition['pair']}{label}走势",
         "unit": "点差" if definition["kind"] == "spread" else "比值",
@@ -2084,7 +2118,11 @@ def build_observation_history_chart(
         "startDate": chart_values.index.min().strftime("%Y-%m-%d"),
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
         "source": "xtdata",
-        "grain": HYBRID_CHART_GRAIN,
+        "grain": (
+            FULL_DAILY_SINCE_LISTING_GRAIN
+            if definition.get("full_daily_history")
+            else HYBRID_CHART_GRAIN
+        ),
         "statisticsPointCount": len(window),
         "renderPointCount": len(chart_values),
         "quantileThresholds": quantile_thresholds(window),
@@ -2178,7 +2216,12 @@ def build_contract_rows(
                 third_volume // third_lots,
             )
         else:
-            paired_volume = min(left_volume, right_volume)
+            fixed_lots = definition.get("fixed_lots")
+            if fixed_lots:
+                left_lots, right_lots = fixed_lots
+                paired_volume = min(left_volume // left_lots, right_volume // right_lots)
+            else:
+                paired_volume = min(left_volume, right_volume)
         if paired_volume <= 0:
             continue
         current_series = (
@@ -3761,6 +3804,50 @@ def write_outputs(
         and chart_statistics_complete(chart)
         for chart in contract_history_charts
     )
+    aluminum_alloy_rows = [
+        row for row in rows if row["pair"] == "铝合金-沪铝价差"
+    ]
+
+    def chart_starts_at_first_point(chart: dict[str, Any] | None) -> bool:
+        return bool(
+            chart
+            and chart.get("series")
+            and all(series.get("points") for series in chart["series"])
+            and chart["startDate"]
+            == min(
+                point["date"]
+                for series in chart["series"]
+                for point in series["points"]
+            )
+        )
+
+    aluminum_alloy_spread_complete = bool(
+        len(aluminum_alloy_rows) == 1
+        and aluminum_alloy_rows[0]["leftSymbol"] == "adJQ00.SF"
+        and aluminum_alloy_rows[0]["rightSymbol"] == "alJQ00.SF"
+        and aluminum_alloy_rows[0]["formulaLabel"]
+        == "AD − AL（元/吨；未扣辅料与加工成本）"
+        and aluminum_alloy_rows[0]["lots"] == "1:2"
+        and aluminum_alloy_rows[0]["mainHistoryChart"] is not None
+        and aluminum_alloy_rows[0]["mainHistoryChart"]["grain"]
+        == FULL_DAILY_SINCE_LISTING_GRAIN
+        and aluminum_alloy_rows[0]["mainHistoryChart"]["startDate"]
+        == "2025-06-10"
+        and aluminum_alloy_rows[0]["mainHistoryChart"]["endDate"] == data_date
+        and chart_starts_at_first_point(aluminum_alloy_rows[0]["mainHistoryChart"])
+        and 0 < len(aluminum_alloy_rows[0]["contracts"]) <= 4
+        and all(
+            int(contract["expiry"][-2:]) in {1, 5, 9}
+            and contract["lots"] == "1:2"
+            and contract["pairedVolume"]
+            == min(contract["leftVolume"], contract["rightVolume"] // 2)
+            and contract["historyChart"] is not None
+            and contract["historyChart"]["grain"]
+            == FULL_DAILY_SINCE_LISTING_GRAIN
+            and chart_starts_at_first_point(contract["historyChart"])
+            for contract in aluminum_alloy_rows[0]["contracts"]
+        )
+    )
     equity_index_contract_history_disabled = all(
         contract.get("historyChart") is None
         for row in equity_index_rows
@@ -4004,6 +4091,7 @@ def write_outputs(
         len(rows) == len(PAIRS),
         contract_rows_complete,
         contract_history_charts_complete,
+        aluminum_alloy_spread_complete,
         weighted_observation_histories_complete,
         related_observations_complete,
         equity_index_contract_history_disabled,
@@ -4049,6 +4137,7 @@ def write_outputs(
         "contractHistoryChartCount": sum(chart is not None for chart in contract_history_charts),
         "expectedContractHistoryChartCount": len(contract_history_charts),
         "contractHistoryChartsComplete": contract_history_charts_complete,
+        "aluminumAlloySpreadComplete": aluminum_alloy_spread_complete,
         "weightedObservationHistoryCount": sum(
             chart is not None for chart in weighted_observation_history_charts
         ),

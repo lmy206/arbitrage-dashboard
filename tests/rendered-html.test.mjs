@@ -17,6 +17,7 @@ async function render() {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘";
+const FULL_DAILY_SINCE_LISTING_GRAIN = "上市以来日线收盘";
 
 function weekEndingFriday(date) {
   const value = new Date(`${date}T00:00:00Z`);
@@ -117,6 +118,8 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.doesNotMatch(html, /title="TAJQ00\.ZF − 0\.655 × PXJQ00\.ZF"/);
   assert.match(html, /猪肉\/玉米比价/);
   assert.match(html, /卷-螺价差/);
+  assert.match(html, /铝合金-沪铝价差/);
+  assert.match(html, /title="AD − AL（元\/吨；未扣辅料与加工成本）"/);
   assert.match(html, /铜\/铝比价/);
   assert.match(html, /金\/银比价/);
   assert.match(html, /油\/粕比价/);
@@ -283,6 +286,7 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /RM: "菜粕"/);
   assert.match(pageSource, /CU: "铜"/);
   assert.match(pageSource, /AL: "铝"/);
+  assert.match(pageSource, /AD: "铝合金"/);
   assert.match(pageSource, /IC: "中证500"/);
   assert.match(pageSource, /IF: "沪深300"/);
   assert.doesNotMatch(pageSource, />左腿涨跌</);
@@ -295,13 +299,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 35);
+  assert.equal(payload.rows.length, 36);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 26);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
@@ -320,7 +324,12 @@ test("monthly contract details contain only current values and liquidity", async
     "豆粕/豆二比价",
     "蛋白质价差",
   ]);
-  const filteredMonthPairs = new Set([...oilseedMonthPairs, "螺/矿比价", "焦炭/焦煤比价"]);
+  const filteredMonthPairs = new Set([
+    ...oilseedMonthPairs,
+    "螺/矿比价",
+    "焦炭/焦煤比价",
+    "铝合金-沪铝价差",
+  ]);
 
   const mealBeanRatio = payload.rows.find((row) => row.pair === "豆粕/豆二比价");
   assert.equal(mealBeanRatio.leftSymbol, "mJQ00.DF");
@@ -392,7 +401,9 @@ test("monthly contract details contain only current values and liquidity", async
         contract.pairedVolume,
         row.thirdSymbol
           ? Math.min(Math.floor(contract.leftVolume / 6), Math.floor(contract.rightVolume / 5), contract.thirdVolume)
-          : Math.min(contract.leftVolume, contract.rightVolume),
+          : row.pair === "铝合金-沪铝价差"
+            ? Math.min(contract.leftVolume, Math.floor(contract.rightVolume / 2))
+            : Math.min(contract.leftVolume, contract.rightVolume),
       );
       assert.ok(Number.isFinite(contract.leftChangePct), `${row.pair} ${contract.expiry} left-leg daily return`);
       assert.ok(Number.isFinite(contract.rightChangePct), `${row.pair} ${contract.expiry} right-leg daily return`);
@@ -407,7 +418,12 @@ test("monthly contract details contain only current values and liquidity", async
       assert.ok(contract.historyChart, `${row.pair} ${contract.expiry} should include a same-month history chart`);
       assert.equal(contract.historyChart.month, contract.expiry.slice(-2));
       assert.equal(contract.historyChart.source, "xtdata");
-      assert.equal(contract.historyChart.grain, HYBRID_CHART_GRAIN);
+      assert.equal(
+        contract.historyChart.grain,
+        row.pair === "铝合金-沪铝价差"
+          ? FULL_DAILY_SINCE_LISTING_GRAIN
+          : HYBRID_CHART_GRAIN,
+      );
       assert.ok(contract.historyChart.series.length >= 1 && contract.historyChart.series.length <= 10);
       const renderedPointCount = contract.historyChart.series.reduce((sum, series) => sum + series.points.length, 0);
       assert.equal(contract.historyChart.renderPointCount, renderedPointCount);
@@ -417,7 +433,11 @@ test("monthly contract details contain only current values and liquidity", async
       for (const series of contract.historyChart.series) {
         assert.equal(series.expiry.slice(-2), contract.expiry.slice(-2));
         assert.ok(series.points.length >= 2, `${row.pair} ${series.expiry} should have enough daily points`);
-        assertHybridHistory(series.points, `${row.pair} ${series.expiry}`);
+        if (row.pair === "铝合金-沪铝价差") {
+          assertIncreasingHistory(series.points, `${row.pair} ${series.expiry}`);
+        } else {
+          assertHybridHistory(series.points, `${row.pair} ${series.expiry}`);
+        }
         assert.ok(
           Date.parse(series.points.at(-1).date) - Date.parse(series.points[0].date) <= 400 * 24 * 60 * 60 * 1000,
           `${row.pair} ${series.expiry} should be a concrete contract rather than an ambiguous long series`,
@@ -450,6 +470,33 @@ test("monthly contract details contain only current values and liquidity", async
   const rebarOreRatio = payload.rows.find((row) => row.pair === "螺/矿比价");
   assert.ok(rebarOreRatio.contracts.length > 0 && rebarOreRatio.contracts.length <= 4);
   assert.ok(rebarOreRatio.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))));
+
+  const aluminumAlloySpread = payload.rows.find((row) => row.pair === "铝合金-沪铝价差");
+  assert.ok(aluminumAlloySpread, "铝合金-沪铝价差 should be present");
+  assert.equal(aluminumAlloySpread.leftSymbol, "adJQ00.SF");
+  assert.equal(aluminumAlloySpread.rightSymbol, "alJQ00.SF");
+  assert.equal(aluminumAlloySpread.formulaLabel, "AD − AL（元/吨；未扣辅料与加工成本）");
+  assert.equal(aluminumAlloySpread.lots, "1:2");
+  assert.equal(aluminumAlloySpread.mainHistoryChart.grain, FULL_DAILY_SINCE_LISTING_GRAIN);
+  assert.equal(aluminumAlloySpread.mainHistoryChart.startDate, "2025-06-10");
+  assert.equal(
+    aluminumAlloySpread.mainHistoryChart.startDate,
+    aluminumAlloySpread.mainHistoryChart.series[0].points[0].date,
+  );
+  assertIncreasingHistory(aluminumAlloySpread.mainHistoryChart.series[0].points, "铝合金-沪铝价差加权");
+  assert.ok(aluminumAlloySpread.contracts.length > 0 && aluminumAlloySpread.contracts.length <= 4);
+  assert.ok(
+    aluminumAlloySpread.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))),
+    "铝合金-沪铝价差 should only show 1/5/9 contracts",
+  );
+  for (const contract of aluminumAlloySpread.contracts) {
+    assert.equal(contract.lots, "1:2");
+    assert.equal(contract.pairedVolume, Math.min(contract.leftVolume, Math.floor(contract.rightVolume / 2)));
+    const firstDate = contract.historyChart.series
+      .flatMap((series) => series.points.map((point) => point.date))
+      .sort()[0];
+    assert.equal(contract.historyChart.startDate, firstDate);
+  }
 
   const proteinJanuary = payload.rows
     .find((row) => row.pair === "蛋白质价差")
@@ -671,7 +718,7 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
   assert.equal(payload.rows.filter((row) => row.spotObservation !== null).length, expected.size);
 });
 
-test("every weighted pair includes an expandable ten-year weighted-index chart", async () => {
+test("every weighted pair includes an expandable weighted-index chart", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   const weightedRows = payload.rows.filter((row) => row.seriesMode === "weighted");
 
@@ -681,7 +728,11 @@ test("every weighted pair includes an expandable ten-year weighted-index chart",
     assert.ok(chart, `${row.pair} should include a weighted-index chart`);
     assert.equal(chart.title, `${row.pair}加权走势`);
     assert.equal(chart.source, "xtdata");
-    assert.equal(chart.grain, HYBRID_CHART_GRAIN);
+    const isAluminumAlloySpread = row.pair === "铝合金-沪铝价差";
+    assert.equal(
+      chart.grain,
+      isAluminumAlloySpread ? FULL_DAILY_SINCE_LISTING_GRAIN : HYBRID_CHART_GRAIN,
+    );
     assert.equal(chart.series.length, 1);
     assert.equal(chart.series[0].expiry, "加权");
     assert.equal(chart.series[0].leftSymbol, row.leftSymbol);
@@ -690,9 +741,16 @@ test("every weighted pair includes an expandable ten-year weighted-index chart",
     assert.equal(chart.renderPointCount, chart.series[0].points.length);
     assert.ok(chart.statisticsPointCount >= chart.renderPointCount);
     assert.deepEqual(chart.quantileThresholds.map((item) => item.label), ["3%", "97%"]);
-    assertHybridHistory(chart.series[0].points, row.pair);
+    if (isAluminumAlloySpread) {
+      assertIncreasingHistory(chart.series[0].points, row.pair);
+    } else {
+      assertHybridHistory(chart.series[0].points, row.pair);
+    }
     assert.equal(chart.series[0].points.at(-1).date, payload.dataDate);
-    assert.ok(Date.parse(chart.endDate) - Date.parse(chart.startDate) >= 600 * 24 * 60 * 60 * 1000);
+    assert.ok(
+      Date.parse(chart.endDate) - Date.parse(chart.startDate)
+      >= (isAluminumAlloySpread ? 300 : 600) * 24 * 60 * 60 * 1000,
+    );
     assert.ok(chart.series[0].points.every((point) => point.date <= payload.dataDate));
   }
 
@@ -841,7 +899,7 @@ test("xtdata-only integrity validation is internally consistent", async () => {
   const validation = payload.sourceValidation;
   assert.match(payload.source, /xtdata.*用户批准/);
   assert.equal(validation.mode, "xtdata_only");
-  assert.equal(validation.summary.total, 73);
+  assert.equal(validation.summary.total, 75);
   assert.equal(validation.checks.length, validation.summary.total);
   assert.equal(validation.summary.consistent, validation.summary.total);
   assert.equal(validation.summary.review, 0);
@@ -1062,6 +1120,7 @@ test("scheduled publishing isolates development work and rejects stale domestic 
   assert.match(publisher, /externalRowDatesComplete/);
   assert.match(publisher, /imIfSpotThresholdsComplete/);
   assert.match(publisher, /icIfSpotThresholdsComplete/);
+  assert.match(publisher, /aluminumAlloySpreadComplete/);
   assert.match(publisher, /Get-NormalizedJsonHash/);
   assert.match(publisher, /Show-DashboardNotification/);
   assert.match(publisher, /\[Console\]::OutputEncoding = \$utf8Encoding/);

@@ -525,6 +525,7 @@ const contractRootNames: Record<string, string> = {
   JM: "焦煤",
   CU: "铜",
   AL: "铝",
+  AD: "铝合金",
   ZN: "锌",
   AU: "黄金",
   AG: "白银",

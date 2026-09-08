@@ -225,8 +225,8 @@ function Assert-IntegrityReport {
   $report = Read-Utf8Text -Path $reportPath | ConvertFrom-Json
   $checks = @(
     ($report.status -eq "ok")
-    ([int]$report.pairCount -eq 35)
-    ([int]$report.expectedPairCount -eq 35)
+    ([int]$report.pairCount -eq 36)
+    ([int]$report.expectedPairCount -eq 36)
     ($report.indexTermHistoryComplete -eq $true)
     ([int]$report.pairCount -eq [int]$report.expectedPairCount)
     ($report.futureDataDetected -eq $false)
@@ -238,6 +238,7 @@ function Assert-IntegrityReport {
     ($report.imIcSpotOverlayComplete -eq $true)
     ($report.icIfSpotOverlayComplete -eq $true)
     ($report.icIfSpotThresholdsComplete -eq $true)
+    ($report.aluminumAlloySpreadComplete -eq $true)
     ($report.spotCorrelationMetricsComplete -eq $true)
     ($report.fullDailyChartStatisticsComplete -eq $true)
     ($report.domesticFreshnessComplete -eq $true)
@@ -245,7 +246,7 @@ function Assert-IntegrityReport {
     ($report.externalSourcesComplete -eq $true)
   )
   if ($checks -contains $false) {
-    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，dataDate=$($report.dataDate)，expectedDomesticDataDate=$($report.expectedDomesticDataDate)，domesticFreshnessComplete=$($report.domesticFreshnessComplete)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，imIfSpotOverlayComplete=$($report.imIfSpotOverlayComplete)，imIfSpotThresholdsComplete=$($report.imIfSpotThresholdsComplete)，imIcSpotOverlayComplete=$($report.imIcSpotOverlayComplete)，icIfSpotOverlayComplete=$($report.icIfSpotOverlayComplete)，icIfSpotThresholdsComplete=$($report.icIfSpotThresholdsComplete)，spotCorrelationMetricsComplete=$($report.spotCorrelationMetricsComplete)，fullDailyChartStatisticsComplete=$($report.fullDailyChartStatisticsComplete)，externalRowDatesComplete=$($report.externalRowDatesComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
+    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，dataDate=$($report.dataDate)，expectedDomesticDataDate=$($report.expectedDomesticDataDate)，domesticFreshnessComplete=$($report.domesticFreshnessComplete)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，imIfSpotOverlayComplete=$($report.imIfSpotOverlayComplete)，imIfSpotThresholdsComplete=$($report.imIfSpotThresholdsComplete)，imIcSpotOverlayComplete=$($report.imIcSpotOverlayComplete)，icIfSpotOverlayComplete=$($report.icIfSpotOverlayComplete)，icIfSpotThresholdsComplete=$($report.icIfSpotThresholdsComplete)，aluminumAlloySpreadComplete=$($report.aluminumAlloySpreadComplete)，spotCorrelationMetricsComplete=$($report.spotCorrelationMetricsComplete)，fullDailyChartStatisticsComplete=$($report.fullDailyChartStatisticsComplete)，externalRowDatesComplete=$($report.externalRowDatesComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
   }
 
   if (-not (Test-Path -LiteralPath $outputPath)) {
