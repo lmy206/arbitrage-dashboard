@@ -789,8 +789,28 @@ test("spot-reference pairs include expandable xtdata history charts", async () =
 test("IM and IC term spreads expose down-quarter and skip-quarter observations without future data", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   const configurations = [
-    { pair: "IM期限套", root: "IM", spotSymbol: "000852.SH", spotLabel: "中证1000", startDate: "2022-07-22" },
-    { pair: "IC期限套", root: "IC", spotSymbol: "000905.SH", spotLabel: "中证500", startDate: "2015-04-16" },
+    {
+      pair: "IM期限套",
+      root: "IM",
+      spotSymbol: "000852.SH",
+      spotLabel: "中证1000",
+      startDate: "2022-07-22",
+      thresholds: {
+        下季: [{ label: "低位 9.07%", value: 0.0907 }, { label: "高位 11.77%", value: 0.1177 }],
+        隔季: [{ label: "低位 9.17%", value: 0.0917 }, { label: "高位 11.80%", value: 0.118 }],
+      },
+    },
+    {
+      pair: "IC期限套",
+      root: "IC",
+      spotSymbol: "000905.SH",
+      spotLabel: "中证500",
+      startDate: "2015-04-16",
+      thresholds: {
+        下季: [{ label: "低位 7.41%", value: 0.0741 }, { label: "高位 10.77%", value: 0.1077 }],
+        隔季: [{ label: "低位 8.19%", value: 0.0819 }, { label: "高位 10.95%", value: 0.1095 }],
+      },
+    },
   ];
 
   for (const configuration of configurations) {
@@ -851,6 +871,9 @@ test("IM and IC term spreads expose down-quarter and skip-quarter observations w
       assert.equal(chart.unit, "百分比");
       assert.equal(chart.source, "xtdata");
       assert.equal(chart.grain, HYBRID_CHART_GRAIN);
+      assert.deepEqual(chart.fixedThresholds, configuration.thresholds[observation.label]);
+      assert.deepEqual(chart.quantileThresholds.map((threshold) => threshold.label), ["3%", "97%"]);
+      assert.equal(chart.overlayThresholds, undefined);
       assert.equal(chart.series.length, 1);
       assert.equal(chart.series[0].expiry, observation.label);
       assert.ok(chart.series[0].points.length >= 180);
@@ -1121,6 +1144,7 @@ test("scheduled publishing isolates development work and rejects stale domestic 
   assert.match(publisher, /imIfSpotThresholdsComplete/);
   assert.match(publisher, /icIfSpotThresholdsComplete/);
   assert.match(publisher, /aluminumAlloySpreadComplete/);
+  assert.match(publisher, /indexTermThresholdsComplete/);
   assert.match(publisher, /Get-NormalizedJsonHash/);
   assert.match(publisher, /Show-DashboardNotification/);
   assert.match(publisher, /\[Console\]::OutputEncoding = \$utf8Encoding/);

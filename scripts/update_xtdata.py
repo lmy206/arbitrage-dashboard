@@ -386,6 +386,16 @@ PAIRS: list[dict[str, Any]] = [
         "term_spot_symbol": "000852.SH",
         "term_spot_label": "中证1000",
         "term_start_date": "2022-07-22",
+        "term_fixed_thresholds": {
+            "下季": [
+                {"label": "低位 9.07%", "value": 0.0907},
+                {"label": "高位 11.77%", "value": 0.1177},
+            ],
+            "隔季": [
+                {"label": "低位 9.17%", "value": 0.0917},
+                {"label": "高位 11.80%", "value": 0.1180},
+            ],
+        },
     },
     {
         "pair": "IC期限套",
@@ -398,6 +408,16 @@ PAIRS: list[dict[str, Any]] = [
         "term_spot_symbol": "000905.SH",
         "term_spot_label": "中证500",
         "term_start_date": "2015-04-16",
+        "term_fixed_thresholds": {
+            "下季": [
+                {"label": "低位 7.41%", "value": 0.0741},
+                {"label": "高位 10.77%", "value": 0.1077},
+            ],
+            "隔季": [
+                {"label": "低位 8.19%", "value": 0.0819},
+                {"label": "高位 10.95%", "value": 0.1095},
+            ],
+        },
     },
     {"pair": "豆一/豆二比价", "left": "aJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
@@ -2808,6 +2828,9 @@ def build_index_term_observation(
     chart["title"] = f"{definition['pair']}（当月-{label}）走势"
     chart["unit"] = "百分比"
     chart["startDate"] = chart["series"][0]["points"][0]["date"]
+    fixed_thresholds = definition.get("term_fixed_thresholds", {}).get(label)
+    if fixed_thresholds:
+        chart["fixedThresholds"] = [dict(threshold) for threshold in fixed_thresholds]
     formula_label = f"({term_root}当月 − {term_root}{label}) × 12 / 月差 / {spot_label}"
     near_history = monthly_histories[latest_legs["nearSymbol"]]["close"]
     far_history = monthly_histories[latest_legs["farSymbol"]]["close"]
@@ -3986,6 +4009,26 @@ def write_outputs(
     }
     index_term_rows = [row for row in rows if row["pairType"] == "期限套利"]
 
+    def index_term_thresholds_complete_for_row(row: dict[str, Any]) -> bool:
+        definition = index_term_definitions.get(row["pair"])
+        observations = row.get("termObservations", [])
+        expected = definition.get("term_fixed_thresholds", {}) if definition else {}
+        return bool(
+            definition
+            and set(expected) == {"下季", "隔季"}
+            and [item.get("label") for item in observations] == ["下季", "隔季"]
+            and all(
+                (item.get("historyChart") or {}).get("fixedThresholds")
+                == expected[item["label"]]
+                and [
+                    threshold.get("label")
+                    for threshold in (item.get("historyChart") or {}).get("quantileThresholds", [])
+                ]
+                == ["3%", "97%"]
+                for item in observations
+            )
+        )
+
     def index_term_row_complete(row: dict[str, Any]) -> bool:
         definition = index_term_definitions.get(row["pair"])
         observations = row.get("termObservations", [])
@@ -3994,6 +4037,7 @@ def write_outputs(
             and row["contracts"] == []
             and row["denominatorSymbol"] == definition["term_spot_symbol"]
             and row["rollRule"] == INDEX_TERM_ROLL_RULE
+            and index_term_thresholds_complete_for_row(row)
             and [item["key"] for item in observations] == ["term-down", "term-skip"]
             and [item["label"] for item in observations] == ["下季", "隔季"]
             and all(
@@ -4014,6 +4058,10 @@ def write_outputs(
     index_term_history_complete = (
         {row["pair"] for row in index_term_rows} == set(index_term_definitions)
         and all(index_term_row_complete(row) for row in index_term_rows)
+    )
+    index_term_thresholds_complete = (
+        {row["pair"] for row in index_term_rows} == set(index_term_definitions)
+        and all(index_term_thresholds_complete_for_row(row) for row in index_term_rows)
     )
     im_term_rows = [row for row in index_term_rows if row["pair"] == "IM期限套"]
     ic_term_rows = [row for row in index_term_rows if row["pair"] == "IC期限套"]
@@ -4108,6 +4156,7 @@ def write_outputs(
         spot_observation_count == len(SPOT_OBSERVATIONS),
         term_structure_count == expected_term_structure_count,
         index_term_history_complete,
+        index_term_thresholds_complete,
         charts_complete,
         cross_market_rows_complete,
         external_row_dates_complete,
@@ -4172,6 +4221,7 @@ def write_outputs(
         "indexTermRowCount": len(index_term_rows),
         "expectedIndexTermRowCount": len(index_term_definitions),
         "indexTermHistoryComplete": index_term_history_complete,
+        "indexTermThresholdsComplete": index_term_thresholds_complete,
         "indexTermHistoryPointCounts": {
             row["pair"]: {
                 item["label"]: len(item["historyChart"]["series"][0]["points"])

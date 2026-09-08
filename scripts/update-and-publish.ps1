@@ -228,6 +228,7 @@ function Assert-IntegrityReport {
     ([int]$report.pairCount -eq 36)
     ([int]$report.expectedPairCount -eq 36)
     ($report.indexTermHistoryComplete -eq $true)
+    ($report.indexTermThresholdsComplete -eq $true)
     ([int]$report.pairCount -eq [int]$report.expectedPairCount)
     ($report.futureDataDetected -eq $false)
     ($report.hierarchySorted -eq $true)
@@ -246,7 +247,7 @@ function Assert-IntegrityReport {
     ($report.externalSourcesComplete -eq $true)
   )
   if ($checks -contains $false) {
-    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，dataDate=$($report.dataDate)，expectedDomesticDataDate=$($report.expectedDomesticDataDate)，domesticFreshnessComplete=$($report.domesticFreshnessComplete)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，imIfSpotOverlayComplete=$($report.imIfSpotOverlayComplete)，imIfSpotThresholdsComplete=$($report.imIfSpotThresholdsComplete)，imIcSpotOverlayComplete=$($report.imIcSpotOverlayComplete)，icIfSpotOverlayComplete=$($report.icIfSpotOverlayComplete)，icIfSpotThresholdsComplete=$($report.icIfSpotThresholdsComplete)，aluminumAlloySpreadComplete=$($report.aluminumAlloySpreadComplete)，spotCorrelationMetricsComplete=$($report.spotCorrelationMetricsComplete)，fullDailyChartStatisticsComplete=$($report.fullDailyChartStatisticsComplete)，externalRowDatesComplete=$($report.externalRowDatesComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
+    throw "完整性校验未通过：status=$($report.status)，pairCount=$($report.pairCount)/$($report.expectedPairCount)，dataDate=$($report.dataDate)，expectedDomesticDataDate=$($report.expectedDomesticDataDate)，domesticFreshnessComplete=$($report.domesticFreshnessComplete)，futureDataDetected=$($report.futureDataDetected)，hierarchySorted=$($report.hierarchySorted)，relatedObservationsComplete=$($report.relatedObservationsComplete)，fundingPressureOverlayComplete=$($report.fundingPressureOverlayComplete)，imIfSpotOverlayComplete=$($report.imIfSpotOverlayComplete)，imIfSpotThresholdsComplete=$($report.imIfSpotThresholdsComplete)，imIcSpotOverlayComplete=$($report.imIcSpotOverlayComplete)，icIfSpotOverlayComplete=$($report.icIfSpotOverlayComplete)，icIfSpotThresholdsComplete=$($report.icIfSpotThresholdsComplete)，aluminumAlloySpreadComplete=$($report.aluminumAlloySpreadComplete)，indexTermThresholdsComplete=$($report.indexTermThresholdsComplete)，spotCorrelationMetricsComplete=$($report.spotCorrelationMetricsComplete)，fullDailyChartStatisticsComplete=$($report.fullDailyChartStatisticsComplete)，externalRowDatesComplete=$($report.externalRowDatesComplete)，externalSourcesComplete=$($report.externalSourcesComplete)"
   }
 
   if (-not (Test-Path -LiteralPath $outputPath)) {
