@@ -93,6 +93,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /菜油\/豆油比价/);
   assert.match(html, /豆一\/豆二比价/);
   assert.match(html, /燃料油\/沥青比价/);
+  assert.match(html, /燃料油\/原油比价/);
+  assert.match(html, /展开燃料油\/原油比价合约月份/);
+  assert.match(html, /FU（元\/吨）\/ SC（元\/桶）；原始报价比，未作吨桶或税制换算/);
   assert.match(html, /20号胶\/BR橡胶比价/);
   assert.match(html, /玻璃\/烧碱比价/);
   assert.match(html, /title="FGJQ00\.ZF \/ SHJQ00\.ZF"/);
@@ -299,13 +302,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 36);
+  assert.equal(payload.rows.length, 37);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 28);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
@@ -539,6 +542,7 @@ test("monthly contract details contain only current values and liquidity", async
     ["菜油/豆油比价", ["OIJQ00.ZF", "yJQ00.DF"]],
     ["豆一/豆二比价", ["aJQ00.DF", "bJQ00.DF"]],
     ["燃料油/沥青比价", ["fuJQ00.SF", "buJQ00.SF"]],
+    ["燃料油/原油比价", ["fuJQ00.SF", "scJQ00.INE"]],
     ["20号胶/BR橡胶比价", ["nrJQ00.INE", "brJQ00.SF"]],
     ["玻璃/烧碱比价", ["FGJQ00.ZF", "SHJQ00.ZF"]],
     ["镍/不锈钢比价", ["niJQ00.SF", "ssJQ00.SF"]],
@@ -552,6 +556,25 @@ test("monthly contract details contain only current values and liquidity", async
     assert.equal(row.leftSymbol, leftSymbol);
     assert.equal(row.rightSymbol, rightSymbol);
     assert.equal(row.current, Number(row.current).toFixed(4));
+  }
+
+  const fuelCrude = payload.rows.find((row) => row.pair === "燃料油/原油比价");
+  assert.equal(fuelCrude.marketCategory, "工业品");
+  assert.equal(fuelCrude.mainHistoryChart.unit, "桶/吨");
+  assert.equal(fuelCrude.mainHistoryChart.source, "xtdata");
+  assert.equal(fuelCrude.mainHistoryChart.series[0].points.at(-1).value.toFixed(4), fuelCrude.current);
+  assert.match(fuelCrude.formulaLabel, /未作吨桶或税制换算/);
+  assert.equal(fuelCrude.mainContinuousObservation.leftSymbol, "fu00.SF");
+  assert.equal(fuelCrude.mainContinuousObservation.rightSymbol, "sc00.INE");
+  assert.equal(fuelCrude.mainContinuousObservation.historyChart, null);
+  for (const contract of fuelCrude.contracts) {
+    assert.equal(contract.leftSymbol, `fu${contract.expiry}.SF`);
+    assert.equal(contract.rightSymbol, `sc${contract.expiry}.INE`);
+    assert.equal(contract.historyChart.unit, "桶/吨");
+    for (const series of contract.historyChart.series) {
+      assert.equal(series.leftSymbol, `fu${series.expiry}.SF`);
+      assert.equal(series.rightSymbol, `sc${series.expiry}.INE`);
+    }
   }
 
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚乙烯比价"), false);
@@ -922,7 +945,7 @@ test("xtdata-only integrity validation is internally consistent", async () => {
   const validation = payload.sourceValidation;
   assert.match(payload.source, /xtdata.*用户批准/);
   assert.equal(validation.mode, "xtdata_only");
-  assert.equal(validation.summary.total, 75);
+  assert.equal(validation.summary.total, 77);
   assert.equal(validation.checks.length, validation.summary.total);
   assert.equal(validation.summary.consistent, validation.summary.total);
   assert.equal(validation.summary.review, 0);
@@ -1063,6 +1086,27 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.equal(palmSoy.soybeanOilCnyPerMetricTonne, undefined);
   assert.equal(cnRisk.mainHistoryChart.unit, "百分比");
   assert.equal(usRisk.mainHistoryChart.unit, "百分比");
+  for (const [row, symbol, label] of [
+    [cnRisk, "000300.SH", "沪深300指数（右轴）"],
+    [usRisk, "INX.SINA", "标普500指数（右轴）"],
+  ]) {
+    const chart = row.mainHistoryChart;
+    assert.equal(chart.series[0].expiry, "ERP（左轴）");
+    assert.equal(chart.overlaySeries.symbol, symbol);
+    assert.equal(chart.overlaySeries.label, label);
+    assert.equal(chart.overlaySeries.unit, "点位");
+    assertHybridHistory(chart.overlaySeries.points, `${row.pair} 指数叠加线`);
+    assert.ok(chart.overlaySeries.points.every((point) => (
+      Number.isFinite(point.value) && point.value > 0
+      && point.date >= chart.startDate && point.date <= chart.endDate
+    )));
+  }
+  assert.deepEqual(
+    cnRisk.mainHistoryChart.overlaySeries.points.map((point) => point.date),
+    cnRisk.mainHistoryChart.series[0].points.map((point) => point.date),
+  );
+  assert.match(cnRisk.mainHistoryChart.source, /沪深300指数：xtdata（000300.SH）/);
+  assert.match(usRisk.mainHistoryChart.source, /标普500指数：新浪美股指数/);
   assert.deepEqual(cnRisk.mainHistoryChart.fixedThresholds, [
     { label: "3%", value: 0.03 },
     { label: "6%", value: 0.06 },

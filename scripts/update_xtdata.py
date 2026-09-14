@@ -44,6 +44,7 @@ SEASONAL_CONTRACT_YEARS = 10
 CONTRACT_HISTORY_MAX_SPAN_DAYS = 400
 RECENT_DAILY_TRADING_DAYS = 20
 FUTURE_XTDATA_ROWS_DISCARDED = 0
+FUTURE_EXTERNAL_ROWS_DISCARDED = 0
 HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘"
 FULL_DAILY_SINCE_LISTING_GRAIN = "上市以来日线收盘"
 INDEX_TERM_CALENDAR_START = pd.Timestamp("2015-04-16")
@@ -102,6 +103,7 @@ CONTRACTS: dict[str, dict[str, float]] = {
     "au00.SF": {"multiplier": 1000, "margin_rate": 0.12},
     "ag00.SF": {"multiplier": 15, "margin_rate": 0.13},
     "fu00.SF": {"multiplier": 10, "margin_rate": 0.16},
+    "sc00.INE": {"multiplier": 1000, "margin_rate": 0.18},
     "bu00.SF": {"multiplier": 10, "margin_rate": 0.12},
     "nr00.INE": {"multiplier": 10, "margin_rate": 0.10},
     "br00.SF": {"multiplier": 5, "margin_rate": 0.12},
@@ -469,6 +471,15 @@ PAIRS: list[dict[str, Any]] = [
     },
     {"pair": "金/银比价", "left": "auJQ00.SF", "right": "agJQ00.SF", "formula": gold_silver, "kind": "gold_silver", "strategy_type": "趋势"},
     {"pair": "燃料油/沥青比价", "left": "fuJQ00.SF", "right": "buJQ00.SF", "formula": ratio, "kind": "ratio"},
+    {
+        "pair": "燃料油/原油比价",
+        "left": "fuJQ00.SF",
+        "right": "scJQ00.INE",
+        "formula": ratio,
+        "kind": "ratio",
+        "unit": "桶/吨",
+        "formula_label": "FU（元/吨）/ SC（元/桶）；原始报价比，未作吨桶或税制换算",
+    },
     {"pair": "20号胶/BR橡胶比价", "left": "nrJQ00.INE", "right": "brJQ00.SF", "formula": ratio, "kind": "ratio"},
     {"pair": "玻璃/烧碱比价", "left": "FGJQ00.ZF", "right": "SHJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {"pair": "镍/不锈钢比价", "left": "niJQ00.SF", "right": "ssJQ00.SF", "formula": ratio, "kind": "ratio"},
@@ -1277,6 +1288,16 @@ def persist_external_frame(
     )
 
 
+def available_external_frame(frame: pd.DataFrame, asof: pd.Timestamp) -> pd.DataFrame:
+    """Exclude next-trading-day rows from live responses and cached input alike."""
+    global FUTURE_EXTERNAL_ROWS_DISCARDED
+    if frame.empty:
+        return frame.copy()
+    future = frame.index > asof.normalize()
+    FUTURE_EXTERNAL_ROWS_DISCARDED += int(future.sum())
+    return frame.loc[~future].copy()
+
+
 def fetch_external_market_history() -> tuple[
     dict[str, pd.Series],
     list[dict[str, Any]],
@@ -1486,7 +1507,10 @@ def fetch_external_market_history() -> tuple[
         fetcher = specification["fetch"]
         if fetcher is not None:
             try:
-                frame = specification["normalize"](fetcher())
+                frame = available_external_frame(
+                    specification["normalize"](fetcher()),
+                    pd.Timestamp(now).tz_localize(None),
+                )
                 if frame.empty:
                     raise RuntimeError("返回空数据")
                 persist_external_frame(
@@ -1502,7 +1526,10 @@ def fetch_external_market_history() -> tuple[
                 errors.append(f"{specification['symbol']}: {exc}")
 
         if frame.empty:
-            frame = load_cached_akshare_frame(csv_path)
+            frame = available_external_frame(
+                load_cached_akshare_frame(csv_path),
+                pd.Timestamp(now).tz_localize(None),
+            )
             if not frame.empty:
                 state = "cache"
 
@@ -1723,6 +1750,7 @@ def build_xtdata_only_validation(
                 "IM00.IF": "中证1000股指",
                 "IF00.IF": "沪深300股指",
                 "fu00.SF": "燃料油",
+                "sc00.INE": "原油",
                 "bu00.SF": "沥青",
                 "nr00.INE": "20号胶",
                 "br00.SF": "BR橡胶",
@@ -2077,7 +2105,7 @@ def build_contract_history_chart(
     )
     return {
         "title": f"{definition['pair']}历年{int(month)}月合约",
-        "unit": "点差" if definition["kind"] == "spread" else "比值",
+        "unit": definition.get("unit", "点差" if definition["kind"] == "spread" else "比值"),
         "month": month,
         "startDate": chart_start_date.strftime("%Y-%m-%d"),
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
@@ -2133,7 +2161,7 @@ def build_observation_history_chart(
     )
     return {
         "title": f"{definition['pair']}{label}走势",
-        "unit": "点差" if definition["kind"] == "spread" else "比值",
+        "unit": definition.get("unit", "点差" if definition["kind"] == "spread" else "比值"),
         "month": "",
         "startDate": chart_values.index.min().strftime("%Y-%m-%d"),
         "endDate": common_latest_date.strftime("%Y-%m-%d"),
@@ -3305,15 +3333,37 @@ def build_external_reference_row(
         "跨市场套利": "跨市场",
         "外盘参考": "外盘",
     }[pair_type]
-    if builder == "usd_funding_pressure":
+    if builder == "cn_equity_risk_premium":
+        chart_dates = pd.DatetimeIndex(
+            [point["date"] for point in chart["series"][0]["points"]]
+        )
+        # Keep the index on the ERP's exact observation dates, without filling
+        # gaps from another trading day or changing the ERP history/statistics.
+        csi300_values = histories["000300.SH"].reindex(chart_dates)
+        if csi300_values.isna().any() or (csi300_values <= 0).any():
+            raise RuntimeError("ERP：沪深300 的 xtdata 沪深300叠加线日期未完全对齐")
+        chart["series"][0]["expiry"] = "ERP（左轴）"
+        chart["overlaySeries"] = {
+            "label": "沪深300指数（右轴）",
+            "symbol": "000300.SH",
+            "unit": "点位",
+            "points": [
+                {"date": timestamp.strftime("%Y-%m-%d"), "value": round(float(value), 4)}
+                for timestamp, value in csi300_values.items()
+            ],
+        }
+        chart["source"] = f"{source}；沪深300指数：xtdata（000300.SH）"
+    if builder in {"usd_funding_pressure", "us_equity_risk_premium"}:
         sp500_window = external_histories[SP500_SYMBOL][
             (external_histories[SP500_SYMBOL].index >= pd.Timestamp(chart["startDate"]))
             & (external_histories[SP500_SYMBOL].index <= latest_date)
         ].dropna()
         if len(sp500_window) < 2:
-            raise ExternalDataError("美元银行融资压力代理 标普500叠加线数据不足")
+            raise ExternalDataError(f"{definition['pair']} 标普500叠加线数据不足")
         sp500_chart_values = sample_chart_history(sp500_window)
-        chart["series"][0]["expiry"] = "美元融资压力（左轴）"
+        chart["series"][0]["expiry"] = (
+            "美元融资压力（左轴）" if builder == "usd_funding_pressure" else "ERP（左轴）"
+        )
         chart["overlaySeries"] = {
             "label": "标普500指数（右轴）",
             "symbol": SP500_SYMBOL,
@@ -3725,7 +3775,6 @@ def write_outputs(
         "charts": charts,
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     latest = pd.Timestamp(data_date).date()
@@ -3899,11 +3948,33 @@ def write_outputs(
     spot_reference_histories_complete = all(
         chart is not None
         and len(chart["series"]) == 1
-        and chart["series"][0]["expiry"] in {"现货", "外盘", "美元融资压力（左轴）"}
+        and chart["series"][0]["expiry"] in {"现货", "外盘", "美元融资压力（左轴）", "ERP（左轴）"}
         and len(chart["series"][0]["points"]) >= 8
         and chart_statistics_complete(chart)
         for chart in spot_reference_history_charts
     )
+    risk_premium_overlays_complete = True
+    for pair, symbol in (("ERP：沪深300", "000300.SH"), ("ERP：标普500", SP500_SYMBOL)):
+        risk_rows = [row for row in rows if row["pair"] == pair]
+        risk_chart = (risk_rows[0].get("mainHistoryChart") or {}) if len(risk_rows) == 1 else {}
+        overlay = risk_chart.get("overlaySeries", {})
+        points = overlay.get("points", [])
+        risk_premium_overlays_complete = risk_premium_overlays_complete and (
+            overlay.get("symbol") == symbol
+            and overlay.get("unit") == "点位"
+            and len(points) >= 8
+            and all(
+                math.isfinite(point["value"]) and point["value"] > 0
+                and risk_chart["startDate"] <= point["date"] <= risk_chart["endDate"]
+                and (index == 0 or point["date"] > points[index - 1]["date"])
+                for index, point in enumerate(points)
+            )
+            and (
+                pair != "ERP：沪深300"
+                or [point["date"] for point in points]
+                == [point["date"] for point in risk_chart["series"][0]["points"]]
+            )
+        )
     funding_pressure_rows = [row for row in rows if row["pair"] == "美元银行融资压力代理"]
     funding_pressure_overlay_complete = (
         len(funding_pressure_rows) == 1
@@ -4146,6 +4217,7 @@ def write_outputs(
         equity_index_observation_histories_complete,
         spot_reference_histories_complete,
         funding_pressure_overlay_complete,
+        risk_premium_overlays_complete,
         im_if_spot_overlay_complete,
         im_if_spot_thresholds_complete,
         im_ic_spot_overlay_complete,
@@ -4207,6 +4279,7 @@ def write_outputs(
         "expectedSpotReferenceHistoryCount": len(spot_reference_history_charts),
         "spotReferenceHistoriesComplete": spot_reference_histories_complete,
         "fundingPressureOverlayComplete": funding_pressure_overlay_complete,
+        "riskPremiumOverlaysComplete": risk_premium_overlays_complete,
         "imIfSpotOverlayComplete": im_if_spot_overlay_complete,
         "imIfSpotThresholdsComplete": im_if_spot_thresholds_complete,
         "imIcSpotOverlayComplete": im_ic_spot_overlay_complete,
@@ -4286,9 +4359,14 @@ def write_outputs(
         "akshareErrors": [] if xtdata_only else akshare_errors,
         "futureDataDetected": future_data_detected,
         "futureXtdataRowsDiscarded": FUTURE_XTDATA_ROWS_DISCARDED,
+        "futureExternalRowsDiscarded": FUTURE_EXTERNAL_ROWS_DISCARDED,
         "xtdataPort": port,
         "output": str(OUTPUT_PATH),
     }
+    if report["status"] == "ok":
+        OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    else:
+        report["lastGoodOutputPreserved"] = OUTPUT_PATH.exists()
     (REPORT_DIR / "arbitrage_dashboard_integrity.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -4304,6 +4382,7 @@ def write_outputs(
             "status": report["status"],
             "data_date": data_date,
             "pair_count": len(rows),
+            "future_external_rows_discarded": FUTURE_EXTERNAL_ROWS_DISCARDED,
             "output": str(OUTPUT_PATH),
             "updated_at": now.isoformat(timespec="seconds"),
         }

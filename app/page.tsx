@@ -47,7 +47,7 @@ type ContractHistoryCorrelation = {
 
 type ContractHistoryChartData = {
   title: string;
-  unit: "比值" | "点差" | "百分比" | "基点";
+  unit: "比值" | "点差" | "百分比" | "基点" | "桶/吨";
   month: string;
   startDate: string;
   endDate: string;
@@ -532,6 +532,7 @@ const contractRootNames: Record<string, string> = {
   SA: "纯碱",
   FG: "玻璃",
   FU: "燃料油",
+  SC: "原油",
   BU: "沥青",
   NR: "20号胶",
   BR: "BR橡胶",
@@ -708,7 +709,7 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
           <span key={series.expiry} title={series.formulaLabel ?? (
             series.thirdSymbol
               ? `${series.leftSymbol} − 0.86 × ${series.rightSymbol} − 0.34 × ${series.thirdSymbol}`
-              : `${series.leftSymbol} ${chart.unit === "比值" ? "/" : "−"} ${series.rightSymbol}`
+              : `${series.leftSymbol} ${chart.unit === "比值" || chart.unit === "桶/吨" ? "/" : "−"} ${series.rightSymbol}`
           )}>
             <i style={{ borderTopColor: style.color, borderTopStyle: style.dash ? "dashed" : "solid" }} aria-hidden="true" />
             {series.expiry}
