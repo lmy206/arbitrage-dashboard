@@ -90,27 +90,48 @@ function Invoke-LoggedCommand {
   param(
     [string]$FilePath,
     [string[]]$ArgumentList,
-    [string]$Step
+    [string]$Step,
+    [switch]$RetryGitNetwork,
+    [ValidateRange(1, 6)]
+    [int]$MaxAttempts = 4
   )
 
-  Write-PublishLog "开始：$Step"
-  $previousPreference = $ErrorActionPreference
-  $ErrorActionPreference = "Continue"
-  try {
-    $commandOutput = & $FilePath @ArgumentList 2>&1
-    $exitCode = $LASTEXITCODE
-  } finally {
-    $ErrorActionPreference = $previousPreference
+  $attemptLimit = if ($RetryGitNetwork) { $MaxAttempts } else { 1 }
+  $commandArguments = if ($RetryGitNetwork) {
+    # Apply transport settings to this Git invocation only; keep TLS and auth intact.
+    @("-c", "http.version=HTTP/1.1", "-c", "http.lowSpeedLimit=1", "-c", "http.lowSpeedTime=45") + $ArgumentList
+  } else {
+    $ArgumentList
   }
+  for ($attempt = 1; $attempt -le $attemptLimit; $attempt++) {
+    Write-PublishLog "开始：$Step（第 $attempt/$attemptLimit 次）"
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+      $commandOutput = @(& $FilePath @commandArguments 2>&1)
+      $exitCode = $LASTEXITCODE
+    } finally {
+      $ErrorActionPreference = $previousPreference
+    }
 
-  foreach ($line in $commandOutput) {
-    Add-Content -LiteralPath $logPath -Value ("  " + [string]$line) -Encoding UTF8
+    foreach ($line in $commandOutput) {
+      Add-Content -LiteralPath $logPath -Value ("  " + [string]$line) -Encoding UTF8
+    }
+    if ($exitCode -eq 0) {
+      Write-PublishLog "完成：$Step"
+      return $commandOutput
+    }
+
+    $failureText = ($commandOutput | ForEach-Object { [string]$_ }) -join "`n"
+    $isTransient = $failureText -match '(?i)connection (?:was )?reset|recv failure|send failure|could not resolve (?:host|proxy)|failed to connect|couldn.t connect|timed? out|timeout|remote end hung up|unexpected disconnect|early EOF|HTTP/?[0-9.]* (?:500|502|503|504)|returned error: (?:500|502|503|504)'
+    $isPermanent = $failureText -match '(?i)authentication failed|permission denied|could not read Username|repository not found|non-fast-forward|fetch first|certificate|returned error: (?:401|403|404)'
+    if (-not $RetryGitNetwork -or -not $isTransient -or $isPermanent -or $attempt -eq $attemptLimit) {
+      throw "$Step 失败，退出码 $exitCode，已尝试 $attempt 次；详见 $logPath"
+    }
+    $delaySeconds = [int][Math]::Min(5 * [Math]::Pow(2, $attempt - 1), 60)
+    Write-PublishLog "网络暂时失败：$Step；$delaySeconds 秒后重试。"
+    Start-Sleep -Seconds $delaySeconds
   }
-  if ($exitCode -ne 0) {
-    throw "$Step 失败，退出码 $exitCode；详见 $logPath"
-  }
-  Write-PublishLog "完成：$Step"
-  return @($commandOutput)
 }
 
 function Get-JsonDataDate {
@@ -184,7 +205,7 @@ function Assert-RepositoryReady {
   }
 
   if (-not $SkipFetch) {
-    Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "fetch", "origin", "main", "--quiet") -Step "同步远端状态"
+    Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "fetch", "origin", "main", "--quiet") -Step "同步远端状态" -RetryGitNetwork | Out-Null
     $syncCounts = (& $GitPath -C $projectRoot rev-list --left-right --count "origin/main...HEAD").Trim() -split "\s+"
     if ($LASTEXITCODE -ne 0 -or $syncCounts.Count -ne 2) {
       throw "无法比较本地 main 与 origin/main"
@@ -205,7 +226,7 @@ function Assert-RepositoryReady {
         if ($aheadPaths.Count -eq 0 -or ($aheadPaths | Where-Object { $_ -ne "app/data/arbitrage.json" }).Count -gt 0) {
           throw "独立发布分支存在非数据提交，自动恢复已停止：$($aheadPaths -join ', ')"
         }
-        Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "push", "origin", "HEAD:main") -Step "重试推送上次未完成的数据提交"
+        Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "push", "origin", "HEAD:main") -Step "重试推送上次未完成的数据提交" -RetryGitNetwork | Out-Null
         $recoveryJson = @(& $GitPath -C $projectRoot show "HEAD:app/data/arbitrage.json") -join "`n"
         Wait-ForCloudflareSnapshot `
           -ExpectedDataDate (Get-JsonDataDate -JsonText $recoveryJson) `
@@ -353,7 +374,7 @@ $commitMessage = if ($currentDataDate -ne $committedDataDate) {
 }
 Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "commit", "-m", $commitMessage) -Step "提交数据快照"
 $pushRef = if ((& $gitPath -C $projectRoot branch --show-current).Trim() -eq $publisherBranch) { "HEAD:main" } else { "main" }
-Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "push", "origin", $pushRef) -Step "推送 main 并触发 Cloudflare"
+Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "push", "origin", $pushRef) -Step "推送 main 并触发 Cloudflare" -RetryGitNetwork | Out-Null
 
 Wait-ForCloudflareSnapshot -ExpectedDataDate $currentDataDate -ExpectedUpdatedAt $currentUpdatedAt
 $message = "更新成功：数据日 $currentDataDate 已推送并在 Cloudflare 生效"

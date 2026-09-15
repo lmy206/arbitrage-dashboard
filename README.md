@@ -46,6 +46,10 @@ Cloudflare 连接的 Git 仓库必须包含当前代码；部署页面显示的�
 
 `scripts/update-and-publish.ps1` 是唯一获准自动执行 `git push` 的入口。计划任务使用 `automation/publisher` 独立分支，自动快进 `origin/main`；完整性报告必须确认国内数据日符合交易日历、外部行披露实际来源日。规范化数据内容有实质变化时才运行 `npm run test:pages`、仅提交 `app/data/arbitrage.json` 并推送 `main`；只有 `updatedAt` 变化时会恢复生成文件并跳过。若上次数据提交因网络中断未推送，下一次会验证提交只修改数据文件后重试 `HEAD:main`。Cloudflare 验收同时核对国内数据日和快照时间，避免同日期内容误判为已部署。任何一步失败都会停止发布、写入独立 worktree 的 `.runtime/cloud-publish-status.json` 并尝试显示 Windows 通知；计划任务配置每 10 分钟重试，最多 3 次。
 
+GitHub 拉取和推送遇到连接重置、DNS/连接超时或服务端 5xx 时，在当前运行内最多尝试 4 次，间隔 5、10、20 秒；使用仅对该 Git 命令生效的 HTTP/1.1 和低速超时设置，不修改全局 Git、代理、TLS 校验或凭据。认证、证书、仓库权限和分支冲突错误立即停止；数据更新、构建与本地提交不会因该机制重复执行。重试后仍失败会保留失败状态与日志，计划任务原有的重启设置继续生效。
+
+重试回归测试：`powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\publisher-network-retry.test.ps1`。
+
 安装或刷新计划任务：
 
 ```powershell
