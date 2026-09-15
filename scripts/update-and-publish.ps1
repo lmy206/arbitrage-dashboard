@@ -97,7 +97,7 @@ function Invoke-LoggedCommand {
   )
 
   $attemptLimit = if ($RetryGitNetwork) { $MaxAttempts } else { 1 }
-  $commandArguments = if ($RetryGitNetwork) {
+  [string[]]$commandArguments = if ($RetryGitNetwork) {
     # Apply transport settings to this Git invocation only; keep TLS and auth intact.
     @("-c", "http.version=HTTP/1.1", "-c", "http.lowSpeedLimit=1", "-c", "http.lowSpeedTime=45") + $ArgumentList
   } else {

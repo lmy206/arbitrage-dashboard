@@ -67,4 +67,11 @@ Assert-Equal $caught $true "Non-network command failure propagates"
 Assert-Equal $script:attempts 1 "No opt-in means no retry"
 Assert-Equal $script:invocations[0] @("run","test:pages") "Other commands are unchanged"
 Write-Output "PASS: data, build and commit commands keep single-execution behavior"
+
+Reset-FakeGit @(@{Code=0;Text="data updated"})
+$result = Invoke-LoggedCommand -FilePath "Invoke-FakeGit" -ArgumentList @("scripts\update_xtdata.py") -Step "single script argument"
+Assert-Equal $result "data updated" "Single-argument output"
+Assert-Equal $script:invocations[0].Count 1 "Single argument stays an array"
+Assert-Equal $script:invocations[0][0] "scripts\update_xtdata.py" "Script path is not split into characters"
+Write-Output "PASS: Windows PowerShell preserves a single Python script argument"
 exit 0
