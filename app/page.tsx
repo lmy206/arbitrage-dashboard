@@ -47,7 +47,7 @@ type ContractHistoryCorrelation = {
 
 type ContractHistoryChartData = {
   title: string;
-  unit: "比值" | "点差" | "百分比" | "基点" | "桶/吨";
+  unit: "比值" | "点差" | "百分比" | "基点" | "桶/吨" | "桶/金衡盎司";
   month: string;
   startDate: string;
   endDate: string;
@@ -284,6 +284,9 @@ function pairCodeFormula(
 ) {
   if (thirdSymbol) {
     return `${leftSymbol} − 0.86 × ${rightSymbol} − 0.34 × ${thirdSymbol}`;
+  }
+  if (row.pair === "金/油比价") {
+    return `${leftSymbol} × 31.1034768 / ${rightSymbol}`;
   }
   const operator = row.formulaKind === "spread" ? "−" : "/";
   return `${leftSymbol} ${operator} ${rightSymbol}`;
@@ -709,7 +712,7 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
           <span key={series.expiry} title={series.formulaLabel ?? (
             series.thirdSymbol
               ? `${series.leftSymbol} − 0.86 × ${series.rightSymbol} − 0.34 × ${series.thirdSymbol}`
-              : `${series.leftSymbol} ${chart.unit === "比值" || chart.unit === "桶/吨" ? "/" : "−"} ${series.rightSymbol}`
+              : `${series.leftSymbol} ${["比值", "桶/吨", "桶/金衡盎司"].includes(chart.unit) ? "/" : "−"} ${series.rightSymbol}`
           )}>
             <i style={{ borderTopColor: style.color, borderTopStyle: style.dash ? "dashed" : "solid" }} aria-hidden="true" />
             {series.expiry}

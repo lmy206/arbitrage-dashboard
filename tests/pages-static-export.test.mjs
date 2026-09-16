@@ -10,7 +10,8 @@ test("Cloudflare Pages output contains a complete static entry document", async 
   const html = await readFile(path.join(clientDirectory, "index.html"), "utf8");
   assert.match(html, /<title>套利监测看板<\/title>/i);
   assert.match(html, /<main class="dashboard-shell" data-snapshot-updated-at="\d{4}-\d{2}-\d{2}T/);
-  assert.match(html, /36<!-- --> 组/);
+  assert.match(html, /37<!-- --> 组/);
+  assert.match(html, /金\/油比价/);
   assert.doesNotMatch(html, /猪肉\/玉米比价/);
   assert.match(html, /燃料油\/原油比价/);
 

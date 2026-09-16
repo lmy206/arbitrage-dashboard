@@ -94,6 +94,9 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /豆一\/豆二比价/);
   assert.match(html, /燃料油\/沥青比价/);
   assert.match(html, /燃料油\/原油比价/);
+  assert.match(html, /金\/油比价/);
+  assert.match(html, /展开金\/油比价合约月份/);
+  assert.match(html, /沪金AU（元\/克）× 31\.1034768 \/ 原油SC（元\/桶）；国内期货金油比/);
   assert.match(html, /展开燃料油\/原油比价合约月份/);
   assert.match(html, /FU（元\/吨）\/ SC（元\/桶）；原始报价比，未作吨桶或税制换算/);
   assert.match(html, /20号胶\/BR橡胶比价/);
@@ -302,10 +305,10 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 36);
+  assert.equal(payload.rows.length, 37);
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
-  assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价"].sort());
+  assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价", "金/油比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
   assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
@@ -575,6 +578,24 @@ test("monthly contract details contain only current values and liquidity", async
       assert.equal(series.leftSymbol, `fu${series.expiry}.SF`);
       assert.equal(series.rightSymbol, `sc${series.expiry}.INE`);
     }
+  }
+
+  const goldOil = payload.rows.find((row) => row.pair === "金/油比价");
+  assert.equal(goldOil.leftSymbol, "auJQ00.SF");
+  assert.equal(goldOil.rightSymbol, "scJQ00.INE");
+  assert.equal(goldOil.marketCategory, "工业品");
+  assert.equal(goldOil.strategyType, "趋势");
+  assert.equal(goldOil.mainHistoryChart.unit, "桶/金衡盎司");
+  assert.equal(goldOil.mainHistoryChart.source, "xtdata");
+  assert.match(goldOil.formulaLabel, /31\.1034768/);
+  assert.equal(goldOil.mainContinuousObservation.leftSymbol, "au00.SF");
+  assert.equal(goldOil.mainContinuousObservation.rightSymbol, "sc00.INE");
+  assert.equal(goldOil.mainHistoryChart.series[0].points.at(-1).value.toFixed(2), goldOil.current);
+  for (const contract of goldOil.contracts) {
+    assert.equal(contract.leftSymbol, `au${contract.expiry}.SF`);
+    assert.equal(contract.rightSymbol, `sc${contract.expiry}.INE`);
+    assert.equal(contract.historyChart.unit, "桶/金衡盎司");
+    assert.ok(contract.historyChart.series.every((series) => /31\.1034768/.test(series.formulaLabel)));
   }
 
   assert.equal(payload.rows.some((row) => row.pair === "玻璃/聚乙烯比价"), false);

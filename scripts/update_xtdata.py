@@ -43,6 +43,7 @@ MONTHLY_LOOKBACK_DAYS = 1100
 SEASONAL_CONTRACT_YEARS = 10
 CONTRACT_HISTORY_MAX_SPAN_DAYS = 400
 RECENT_DAILY_TRADING_DAYS = 20
+GRAMS_PER_TROY_OUNCE = 31.1034768
 FUTURE_XTDATA_ROWS_DISCARDED = 0
 FUTURE_EXTERNAL_ROWS_DISCARDED = 0
 HYBRID_CHART_GRAIN = "更早周频 · 最近20个交易日日线收盘"
@@ -276,6 +277,11 @@ def gold_silver(left: pd.Series, right: pd.Series) -> pd.Series:
     return left * 1000 / right
 
 
+def gold_oil(gold: pd.Series, crude_oil: pd.Series) -> pd.Series:
+    """AU yuan/gram to yuan/troy ounce, divided by SC yuan/barrel."""
+    return gold * GRAMS_PER_TROY_OUNCE / crude_oil
+
+
 def mto_screen_margin(polypropylene: pd.Series, methanol: pd.Series) -> pd.Series:
     """Simplified PP-route MTO screen margin before processing and by-product items."""
     return polypropylene - 3 * methanol
@@ -468,6 +474,16 @@ PAIRS: list[dict[str, Any]] = [
         "contract_months": {1, 5, 9},
     },
     {"pair": "金/银比价", "left": "auJQ00.SF", "right": "agJQ00.SF", "formula": gold_silver, "kind": "gold_silver", "strategy_type": "趋势"},
+    {
+        "pair": "金/油比价",
+        "left": "auJQ00.SF",
+        "right": "scJQ00.INE",
+        "formula": gold_oil,
+        "kind": "ratio",
+        "strategy_type": "趋势",
+        "unit": "桶/金衡盎司",
+        "formula_label": "沪金AU（元/克）× 31.1034768 / 原油SC（元/桶）；国内期货金油比",
+    },
     {"pair": "燃料油/沥青比价", "left": "fuJQ00.SF", "right": "buJQ00.SF", "formula": ratio, "kind": "ratio"},
     {
         "pair": "燃料油/原油比价",
