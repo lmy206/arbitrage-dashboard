@@ -114,8 +114,6 @@ CONTRACTS: dict[str, dict[str, float]] = {
     "MA00.ZF": {"multiplier": 10, "margin_rate": 0.10},
     "TA00.ZF": {"multiplier": 5, "margin_rate": 0.09},
     "PX00.ZF": {"multiplier": 5, "margin_rate": 0.10},
-    "lh00.DF": {"multiplier": 16, "margin_rate": 0.08},
-    "c00.DF": {"multiplier": 10, "margin_rate": 0.07},
 }
 
 
@@ -421,7 +419,7 @@ PAIRS: list[dict[str, Any]] = [
             ],
         },
     },
-    {"pair": "豆一/豆二比价", "left": "aJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio"},
+    {"pair": "豆一/豆二比价", "left": "aJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
     {"pair": "卷-螺价差", "left": "hcJQ00.SF", "right": "rbJQ00.SF", "formula": spread, "kind": "spread"},
     {"pair": "铜/铝比价", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
@@ -490,7 +488,6 @@ PAIRS: list[dict[str, Any]] = [
         "formula": ratio,
         "kind": "ratio",
     },
-    {"pair": "猪肉/玉米比价", "left": "lhJQ00.DF", "right": "cJQ00.DF", "formula": ratio, "kind": "ratio"},
     {"pair": "豆粕/豆二比价", "left": "mJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {
         "pair": "蛋白质价差",
