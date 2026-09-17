@@ -476,7 +476,12 @@ test("monthly contract details contain only current values and liquidity", async
 
   const rebarOreRatio = payload.rows.find((row) => row.pair === "螺/矿比价");
   assert.ok(rebarOreRatio.contracts.length > 0 && rebarOreRatio.contracts.length <= 4);
-  assert.ok(rebarOreRatio.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))));
+  assert.ok(
+    rebarOreRatio.contracts.every((contract) => ["01", "05", "10"].includes(contract.expiry.slice(-2))),
+    "螺/矿比价 should only show 1/5/10 contracts",
+  );
+  assert.ok(rebarOreRatio.contracts.some((contract) => contract.expiry.endsWith("10")));
+  assert.equal(rebarOreRatio.contracts.some((contract) => contract.expiry.endsWith("09")), false);
 
   const aluminumAlloySpread = payload.rows.find((row) => row.pair === "铝合金-沪铝价差");
   assert.ok(aluminumAlloySpread, "铝合金-沪铝价差 should be present");

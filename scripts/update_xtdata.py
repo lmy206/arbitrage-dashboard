@@ -471,7 +471,7 @@ PAIRS: list[dict[str, Any]] = [
         "right": "iJQ00.DF",
         "formula": ratio,
         "kind": "ratio",
-        "contract_months": {1, 5, 9},
+        "contract_months": {1, 5, 10},
     },
     {"pair": "金/银比价", "left": "auJQ00.SF", "right": "agJQ00.SF", "formula": gold_silver, "kind": "gold_silver", "strategy_type": "趋势"},
     {
