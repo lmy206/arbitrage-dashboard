@@ -6,7 +6,11 @@
 $ErrorActionPreference = "Stop"
 $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $gitPath = (Get-Command git.exe -ErrorAction Stop).Source
-& $gitPath -C $sourceRoot fetch origin main --quiet
+. (Join-Path $PSScriptRoot "publisher-support.ps1")
+function Write-PublishLog { param([string]$Message) Write-Host $Message }
+Initialize-PublisherNetwork -GitPath $gitPath -ProjectRoot $sourceRoot
+[string[]]$networkOptions = @(Get-PublisherGitNetworkOptions)
+& $gitPath @networkOptions -C $sourceRoot fetch origin main --quiet
 if ($LASTEXITCODE -ne 0) {
   throw "无法同步 origin/main，未更新计划任务"
 }
@@ -51,6 +55,12 @@ $trigger = New-ScheduledTaskTrigger `
   -WeeksInterval 1 `
   -DaysOfWeek Monday, Tuesday, Wednesday, Thursday, Friday `
   -At "20:10"
+$repeatPattern = New-ScheduledTaskTrigger `
+  -Once `
+  -At "20:10" `
+  -RepetitionInterval (New-TimeSpan -Minutes 10) `
+  -RepetitionDuration (New-TimeSpan -Hours 23 -Minutes 50)
+$trigger.Repetition = $repeatPattern.Repetition
 $settings = New-ScheduledTaskSettingsSet `
   -AllowStartIfOnBatteries `
   -DontStopIfGoingOnBatteries `
@@ -67,13 +77,25 @@ $principal = New-ScheduledTaskPrincipal `
   -LogonType Interactive `
   -RunLevel Limited
 
+$existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+if ($existingTask) {
+  if ($existingTask.State -eq "Running") { throw "计划任务仍在运行，不能覆盖任务配置" }
+  # Keep the task's existing account and execution/security settings.
+  $principal = $existingTask.Principal
+  $settings = $existingTask.Settings
+  $backupDirectory = Join-Path $sourceRoot ".runtime"
+  New-Item -ItemType Directory -Path $backupDirectory -Force | Out-Null
+  $backupPath = Join-Path $backupDirectory ("cloud-publish-task-before-{0}.xml" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
+  [IO.File]::WriteAllText($backupPath, (Export-ScheduledTask -TaskName $TaskName), [Text.Encoding]::Unicode)
+}
+
 Register-ScheduledTask `
   -TaskName $TaskName `
   -Action $action `
   -Trigger $trigger `
   -Settings $settings `
   -Principal $principal `
-  -Description "交易日 20:10 在独立发布 worktree 更新套利看板；校验通过后推送 GitHub main 并触发 Cloudflare Pages" `
+  -Description "工作日20:10更新；每10分钟检查未完成发布，成功后本轮空跑跳过；使用独立worktree推送GitHub并核验Cloudflare" `
   -Force | Out-Null
 
 Get-ScheduledTask -TaskName $TaskName

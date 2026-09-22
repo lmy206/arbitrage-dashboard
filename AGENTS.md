@@ -7,6 +7,8 @@
 - 用户已明确授权：本项目每次修改完成并通过相应校验后，都必须提交本次任务涉及的文件、推送到 GitHub `main`，并由 GitHub 推送触发 Cloudflare Pages 自动部署；不得只保留在本地。
 - 每次推送后必须检查 Cloudflare 生产域名 `https://arbitrage-dashboard-588.pages.dev/` 是否已部署新版；若 GitHub 推送或 Cloudflare 部署失败，必须明确报告失败环节，不得宣称修改已经上线。
 - 日常定时数据更新只能由 `scripts/update-and-publish.ps1` 执行；该自动任务只能提交 `app/data/arbitrage.json`，不得自动提交源代码、配置、凭证或其他工作区修改。
+- 计划任务工作日20:10启动，之后每10分钟检查未完成发布，持续23小时50分钟；`-Scheduled` 在本轮已确认上线后立即跳过。失败补发优先恢复已校验的提交和待发布记录，不重复下载行情。手动只补发可用 `-RecoverOnly`。
+- Git 连接遵守已有 Git/代理环境配置；未配置时复用 Windows 当前启用的无凭据本机代理，仅作用于单次命令。不得通过关闭 TLS 验证或新增外部代理处理断线。
 - Windows 计划任务固定使用 `D:\arbitrage-dashboard-publisher` 独立 worktree 的 `automation/publisher` 分支，禁止与日常开发 checkout 共用工作区。
 - 功能、样式、测试、文档和项目规则等人工修改，按本文件的“修改发布流程”提交，不得混入与当前任务无关的用户文件或未跟踪文件。
 

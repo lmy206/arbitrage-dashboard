@@ -1,5 +1,7 @@
 ﻿param(
   [switch]$DryRun,
+  [switch]$RecoverOnly,
+  [switch]$Scheduled,
   [string]$ProductionUrl = "https://arbitrage-dashboard-588.pages.dev/"
 )
 
@@ -21,6 +23,15 @@ $runStamp = $startedAt.ToString("yyyyMMdd-HHmmss")
 $logPath = Join-Path $runtimeDirectory "cloud-publish-$runStamp.log"
 $currentDataDate = $null
 $publisherBranch = "automation/publisher"
+$pendingPath = Join-Path $runtimeDirectory "cloud-publish-pending.json"
+$completedPath = Join-Path $runtimeDirectory "cloud-publish-completed.json"
+$script:publishStage = "preflight"
+$script:publishStep = ""
+$script:unpublishedDataCommit = $false
+$publishLock = $null
+
+. (Join-Path $PSScriptRoot "publisher-support.ps1")
+$script:cycleDate = Get-PublisherCycleDate
 
 New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
 
@@ -35,18 +46,29 @@ function Write-RunStatus {
   param(
     [string]$Status,
     [string]$Message,
-    [AllowNull()][string]$DataDate
+    [AllowNull()][string]$DataDate,
+    [bool]$Retryable = $false
   )
 
   $payload = [ordered]@{
     status = $Status
     message = $Message
     dataDate = $DataDate
+    cycleDate = $script:cycleDate
+    stage = $script:publishStage
+    step = $script:publishStep
+    retryable = $Retryable
     startedAt = $startedAt.ToString("o")
-    finishedAt = (Get-Date).ToString("o")
+    finishedAt = $(if ($Status -eq "running") { $null } else { (Get-Date).ToString("o") })
     logPath = $logPath
   }
-  $payload | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding UTF8
+  Write-PublisherState -Path $statusPath -Value $payload
+}
+
+function Set-PublishStage {
+  param([string]$Stage)
+  $script:publishStage = $Stage
+  Write-RunStatus -Status "running" -Message "正在执行：$Stage" -DataDate $currentDataDate
 }
 
 function Show-DashboardNotification {
@@ -97,13 +119,12 @@ function Invoke-LoggedCommand {
   )
 
   $attemptLimit = if ($RetryGitNetwork) { $MaxAttempts } else { 1 }
-  [string[]]$commandArguments = if ($RetryGitNetwork) {
-    # Apply transport settings to this Git invocation only; keep TLS and auth intact.
-    @("-c", "http.version=HTTP/1.1", "-c", "http.lowSpeedLimit=1", "-c", "http.lowSpeedTime=45") + $ArgumentList
-  } else {
-    $ArgumentList
-  }
+  $script:publishStep = $Step
   for ($attempt = 1; $attempt -le $attemptLimit; $attempt++) {
+    [string[]]$commandArguments = if ($RetryGitNetwork) {
+      # Re-read the user's current local proxy on each retry; do not persist Git config.
+      @(Get-PublisherGitNetworkOptions) + $ArgumentList
+    } else { $ArgumentList }
     Write-PublishLog "开始：$Step（第 $attempt/$attemptLimit 次）"
     $previousPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
@@ -123,10 +144,12 @@ function Invoke-LoggedCommand {
     }
 
     $failureText = ($commandOutput | ForEach-Object { [string]$_ }) -join "`n"
-    $isTransient = $failureText -match '(?i)connection (?:was )?reset|recv failure|send failure|could not resolve (?:host|proxy)|failed to connect|couldn.t connect|timed? out|timeout|remote end hung up|unexpected disconnect|early EOF|HTTP/?[0-9.]* (?:500|502|503|504)|returned error: (?:500|502|503|504)'
+    $isTransient = $failureText -match '(?i)connection (?:was )?reset|recv failure|send failure|could not resolve (?:host|proxy)|failed to connect|couldn.t connect|timed? out|timeout|operation too slow|remote end hung up|unexpected disconnect|early EOF|HTTP/?[0-9.]* (?:500|502|503|504)|returned error: (?:500|502|503|504)'
     $isPermanent = $failureText -match '(?i)authentication failed|permission denied|could not read Username|repository not found|non-fast-forward|fetch first|certificate|returned error: (?:401|403|404)'
     if (-not $RetryGitNetwork -or -not $isTransient -or $isPermanent -or $attempt -eq $attemptLimit) {
-      throw "$Step 失败，退出码 $exitCode，已尝试 $attempt 次；详见 $logPath"
+      $failure = New-Object System.Exception("$Step 失败，退出码 $exitCode，已尝试 $attempt 次；详见 $logPath")
+      $failure.Data["Retryable"] = [bool]($RetryGitNetwork -and $isTransient -and -not $isPermanent)
+      throw $failure
     }
     $delaySeconds = [int][Math]::Min(5 * [Math]::Pow(2, $attempt - 1), 60)
     Write-PublishLog "网络暂时失败：$Step；$delaySeconds 秒后重试。"
@@ -222,15 +245,11 @@ function Assert-RepositoryReady {
         }
         Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "merge", "--ff-only", "origin/main") -Step "快进独立发布分支"
       } elseif ($localAhead -gt 0) {
-        $aheadPaths = @(& $GitPath -C $projectRoot diff --name-only "origin/main..HEAD") | Where-Object { $_ }
+        $aheadPaths = @(& $GitPath -C $projectRoot log --format= --name-only "origin/main..HEAD") | Where-Object { $_ }
         if ($aheadPaths.Count -eq 0 -or ($aheadPaths | Where-Object { $_ -ne "app/data/arbitrage.json" }).Count -gt 0) {
           throw "独立发布分支存在非数据提交，自动恢复已停止：$($aheadPaths -join ', ')"
         }
-        Invoke-LoggedCommand -FilePath $GitPath -ArgumentList @("-C", $projectRoot, "push", "origin", "HEAD:main") -Step "重试推送上次未完成的数据提交" -RetryGitNetwork | Out-Null
-        $recoveryJson = @(& $GitPath -C $projectRoot show "HEAD:app/data/arbitrage.json") -join "`n"
-        Wait-ForCloudflareSnapshot `
-          -ExpectedDataDate (Get-JsonDataDate -JsonText $recoveryJson) `
-          -ExpectedUpdatedAt (Get-JsonUpdatedAt -JsonText $recoveryJson)
+        $script:unpublishedDataCommit = $true
       }
     } elseif ($remoteAhead -ne 0 -or $localAhead -ne 0) {
       throw "本地 main 与 origin/main 不同步（远端领先 $remoteAhead，本地领先 $localAhead），请人工处理"
@@ -295,7 +314,8 @@ function Wait-ForCloudflareSnapshot {
       $cacheBust = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
       $separator = if ($ProductionUrl.Contains("?")) { "&" } else { "?" }
       $response = Invoke-WebRequest -Uri "$ProductionUrl${separator}v=$cacheBust" -Headers $headers -UseBasicParsing -TimeoutSec 30
-      if ($response.StatusCode -eq 200 -and $response.Content.Contains($ExpectedDataDate) -and $response.Content.Contains($ExpectedUpdatedAt) -and $response.Content.Contains("套利监测看板")) {
+      $snapshotMatch = [regex]::Match($response.Content, 'data-snapshot-updated-at="([^"]+)"')
+      if ($response.StatusCode -eq 200 -and $snapshotMatch.Success -and $snapshotMatch.Groups[1].Value -eq $ExpectedUpdatedAt -and $response.Content.Contains($ExpectedDataDate) -and $response.Content.Contains("套利监测看板")) {
         Write-PublishLog "Cloudflare 已展示国内数据日 $ExpectedDataDate，快照时间 $ExpectedUpdatedAt"
         return
       }
@@ -304,7 +324,35 @@ function Wait-ForCloudflareSnapshot {
     }
     Start-Sleep -Seconds 20
   }
-  throw "GitHub 已推送，但 15 分钟内未确认 Cloudflare 展示国内数据日 $ExpectedDataDate 与快照时间 $ExpectedUpdatedAt"
+  $failure = New-Object System.Exception("GitHub 已推送，但 15 分钟内未确认 Cloudflare 展示国内数据日 $ExpectedDataDate 与快照时间 $ExpectedUpdatedAt")
+  $failure.Data["Retryable"] = $true
+  throw $failure
+}
+
+function Resume-PublisherSnapshot {
+  param([object]$Snapshot, [object]$Pending)
+  Set-PublishStage -Stage "recover"
+  & $gitPath -C $projectRoot diff --quiet -- "app/data/arbitrage.json"
+  if ($LASTEXITCODE -ne 0) { throw "恢复发布前发现未提交的数据修改，停止以保留现有内容" }
+  if ($Pending) { Assert-PublisherPendingSnapshot -Pending $Pending -Snapshot $Snapshot }
+  $recoveryCycle = if ($Pending) { $Pending.cycleDate } else { $Snapshot.cycleDate }
+  if (-not $Pending -or $Pending.commit -ne $Snapshot.commit) {
+    $null = Assert-IntegrityReport
+    Set-PublishStage -Stage "build"
+    Invoke-LoggedCommand -FilePath $npmPath -ArgumentList @("run", "test:pages") -Step "验证待补发快照" | Out-Null
+    Save-PublisherPending -Snapshot $Snapshot -CycleDate $recoveryCycle -Path $pendingPath
+  }
+  if ($script:unpublishedDataCommit) {
+    Set-PublishStage -Stage "push"
+    Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "push", "origin", "HEAD:main") -Step "补推已校验的数据提交" -RetryGitNetwork | Out-Null
+  }
+  Set-PublishStage -Stage "verify"
+  Wait-ForCloudflareSnapshot -ExpectedDataDate $Snapshot.dataDate -ExpectedUpdatedAt $Snapshot.updatedAt
+  $message = "补发完成：国内数据日 $($Snapshot.dataDate)，快照 $($Snapshot.updatedAt) 已在线核验；未重复下载行情"
+  Write-PublishLog $message
+  Write-RunStatus -Status "success" -Message $message -DataDate $Snapshot.dataDate
+  Save-PublisherCompletion -Snapshot $Snapshot -CycleDate $recoveryCycle -CompletedPath $completedPath -PendingPath $pendingPath
+  return $recoveryCycle
 }
 
 trap {
@@ -312,39 +360,65 @@ trap {
   $message = if ($rawMessage.Length -gt 1000) { $rawMessage.Substring(0, 1000) + "…" } else { $rawMessage }
   $notificationMessage = if ($message.Length -gt 180) { $message.Substring(0, 180) + "…" } else { $message }
   Write-PublishLog "失败：$message"
-  Write-RunStatus -Status "failed" -Message $message -DataDate $currentDataDate
+  $retryable = if ($_.Exception.Data.Contains("Retryable")) { [bool]$_.Exception.Data["Retryable"] } else { $script:publishStage -in @("update", "verify") }
+  Write-RunStatus -Status "failed" -Message $message -DataDate $currentDataDate -Retryable $retryable
   Show-DashboardNotification -Title "套利看板自动更新失败" -Message $notificationMessage
+  if ($publishLock) { $publishLock.Dispose() }
   exit 1
 }
 
 Set-Location -LiteralPath $projectRoot
-Write-PublishLog "套利看板自动更新任务启动。DryRun=$DryRun"
+try {
+  $publishLock = [IO.File]::Open((Join-Path $runtimeDirectory "cloud-publish.lock"), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+} catch [IO.IOException] {
+  Write-Output "已有套利看板更新任务运行，跳过重复启动。"
+  exit 0
+}
+$previousStatus = Read-PublisherState -Path $statusPath
+$completed = Read-PublisherState -Path $completedPath
+if ($Scheduled -and -not $DryRun -and -not (Test-PublisherScheduledWork -CycleDate $script:cycleDate -Completed $completed -LastStatus $previousStatus -HasPending (Test-Path -LiteralPath $pendingPath))) {
+  $publishLock.Dispose()
+  exit 0
+}
+Write-PublishLog "套利看板自动更新任务启动。DryRun=$DryRun；RecoverOnly=$RecoverOnly；Scheduled=$Scheduled"
 
 if (-not (Test-Path -LiteralPath $pythonPath)) {
   throw "找不到指定 Python：$pythonPath"
 }
 $gitPath = Resolve-CommandPath -Name "git.exe"
 $npmPath = Resolve-CommandPath -Name "npm.cmd" -Fallback (Join-Path $env:ProgramFiles "nodejs\npm.cmd")
+Initialize-PublisherNetwork -GitPath $gitPath -ProjectRoot $projectRoot
 
+if (-not $DryRun) { Set-PublishStage -Stage "sync" }
 Assert-RepositoryReady -GitPath $gitPath -SkipFetch:$DryRun
 
-$committedJson = @(& $gitPath -C $projectRoot show "HEAD:app/data/arbitrage.json") -join "`n"
-if ($LASTEXITCODE -ne 0) {
-  throw "无法读取 HEAD 中的 app/data/arbitrage.json"
-}
-$committedDataDate = Get-JsonDataDate -JsonText $committedJson
-$committedUpdatedAt = Get-JsonUpdatedAt -JsonText $committedJson
-$committedContentHash = Get-NormalizedJsonHash -JsonText $committedJson
+$committedSnapshot = Get-PublisherHeadSnapshot -GitPath $gitPath -ProjectRoot $projectRoot
+$committedDataDate = $committedSnapshot.dataDate
+$committedUpdatedAt = $committedSnapshot.updatedAt
+$committedContentHash = $committedSnapshot.dataHash
 
 if ($DryRun) {
   $currentDataDate = Assert-IntegrityReport
   $message = "演练通过：环境、仓库和完整性报告可用；未更新、未提交、未推送"
   Write-PublishLog $message
   Write-RunStatus -Status "dry_run_ok" -Message $message -DataDate $currentDataDate
+  $publishLock.Dispose()
   exit 0
 }
 
-Invoke-LoggedCommand -FilePath $pythonPath -ArgumentList @("scripts\update_xtdata.py") -Step "更新 xtdata 与已批准外部补充数据"
+$pending = Read-PublisherState -Path $pendingPath
+$legacyRecovery = $Scheduled -and $previousStatus.status -eq "failed" -and $previousStatus.dataDate -eq $committedDataDate
+if ($RecoverOnly -or $pending -or $script:unpublishedDataCommit -or $legacyRecovery) {
+  $currentDataDate = $committedDataDate
+  $recoveredCycle = Resume-PublisherSnapshot -Snapshot $committedSnapshot -Pending $pending
+  if ($RecoverOnly -or $recoveredCycle -ge $script:cycleDate) {
+    $publishLock.Dispose()
+    exit 0
+  }
+}
+
+Set-PublishStage -Stage "update"
+Invoke-LoggedCommand -FilePath $pythonPath -ArgumentList @("scripts\update_xtdata.py") -Step "更新 xtdata 与已批准外部补充数据" | Out-Null
 $currentDataDate = Assert-IntegrityReport
 $currentJson = Read-Utf8Text -Path $outputPath
 $currentUpdatedAt = Get-JsonUpdatedAt -JsonText $currentJson
@@ -356,14 +430,19 @@ if ([datetime]$currentDataDate -lt [datetime]$committedDataDate) {
 
 if ($currentContentHash -eq $committedContentHash) {
   Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "restore", "--source=HEAD", "--", "app/data/arbitrage.json") -Step "清理无实质变化的生成文件"
+  Save-PublisherPending -Snapshot $committedSnapshot -CycleDate $script:cycleDate -Path $pendingPath
+  Set-PublishStage -Stage "verify"
   Wait-ForCloudflareSnapshot -ExpectedDataDate $committedDataDate -ExpectedUpdatedAt $committedUpdatedAt
   $message = "无实质数据变化且线上快照已验证：国内数据日仍为 $currentDataDate，外部来源内容也未变化"
   Write-PublishLog $message
   Write-RunStatus -Status "no_new_data" -Message $message -DataDate $currentDataDate
+  Save-PublisherCompletion -Snapshot $committedSnapshot -CycleDate $script:cycleDate -CompletedPath $completedPath -PendingPath $pendingPath
+  $publishLock.Dispose()
   exit 0
 }
 
-Invoke-LoggedCommand -FilePath $npmPath -ArgumentList @("run", "test:pages") -Step "构建并验证 Cloudflare 静态页面"
+Set-PublishStage -Stage "build"
+Invoke-LoggedCommand -FilePath $npmPath -ArgumentList @("run", "test:pages") -Step "构建并验证 Cloudflare 静态页面" | Out-Null
 Assert-RepositoryReady -GitPath $gitPath -SkipFetch
 
 Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "add", "--", "app/data/arbitrage.json") -Step "暂存看板数据"
@@ -373,11 +452,17 @@ $commitMessage = if ($currentDataDate -ne $committedDataDate) {
   "data: refresh arbitrage dashboard sources for $currentDataDate"
 }
 Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "commit", "-m", $commitMessage) -Step "提交数据快照"
+$newSnapshot = Get-PublisherHeadSnapshot -GitPath $gitPath -ProjectRoot $projectRoot
+Save-PublisherPending -Snapshot $newSnapshot -CycleDate $script:cycleDate -Path $pendingPath
 $pushRef = if ((& $gitPath -C $projectRoot branch --show-current).Trim() -eq $publisherBranch) { "HEAD:main" } else { "main" }
+Set-PublishStage -Stage "push"
 Invoke-LoggedCommand -FilePath $gitPath -ArgumentList @("-C", $projectRoot, "push", "origin", $pushRef) -Step "推送 main 并触发 Cloudflare" -RetryGitNetwork | Out-Null
 
+Set-PublishStage -Stage "verify"
 Wait-ForCloudflareSnapshot -ExpectedDataDate $currentDataDate -ExpectedUpdatedAt $currentUpdatedAt
 $message = "更新成功：数据日 $currentDataDate 已推送并在 Cloudflare 生效"
 Write-PublishLog $message
 Write-RunStatus -Status "success" -Message $message -DataDate $currentDataDate
+Save-PublisherCompletion -Snapshot $newSnapshot -CycleDate $script:cycleDate -CompletedPath $completedPath -PendingPath $pendingPath
+$publishLock.Dispose()
 exit 0

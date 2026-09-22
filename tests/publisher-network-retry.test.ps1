@@ -9,6 +9,8 @@ if ($parseErrors) { throw ($parseErrors.Message -join "; ") }
 $definition = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq "Invoke-LoggedCommand" }, $true)
 if (-not $definition) { throw "Missing retry function" }
 . ([scriptblock]::Create($definition.Extent.Text))
+. (Join-Path $projectRoot "scripts\publisher-support.ps1")
+$script:publisherExplicitProxy = $true
 
 $runtimeDirectory = Join-Path $projectRoot ".runtime"
 New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
@@ -44,18 +46,20 @@ Write-Output "PASS: transient failures recover with bounded backoff"
 
 Reset-FakeGit @(@{Code=128;Text="fatal: Connection was reset"})
 $caught = $false
-try { Invoke-LoggedCommand -FilePath "Invoke-FakeGit" -ArgumentList @("push","origin","HEAD:main") -Step "test push" -RetryGitNetwork | Out-Null } catch { $caught = $true }
+try { Invoke-LoggedCommand -FilePath "Invoke-FakeGit" -ArgumentList @("push","origin","HEAD:main") -Step "test push" -RetryGitNetwork | Out-Null } catch { $caught = $true; $caughtFailure = $_.Exception }
 Assert-Equal $caught $true "Exhaustion propagates failure"
 Assert-Equal $script:attempts 4 "Attempt limit"
+Assert-Equal $caughtFailure.Data["Retryable"] $true "Persistent network errors remain retryable"
 Assert-Equal $script:delays @(5,10,20) "Exhaustion delays"
 Write-Output "PASS: persistent transport failure stops after four attempts"
 
 foreach ($failure in @("fatal: Authentication failed", "fatal: SSL certificate problem; Connection was reset", "! [rejected] main -> main (fetch first)")) {
   Reset-FakeGit @(@{Code=128;Text=$failure})
   $caught = $false
-  try { Invoke-LoggedCommand -FilePath "Invoke-FakeGit" -ArgumentList @("push","origin","main") -Step "permanent failure" -RetryGitNetwork | Out-Null } catch { $caught = $true }
+  try { Invoke-LoggedCommand -FilePath "Invoke-FakeGit" -ArgumentList @("push","origin","main") -Step "permanent failure" -RetryGitNetwork | Out-Null } catch { $caught = $true; $caughtFailure = $_.Exception }
   Assert-Equal $caught $true "Permanent error propagates"
   Assert-Equal $script:attempts 1 "Permanent errors are not retried"
+  Assert-Equal $caughtFailure.Data["Retryable"] $false "Permanent errors block automatic recovery"
   Assert-Equal $script:delays @() "Permanent errors do not sleep"
 }
 Write-Output "PASS: auth, TLS certificate and divergent-history failures stop immediately"
