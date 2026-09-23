@@ -187,6 +187,7 @@ type PairRow = {
   mainContinuousObservation: MainContinuousObservation | null;
   relatedObservations?: RelatedObservation[];
   termObservations?: TermObservation[];
+  contractSelection?: "nearest" | "liquidity";
   contracts: ContractRow[];
   formulaKind: "spread" | "ratio";
 };
@@ -195,6 +196,7 @@ const rows: PairRow[] = dashboardData.rows.map((row) => ({
   ...row,
   signal: row.signal as Signal,
   sourceStatus: row.sourceStatus as SourceStatus,
+  contractSelection: ("contractSelection" in row ? row.contractSelection : "liquidity") as PairRow["contractSelection"],
   formulaKind: (
     row.pair.includes("差")
     || row.pair.includes("利润")
@@ -1267,15 +1269,15 @@ export default function Home() {
                     {isExpanded && hasObservationPanel && (
                       <tr className="contract-detail-row">
                         <td colSpan={columns.length} id={detailId}>
-                          <div className="contract-panel" aria-label={hasTermObservations ? `${row.pair}下季与隔季观察口径` : `${row.pair}观察口径及成交量前四的合约月份`}>
+                          <div className="contract-panel" aria-label={hasTermObservations ? `${row.pair}下季与隔季观察口径` : row.contractSelection === "nearest" ? `${row.pair}观察口径及最近四个共同合约月份` : `${row.pair}观察口径及成交量前四的合约月份`}>
                             <div className="contract-grid contract-grid-header">
-                              <span>观察口径</span>
+                              <span>{row.contractSelection === "nearest" ? "观察口径（近四个月）" : "观察口径"}</span>
                               <span>当前值</span>
                               <span>{hasTermObservations ? "当月涨跌幅" : `${contractRootLabel(baseRow.leftSymbol)} 涨跌幅`}</span>
                               <span>{hasTermObservations ? "当月合约" : `${contractRootLabel(baseRow.contracts[0].leftSymbol)} 成交量`}</span>
                               <span>{hasTermObservations ? "远季涨跌幅" : hasThreeLeg ? "PTA / MEG 涨跌幅" : `${contractRootLabel(baseRow.rightSymbol)} 涨跌幅`}</span>
                               <span>{hasTermObservations ? "远季合约" : hasThreeLeg ? "PTA / MEG 成交量" : `${contractRootLabel(baseRow.contracts[0].rightSymbol)} 成交量`}</span>
-                              <span>{hasTermObservations ? "现货指数" : "可配对成交量 ↓"}</span>
+                              <span>{hasTermObservations ? "现货指数" : row.contractSelection === "nearest" ? "可配对成交量" : "可配对成交量 ↓"}</span>
                               <span>近5年分位</span>
                               <span>判断</span>
                               <span>主要观察</span>

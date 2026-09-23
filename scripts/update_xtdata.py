@@ -436,7 +436,7 @@ PAIRS: list[dict[str, Any]] = [
         "formula": spread,
         "kind": "spread",
         "fixed_lots": (1, 2),
-        "contract_months": {1, 5, 9},
+        "contract_selection": "nearest",
         "history_start_date": "2025-06-10",
         "full_daily_history": True,
         "formula_label": "AD − AL（元/吨；未扣辅料与加工成本）",
@@ -2225,6 +2225,7 @@ def build_contract_rows(
     )
     formula: Callable[..., pd.Series] = definition["formula"]
     results: list[dict[str, Any]] = []
+    nearest_contracts = definition.get("contract_selection") == "nearest"
 
     common_expiries = set(left_months) & set(right_months)
     if third_months is not None:
@@ -2283,7 +2284,7 @@ def build_contract_rows(
                 paired_volume = min(left_volume // left_lots, right_volume // right_lots)
             else:
                 paired_volume = min(left_volume, right_volume)
-        if paired_volume <= 0:
+        if paired_volume <= 0 and not nearest_contracts:
             continue
         current_series = (
             formula(aligned["leftClose"], aligned["rightClose"], aligned["thirdClose"])
@@ -2381,13 +2382,16 @@ def build_contract_rows(
             }
         )
 
-    results.sort(
-        key=lambda item: (
-            -item["pairedVolume"],
-            -(item["leftVolume"] + item["rightVolume"] + item.get("thirdVolume", 0)),
-            item["expiry"],
+    if nearest_contracts:
+        results.sort(key=lambda item: item["expiry"])
+    else:
+        results.sort(
+            key=lambda item: (
+                -item["pairedVolume"],
+                -(item["leftVolume"] + item["rightVolume"] + item.get("thirdVolume", 0)),
+                item["expiry"],
+            )
         )
-    )
     selected = results[:4]
     selected.sort(key=lambda item: item["expiry"])
     return selected
@@ -3630,6 +3634,7 @@ def build_rows(
                     else ("main" if tradable else "spot")
                 ),
                 "pairType": "期货套利" if tradable else "现货参考",
+                **({"contractSelection": definition["contract_selection"]} if definition.get("contract_selection") else {}),
                 "sourceStatus": pair_source_status(definition, source_validation),
                 "leftStructure": term_structures.get(left) if tradable else None,
                 "rightStructure": term_structures.get(right) if tradable else None,
@@ -3920,9 +3925,13 @@ def write_outputs(
         == "2025-06-10"
         and aluminum_alloy_rows[0]["mainHistoryChart"]["endDate"] == data_date
         and chart_starts_at_first_point(aluminum_alloy_rows[0]["mainHistoryChart"])
-        and 0 < len(aluminum_alloy_rows[0]["contracts"]) <= 4
+        and aluminum_alloy_rows[0].get("contractSelection") == "nearest"
+        and not definitions_by_pair["铝合金-沪铝价差"].get("contract_months")
+        and len(aluminum_alloy_rows[0]["contracts"]) == 4
+        and [contract["expiry"] for contract in aluminum_alloy_rows[0]["contracts"]]
+        == sorted({contract["expiry"] for contract in aluminum_alloy_rows[0]["contracts"]})
         and all(
-            int(contract["expiry"][-2:]) in {1, 5, 9}
+            contract["expiry"] >= pd.Timestamp(data_date).strftime("%y%m")
             and contract["lots"] == "1:2"
             and contract["pairedVolume"]
             == min(contract["leftVolume"], contract["rightVolume"] // 2)

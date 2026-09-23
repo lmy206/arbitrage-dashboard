@@ -335,7 +335,6 @@ test("monthly contract details contain only current values and liquidity", async
     ...oilseedMonthPairs,
     "螺/矿比价",
     "焦炭/焦煤比价",
-    "铝合金-沪铝价差",
   ]);
 
   const mealBeanRatio = payload.rows.find((row) => row.pair === "豆粕/豆二比价");
@@ -496,10 +495,12 @@ test("monthly contract details contain only current values and liquidity", async
     aluminumAlloySpread.mainHistoryChart.series[0].points[0].date,
   );
   assertIncreasingHistory(aluminumAlloySpread.mainHistoryChart.series[0].points, "铝合金-沪铝价差加权");
-  assert.ok(aluminumAlloySpread.contracts.length > 0 && aluminumAlloySpread.contracts.length <= 4);
-  assert.ok(
-    aluminumAlloySpread.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))),
-    "铝合金-沪铝价差 should only show 1/5/9 contracts",
+  assert.equal(aluminumAlloySpread.contractSelection, "nearest");
+  assert.equal(aluminumAlloySpread.contracts.length, 4);
+  assert.deepEqual(
+    aluminumAlloySpread.contracts.map((contract) => contract.expiry),
+    [...new Set(aluminumAlloySpread.contracts.map((contract) => contract.expiry))].sort(),
+    "铝合金-沪铝价差 should display four unique months from nearest to farthest",
   );
   for (const contract of aluminumAlloySpread.contracts) {
     assert.equal(contract.lots, "1:2");
