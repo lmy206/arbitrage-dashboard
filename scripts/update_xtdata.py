@@ -298,6 +298,7 @@ def coking_profit(coke: pd.Series, coking_coal: pd.Series) -> pd.Series:
 
 
 OILSEED_CONTRACT_MONTHS = {1, 5, 9}
+EQUITY_INDEX_QUARTER_MONTHS = {3, 6, 9, 12}
 
 
 LME_CROSS_MARKET_PAIRS: list[dict[str, str]] = [
@@ -380,7 +381,7 @@ ADDITIONAL_EXTERNAL_PAIRS = {
 
 
 PAIRS: list[dict[str, Any]] = [
-    {"pair": "IM-IC价差", "left": "IM00.IF", "right": "IC00.IF", "formula": spread, "kind": "spread"},
+    {"pair": "IM-IC价差", "left": "IM00.IF", "right": "IC00.IF", "formula": spread, "kind": "spread", "contract_months": EQUITY_INDEX_QUARTER_MONTHS},
     {
         "pair": "IM期限套",
         "left": "IM00.IF",
@@ -453,7 +454,7 @@ PAIRS: list[dict[str, Any]] = [
     ],
     {"pair": "棕榈油/菜油比价", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "棕榈油/豆油比价", "left": "pJQ00.DF", "right": "yJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
-    {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
+    {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio", "contract_months": EQUITY_INDEX_QUARTER_MONTHS},
     {"pair": "玻璃/纯碱比价", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {
         "pair": "焦炭/焦煤比价",
@@ -4498,4 +4499,12 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    exit_code = main()
+    if os.name == "nt" and "xtquant.xtdatacenter" in sys.modules:
+        # The installed native SDK has no working shutdown API and can crash
+        # during interpreter teardown. All outputs are closed by main(); retain
+        # its success/failure code and flush console output before process exit.
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(exit_code)
+    raise SystemExit(exit_code)
