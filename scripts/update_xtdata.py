@@ -11,7 +11,7 @@ import sqlite3
 import sys
 from datetime import datetime, time, timedelta
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, NoReturn
 from zoneinfo import ZoneInfo
 from io import StringIO
 
@@ -427,7 +427,7 @@ PAIRS: list[dict[str, Any]] = [
         },
     },
     {"pair": "豆一/豆二比价", "left": "aJQ00.DF", "right": "bJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
-    {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
+    {"pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio", "contract_months": EQUITY_INDEX_QUARTER_MONTHS},
     {"pair": "卷-螺价差", "left": "hcJQ00.SF", "right": "rbJQ00.SF", "formula": spread, "kind": "spread"},
     {"pair": "铜/铝比价", "left": "cuJQ00.SF", "right": "alJQ00.SF", "formula": ratio, "kind": "ratio"},
     {
@@ -4498,13 +4498,26 @@ def main() -> int:
         return 1
 
 
-if __name__ == "__main__":
-    exit_code = main()
+def exit_after_update(exit_code: int) -> NoReturn:
     if os.name == "nt" and "xtquant.xtdatacenter" in sys.modules:
-        # The installed native SDK has no working shutdown API and can crash
-        # during interpreter teardown. All outputs are closed by main(); retain
-        # its success/failure code and flush console output before process exit.
+        # datacenter_shared.dll can crash on DLL_PROCESS_DETACH, which even
+        # os._exit triggers. Only after main() finishes writing and validating
+        # all outputs, terminate this worker without DLL teardown callbacks.
+        # Preserve failed updates' exit codes; this is not a success override.
+        import ctypes
+        from ctypes import wintypes
+
         sys.stdout.flush()
         sys.stderr.flush()
-        os._exit(exit_code)
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetCurrentProcess.argtypes = []
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        kernel32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        kernel32.TerminateProcess.restype = wintypes.BOOL
+        if not kernel32.TerminateProcess(kernel32.GetCurrentProcess(), exit_code):
+            raise ctypes.WinError(ctypes.get_last_error())
     raise SystemExit(exit_code)
+
+
+if __name__ == "__main__":
+    exit_after_update(main())
