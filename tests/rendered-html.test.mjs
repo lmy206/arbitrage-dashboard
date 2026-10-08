@@ -315,9 +315,9 @@ test("monthly contract details contain only current values and liquidity", async
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
-    if (percentile >= 95) return "极度偏高";
+    if (percentile >= 97) return "极度偏高";
     if (percentile >= 85) return "偏高";
-    if (percentile <= 5) return "极度偏低";
+    if (percentile <= 3) return "极度偏低";
     if (percentile <= 15) return "偏低";
     return "中性";
   };

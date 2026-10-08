@@ -1899,11 +1899,11 @@ def latest_leg_change_pct(series: pd.Series, latest_date: pd.Timestamp) -> float
 
 
 def signal_for(value: float) -> str:
-    if value >= 95:
+    if value >= 97:
         return "极度偏高"
     if value >= 85:
         return "偏高"
-    if value <= 5:
+    if value <= 3:
         return "极度偏低"
     if value <= 15:
         return "偏低"

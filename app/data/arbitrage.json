@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-10-08",
-  "updatedAt": "2026-10-08T20:14:22+08:00",
+  "updatedAt": "2026-10-08T21:33:12+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -1632,8 +1632,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\newyorkfed\\OBFR.csv",
       "startDate": "2016-08-25",
-      "endDate": "2026-10-06",
-      "rows": 2539,
+      "endDate": "2026-10-07",
+      "rows": 2540,
       "maxLagDays": 7,
       "quoteUnit": "%"
     },
@@ -10352,7 +10352,7 @@
       "previous": "-2.00bp",
       "change": "+0.00bp",
       "changeValue": 0.0,
-      "allTime": "78.14%",
+      "allTime": "78.15%",
       "allTimeRange": "-21.00bp ~ 15.00bp",
       "percentile": 94.66,
       "fiveYearRange": "-9.00bp ~ 0.00bp",
@@ -10376,9 +10376,9 @@
         "unit": "基点",
         "month": "",
         "startDate": "2016-10-07",
-        "endDate": "2026-10-06",
+        "endDate": "2026-10-07",
         "source": "纽约联储官方日度OBFR；美联储理事会官方准备金管理利率，2021-07-29起使用IORB、此前使用IOER；标普500指数：新浪美股指数",
-        "grain": "更早周频 · 最近20个交易日日线收盘 · 外部数据截至2026-10-06 · 仅向后匹配已公布数据 · 标普500仅作右轴对照",
+        "grain": "更早周频 · 最近20个交易日日线收盘 · 外部数据截至2026-10-07 · 仅向后匹配已公布数据 · 标普500仅作右轴对照",
         "statisticsPointCount": 2510,
         "renderPointCount": 539,
         "quantileThresholds": [
@@ -12470,10 +12470,6 @@
                 "value": -2.0
               },
               {
-                "date": "2026-09-08",
-                "value": -2.0
-              },
-              {
                 "date": "2026-09-09",
                 "value": -2.0
               },
@@ -12551,6 +12547,10 @@
               },
               {
                 "date": "2026-10-06",
+                "value": -2.0
+              },
+              {
+                "date": "2026-10-07",
                 "value": -2.0
               }
             ]
@@ -14634,10 +14634,6 @@
               "value": 7718.6001
             },
             {
-              "date": "2026-09-08",
-              "value": 7673.52
-            },
-            {
               "date": "2026-09-09",
               "value": 7636.3599
             },
@@ -14716,6 +14712,10 @@
             {
               "date": "2026-10-06",
               "value": 7818.9302
+            },
+            {
+              "date": "2026-10-07",
+              "value": 7801.77
             }
           ]
         }
@@ -14723,10 +14723,10 @@
       "spotObservation": null,
       "mainContinuousObservation": null,
       "contracts": [],
-      "externalSourceDate": "2026-10-06",
+      "externalSourceDate": "2026-10-07",
       "externalSourceDates": {
-        "OBFR.NYFED": "2026-10-06",
-        "IORB_IOER.FED": "2026-10-06"
+        "OBFR.NYFED": "2026-10-07",
+        "IORB_IOER.FED": "2026-10-07"
       },
       "externalSourceMaxLagDays": 7,
       "obfrPct": 3.88,
@@ -123587,7 +123587,7 @@
           "allTimeRange": "-2325 ~ 890",
           "percentile": 95.36,
           "fiveYearRange": "-2325 ~ 890",
-          "signal": "极度偏高",
+          "signal": "偏高",
           "lots": "1:2",
           "deviation": "0.86%",
           "notional": "47万",
@@ -127300,7 +127300,7 @@
           "allTimeRange": "-2225 ~ 395",
           "percentile": 96.28,
           "fiveYearRange": "-2225 ~ 395",
-          "signal": "极度偏高",
+          "signal": "偏高",
           "lots": "1:2",
           "deviation": "0.80%",
           "notional": "46万",
@@ -128659,7 +128659,7 @@
       "allTimeRange": "3.9572 ~ 8.6022",
       "percentile": 95.13,
       "fiveYearRange": "3.9572 ~ 6.8197",
-      "signal": "极度偏高",
+      "signal": "偏高",
       "lots": "16:1",
       "deviation": "2.14%",
       "notional": "148万",
@@ -203372,7 +203372,7 @@
       "allTimeRange": "6.6163 ~ 13.70",
       "percentile": 4.29,
       "fiveYearRange": "6.9355 ~ 13.70",
-      "signal": "极度偏低",
+      "signal": "偏低",
       "lots": "9:16",
       "deviation": "0.51%",
       "notional": "215万",
@@ -204949,7 +204949,7 @@
         "allTimeRange": "6.5573 ~ 13.79",
         "percentile": 4.79,
         "fiveYearRange": "6.9245 ~ 13.79",
-        "signal": "极度偏低",
+        "signal": "偏低",
         "lots": "9:16",
         "deviation": "0.71%",
         "notional": "215万",
@@ -208909,7 +208909,7 @@
           "allTimeRange": "6.7520 ~ 13.91",
           "percentile": 4.62,
           "fiveYearRange": "6.9817 ~ 13.91",
-          "signal": "极度偏低",
+          "signal": "偏低",
           "lots": "9:16",
           "deviation": "0.41%",
           "notional": "215万",
@@ -210865,7 +210865,7 @@
           "allTimeRange": "6.8618 ~ 14.04",
           "percentile": 4.7,
           "fiveYearRange": "7.0573 ~ 14.04",
-          "signal": "极度偏低",
+          "signal": "偏低",
           "lots": "9:16",
           "deviation": "0.17%",
           "notional": "215万",
@@ -261587,13 +261587,13 @@
     {
       "strategyType": "外盘监控",
       "pair": "美盘油粕比",
-      "current": "3.8959",
+      "current": "3.8856",
       "previous": "3.8778",
-      "change": "+0.0181",
-      "changeValue": 0.01809313,
-      "allTime": "93.23%",
+      "change": "+0.0078",
+      "changeValue": 0.00779209,
+      "allTime": "92.99%",
       "allTimeRange": "1.5036 ~ 4.9055",
-      "percentile": 86.31,
+      "percentile": 85.83,
       "fiveYearRange": "2.1802 ~ 4.9055",
       "signal": "偏高",
       "lots": "—",
@@ -261602,8 +261602,8 @@
       "margin": "—",
       "leftSymbol": "BO.SINA",
       "rightSymbol": "SM.SINA",
-      "leftChangePct": 0.381,
-      "rightChangePct": -0.0852,
+      "leftChangePct": 0.0586,
+      "rightChangePct": -0.142,
       "seriesMode": "external",
       "pairType": "外盘参考",
       "formulaLabel": "美豆油（美分/磅）×20 ÷ 美豆粕（美元/短吨）",
@@ -263786,7 +263786,7 @@
               },
               {
                 "date": "2026-10-08",
-                "value": 3.895934
+                "value": 3.885633
               }
             ]
           }
@@ -263801,22 +263801,22 @@
         "SM.SINA": "2026-10-08"
       },
       "externalSourceMaxLagDays": 7,
-      "soybeanOilCentsPerLb": 68.51,
-      "soybeanMealUsdPerShortTon": 351.7,
-      "soybeanOilUsdPerMetricTonne": 1510.386958,
-      "soybeanMealUsdPerMetricTonne": 387.682888,
+      "soybeanOilCentsPerLb": 68.29,
+      "soybeanMealUsdPerShortTon": 351.5,
+      "soybeanOilUsdPerMetricTonne": 1505.536788,
+      "soybeanMealUsdPerMetricTonne": 387.462426,
       "marketCategory": "农产品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "马盘棕榈油/美盘豆油",
-      "current": "68.06",
+      "current": "68.28",
       "previous": "66.26",
-      "change": "+1.8066",
-      "changeValue": 1.80664623,
-      "allTime": "25.50%",
+      "change": "+2.0259",
+      "changeValue": 2.02591512,
+      "allTime": "26.17%",
       "allTimeRange": "51.20 ~ 121.77",
-      "percentile": 29.28,
+      "percentile": 30.1,
       "fiveYearRange": "51.87 ~ 121.77",
       "signal": "中性",
       "lots": "—",
@@ -263826,7 +263826,7 @@
       "leftSymbol": "FCPO.SINA",
       "rightSymbol": "BO.SINA",
       "leftChangePct": 3.1181,
-      "rightChangePct": 0.381,
+      "rightChangePct": 0.0586,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "马盘棕榈油报价（马币/公吨）÷ 美盘豆油报价（美分/磅）",
@@ -265333,7 +265333,7 @@
               },
               {
                 "date": "2026-10-08",
-                "value": 68.063056
+                "value": 68.282325
               }
             ]
           }
@@ -265349,19 +265349,19 @@
       },
       "externalSourceMaxLagDays": 7,
       "palmOilMyrPerMetricTonne": 4663.0,
-      "soybeanOilCentsPerLb": 68.51,
+      "soybeanOilCentsPerLb": 68.29,
       "marketCategory": "农产品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "铝内外盘比价",
-      "current": "7.6135",
+      "current": "7.6272",
       "previous": "7.5174",
-      "change": "+0.0962",
-      "changeValue": 0.09619371,
-      "allTime": "41.35%",
+      "change": "+0.1099",
+      "changeValue": 0.10985141,
+      "allTime": "41.85%",
       "allTimeRange": "5.8549 ~ 8.8167",
-      "percentile": 33.42,
+      "percentile": 33.83,
       "fiveYearRange": "6.1372 ~ 8.8167",
       "signal": "中性",
       "lots": "—",
@@ -265371,7 +265371,7 @@
       "leftSymbol": "al00.SF",
       "rightSymbol": "AHD.LME",
       "leftChangePct": -1.8674,
-      "rightChangePct": -3.1073,
+      "rightChangePct": -3.2808,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "al00.SF / AHD.LME",
@@ -267518,7 +267518,7 @@
               },
               {
                 "date": "2026-10-08",
-                "value": 7.613544
+                "value": 7.627202
               }
             ]
           }
@@ -269645,19 +269645,19 @@
       "externalSourceDate": "2026-10-08",
       "externalSourceMaxLagDays": 5,
       "domesticPrice": 23385.0,
-      "lmePriceUsdPerTonne": 3071.5,
+      "lmePriceUsdPerTonne": 3066.0,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "铜内外盘比价",
-      "current": "7.6286",
+      "current": "7.6655",
       "previous": "7.6156",
-      "change": "+0.0130",
-      "changeValue": 0.01299313,
-      "allTime": "24.26%",
+      "change": "+0.0499",
+      "changeValue": 0.04985268,
+      "allTime": "27.10%",
       "allTimeRange": "6.8790 ~ 8.5541",
-      "percentile": 19.31,
+      "percentile": 22.11,
       "fiveYearRange": "6.8790 ~ 8.5541",
       "signal": "中性",
       "lots": "—",
@@ -269667,7 +269667,7 @@
       "leftSymbol": "cu00.SF",
       "rightSymbol": "CAD.LME",
       "leftChangePct": 0.5288,
-      "rightChangePct": 0.3576,
+      "rightChangePct": -0.125,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "cu00.SF / CAD.LME",
@@ -271814,7 +271814,7 @@
               },
               {
                 "date": "2026-10-08",
-                "value": 7.628602
+                "value": 7.665462
               }
             ]
           }
@@ -273941,21 +273941,21 @@
       "externalSourceDate": "2026-10-08",
       "externalSourceMaxLagDays": 5,
       "domesticPrice": 110260.0,
-      "lmePriceUsdPerTonne": 14453.5,
+      "lmePriceUsdPerTonne": 14384.0,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "锌内外盘比价",
-      "current": "6.9688",
+      "current": "6.9875",
       "previous": "6.9283",
-      "change": "+0.0405",
-      "changeValue": 0.0405274,
-      "allTime": "7.21%",
+      "change": "+0.0592",
+      "changeValue": 0.05921314,
+      "allTime": "7.66%",
       "allTimeRange": "6.1944 ~ 9.0651",
-      "percentile": 14.44,
+      "percentile": 15.35,
       "fiveYearRange": "6.1944 ~ 8.8800",
-      "signal": "偏低",
+      "signal": "中性",
       "lots": "—",
       "deviation": "—",
       "notional": "—",
@@ -273963,7 +273963,7 @@
       "leftSymbol": "zn00.SF",
       "rightSymbol": "ZSD.LME",
       "leftChangePct": -1.4186,
-      "rightChangePct": -1.9919,
+      "rightChangePct": -2.254,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "zn00.SF / ZSD.LME",
@@ -276110,7 +276110,7 @@
               },
               {
                 "date": "2026-10-08",
-                "value": 6.968846
+                "value": 6.987532
               }
             ]
           }
@@ -278237,7 +278237,7 @@
       "externalSourceDate": "2026-10-08",
       "externalSourceMaxLagDays": 5,
       "domesticPrice": 26060.0,
-      "lmePriceUsdPerTonne": 3739.5,
+      "lmePriceUsdPerTonne": 3729.5,
       "marketCategory": "工业品"
     }
   ],
