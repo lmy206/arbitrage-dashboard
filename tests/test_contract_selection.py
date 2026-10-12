@@ -44,5 +44,33 @@ class ContractSelectionTests(unittest.TestCase):
         self.assertTrue(all(row["pairedVolume"] > 0 for row in rows))
 
 
+class FilteredContractSelectionTests(unittest.TestCase):
+    def setUp(self):
+        self.definition = next(item for item in updater.PAIRS if item["pair"] == "螺/矿比价")
+        self.asof = pd.Timestamp("2026-10-12")
+        self.dates = pd.to_datetime(["2026-10-09", "2026-10-12"])
+        self.months = {"rb00.SF": {}, "i00.DF": {}}
+        self.histories = {}
+        for expiry in ("2610", "2701", "2705", "2709"):
+            for root, exchange, prices in [("rb", "SF", [3000.0, 3020.0]), ("i", "DF", [690.0, 700.0])]:
+                symbol = f"{root}{expiry}.{exchange}"
+                self.months[f"{root}00.{exchange}"][expiry] = symbol
+                volume = 0 if root == "i" and expiry == "2610" else 1000
+                self.histories[symbol] = pd.DataFrame({"close": prices, "volume": [1000, volume]}, index=self.dates)
+
+    def build(self):
+        return updater.build_contract_rows(self.definition, self.histories, self.months, self.asof, include_history_chart=False)
+
+    def test_zero_volume_october_does_not_require_a_missing_allowed_month(self):
+        rows = self.build()
+        self.assertEqual([row["expiry"] for row in rows], ["2701", "2705"])
+        self.assertTrue(all(row["pairedVolume"] > 0 for row in rows))
+
+    def test_liquid_october_is_included_and_september_is_excluded(self):
+        self.histories["i2610.DF"].loc[self.asof, "volume"] = 100
+        rows = self.build()
+        self.assertEqual([row["expiry"] for row in rows], ["2610", "2701", "2705"])
+
+
 if __name__ == "__main__":
     unittest.main()

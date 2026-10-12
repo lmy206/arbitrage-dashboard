@@ -479,7 +479,9 @@ test("monthly contract details contain only current values and liquidity", async
     rebarOreRatio.contracts.every((contract) => ["01", "05", "10"].includes(contract.expiry.slice(-2))),
     "螺/矿比价 should only show 1/5/10 contracts",
   );
-  assert.ok(rebarOreRatio.contracts.some((contract) => contract.expiry.endsWith("10")));
+  // An allowed month can disappear when either leg has no current-day liquidity.
+  // Require valid listed observations, not the presence of every allowed month.
+  assert.ok(rebarOreRatio.contracts.every((contract) => contract.pairedVolume > 0));
   assert.equal(rebarOreRatio.contracts.some((contract) => contract.expiry.endsWith("09")), false);
 
   const aluminumAlloySpread = payload.rows.find((row) => row.pair === "铝合金-沪铝价差");
