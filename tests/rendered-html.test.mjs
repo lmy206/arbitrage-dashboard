@@ -129,8 +129,8 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /铜\/铝比价/);
   assert.match(html, /金\/银比价/);
   assert.match(html, /油\/粕比价/);
-  assert.match(html, /棕榈油\/豆油比价/);
-  assert.match(html, /title="pJQ00\.DF \/ yJQ00\.DF"/);
+  assert.match(html, /豆棕价差/);
+  assert.match(html, /title="豆油 − 棕榈油（Y − P，元\/吨）"/);
   assert.match(html, /螺\/矿比价/);
   assert.doesNotMatch(html, /螺卷差/);
   assert.match(html, /title="hcJQ00\.SF − rbJQ00\.SF"/);
@@ -325,7 +325,7 @@ test("monthly contract details contain only current values and liquidity", async
   const oilseedMonthPairs = new Set([
     "豆一/豆二比价",
     "棕榈油/菜油比价",
-    "棕榈油/豆油比价",
+    "豆棕价差",
     "油/粕比价",
     "菜油/豆油比价",
     "豆粕/豆二比价",
@@ -550,7 +550,6 @@ test("monthly contract details contain only current values and liquidity", async
 
   const addedRatios = new Map([
     ["棕榈油/菜油比价", ["pJQ00.DF", "OIJQ00.ZF"]],
-    ["棕榈油/豆油比价", ["pJQ00.DF", "yJQ00.DF"]],
     ["菜油/豆油比价", ["OIJQ00.ZF", "yJQ00.DF"]],
     ["豆一/豆二比价", ["aJQ00.DF", "bJQ00.DF"]],
     ["燃料油/沥青比价", ["fuJQ00.SF", "buJQ00.SF"]],
@@ -567,6 +566,26 @@ test("monthly contract details contain only current values and liquidity", async
     assert.equal(row.leftSymbol, leftSymbol);
     assert.equal(row.rightSymbol, rightSymbol);
     assert.equal(row.current, Number(row.current).toFixed(4));
+  }
+
+  const soyPalmSpread = payload.rows.find((row) => row.pair === "豆棕价差");
+  assert.ok(soyPalmSpread, "豆棕价差 should replace the palm/soybean ratio");
+  assert.equal(payload.rows.some((row) => row.pair === "棕榈油/豆油比价"), false);
+  assert.equal(soyPalmSpread.leftSymbol, "yJQ00.DF");
+  assert.equal(soyPalmSpread.rightSymbol, "pJQ00.DF");
+  assert.equal(soyPalmSpread.current, Number(soyPalmSpread.current).toFixed(0));
+  assert.match(soyPalmSpread.formulaLabel, /豆油.*棕榈油/);
+  assert.equal(soyPalmSpread.lots, "1:1");
+  assert.equal(soyPalmSpread.mainHistoryChart.unit, "元/吨");
+  assert.ok(Math.abs(soyPalmSpread.mainHistoryChart.series[0].points.at(-1).value - Number(soyPalmSpread.current)) <= 0.500001);
+  assert.equal(soyPalmSpread.mainContinuousObservation.leftSymbol, "y00.DF");
+  assert.equal(soyPalmSpread.mainContinuousObservation.rightSymbol, "p00.DF");
+  for (const contract of soyPalmSpread.contracts) {
+    assert.equal(contract.leftSymbol, `y${contract.expiry}.DF`);
+    assert.equal(contract.rightSymbol, `p${contract.expiry}.DF`);
+    assert.equal(contract.lots, "1:1");
+    assert.equal(contract.historyChart.unit, "元/吨");
+    assert.ok(contract.historyChart.series.every((series) => series.leftSymbol === `y${series.expiry}.DF` && series.rightSymbol === `p${series.expiry}.DF`));
   }
 
   const fuelCrude = payload.rows.find((row) => row.pair === "燃料油/原油比价");

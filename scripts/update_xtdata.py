@@ -453,7 +453,7 @@ PAIRS: list[dict[str, Any]] = [
         for definition in LME_CROSS_MARKET_PAIRS
     ],
     {"pair": "棕榈油/菜油比价", "left": "pJQ00.DF", "right": "OIJQ00.ZF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
-    {"pair": "棕榈油/豆油比价", "left": "pJQ00.DF", "right": "yJQ00.DF", "formula": ratio, "kind": "ratio", "contract_months": OILSEED_CONTRACT_MONTHS},
+    {"pair": "豆棕价差", "left": "yJQ00.DF", "right": "pJQ00.DF", "formula": spread, "kind": "spread", "unit": "元/吨", "formula_label": "豆油 − 棕榈油（Y − P，元/吨）", "contract_months": OILSEED_CONTRACT_MONTHS},
     {"pair": "IM/IF比价", "left": "IM00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio", "contract_months": EQUITY_INDEX_QUARTER_MONTHS},
     {"pair": "玻璃/纯碱比价", "left": "FGJQ00.ZF", "right": "SAJQ00.ZF", "formula": ratio, "kind": "ratio"},
     {

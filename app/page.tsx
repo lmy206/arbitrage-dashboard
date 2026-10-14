@@ -47,7 +47,7 @@ type ContractHistoryCorrelation = {
 
 type ContractHistoryChartData = {
   title: string;
-  unit: "比值" | "点差" | "百分比" | "基点" | "桶/吨" | "桶/金衡盎司";
+  unit: "比值" | "点差" | "元/吨" | "百分比" | "基点" | "桶/吨" | "桶/金衡盎司";
   month: string;
   startDate: string;
   endDate: string;
@@ -209,6 +209,7 @@ const hasExternalSources = externalSources.length > 0;
 const primaryObservationStorageKey = "arbitrage-primary-observations-v1";
 const favoriteStorageKey = "arbitrage-favorites-v1";
 const legacyPairNamesByCurrent: Record<string, string[]> = {
+  "豆棕价差": ["棕榈油/豆油比价"],
   "玻璃/烧碱比价": ["烧碱/玻璃比价"],
   "豆粕/豆二比价": ["豆粕价差"],
   "棕榈油/菜油比价": ["棕榈油菜油比"],
@@ -223,6 +224,7 @@ const legacyPairNamesByCurrent: Record<string, string[]> = {
   "焦炭/焦煤比价": ["焦炭/焦煤比", "焦炭焦煤比"],
 };
 const legacyFavoriteNamesByCurrent: Record<string, string[]> = {
+  "豆棕价差": ["棕榈油/豆油比价"],
   "玻璃/烧碱比价": ["烧碱/玻璃比价"],
   "豆粕/豆二比价": ["豆粕价差"],
   "棕榈油/菜油比价": ["棕榈油菜油比"],
@@ -682,7 +684,7 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
   }
 
   return (
-    <section className={`contract-history-chart ${chart.unit === "点差" ? "spread" : "ratio"}`}>
+    <section className={`contract-history-chart ${["点差", "元/吨"].includes(chart.unit) ? "spread" : "ratio"}`}>
       <header>
         <div>
           <h4>
