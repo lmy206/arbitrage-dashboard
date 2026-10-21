@@ -529,6 +529,7 @@ PAIRS: list[dict[str, Any]] = [
         "formula": ratio,
         "kind": "ratio",
         "tradable": False,
+        "history_overlay": {"symbol": "399006.SZ", "label": "创业板指数（右轴）", "unit": "点位"},
     },
     {
         "pair": "ERP：沪深300",
@@ -2161,6 +2162,7 @@ def build_observation_history_chart(
     common_latest_date: pd.Timestamp,
     third_symbol: str | None = None,
     formula_label: str | None = None,
+    histories: dict[str, pd.Series] | None = None,
 ) -> dict[str, Any] | None:
     start_date = common_latest_date - pd.DateOffset(years=SEASONAL_CONTRACT_YEARS)
     window = values[
@@ -2173,7 +2175,7 @@ def build_observation_history_chart(
         if definition.get("full_daily_history")
         else sample_chart_history(window)
     )
-    return {
+    chart = {
         "title": f"{definition['pair']}{label}走势",
         "unit": definition.get("unit", "点差" if definition["kind"] == "spread" else "比值"),
         "month": "",
@@ -2205,6 +2207,23 @@ def build_observation_history_chart(
             }
         ],
     }
+    overlay = definition.get("history_overlay")
+    if overlay:
+        if histories is None or overlay["symbol"] not in histories:
+            raise RuntimeError(f"{definition['pair']} 的指数叠加行情缺失")
+        overlay_values = histories[overlay["symbol"]].reindex(chart_values.index)
+        if overlay_values.isna().any() or not all(math.isfinite(float(value)) and value > 0 for value in overlay_values):
+            raise RuntimeError(f"{definition['pair']} 的指数叠加线日期未完全对齐或点位无效")
+        chart["overlaySeries"] = {
+            "label": overlay["label"],
+            "symbol": overlay["symbol"],
+            "unit": overlay["unit"],
+            "points": [
+                {"date": timestamp.strftime("%Y-%m-%d"), "value": round(float(value), 4)}
+                for timestamp, value in overlay_values.items()
+            ],
+        }
+    return chart
 
 
 def build_contract_rows(
@@ -3654,6 +3673,7 @@ def build_rows(
                         common_latest_date,
                         third,
                         definition.get("formula_label"),
+                        histories=histories,
                     )
                     if (
                         is_equity_index_definition(definition)
@@ -4061,6 +4081,18 @@ def write_outputs(
         and [point["date"] for point in ic_if_spot_chart.get("overlaySeries", {}).get("points", [])]
         == [point["date"] for point in ic_if_spot_chart["series"][0]["points"]]
     )
+    growth_rows = [row for row in rows if row["pair"] == "创业板/沪深300"]
+    growth_chart = growth_rows[0].get("mainHistoryChart") if len(growth_rows) == 1 else None
+    growth_overlay = (growth_chart or {}).get("overlaySeries", {})
+    growth_spot_overlay_complete = (
+        growth_chart is not None
+        and growth_overlay.get("label") == "创业板指数（右轴）"
+        and growth_overlay.get("symbol") == "399006.SZ"
+        and growth_overlay.get("unit") == "点位"
+        and [point["date"] for point in growth_overlay.get("points", [])]
+        == [point["date"] for point in growth_chart["series"][0]["points"]]
+        and all(math.isfinite(point["value"]) and point["value"] > 0 for point in growth_overlay.get("points", []))
+    )
     ic_if_spot_thresholds_complete = (
         ic_if_spot_chart is not None
         and ic_if_spot_chart.get("fixedThresholds")
@@ -4246,6 +4278,7 @@ def write_outputs(
         im_ic_spot_overlay_complete,
         ic_if_spot_overlay_complete,
         ic_if_spot_thresholds_complete,
+        growth_spot_overlay_complete,
         spot_correlation_metrics_complete,
         full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
@@ -4308,6 +4341,7 @@ def write_outputs(
         "imIcSpotOverlayComplete": im_ic_spot_overlay_complete,
         "icIfSpotOverlayComplete": ic_if_spot_overlay_complete,
         "icIfSpotThresholdsComplete": ic_if_spot_thresholds_complete,
+        "growthSpotOverlayComplete": growth_spot_overlay_complete,
         "spotCorrelationMetricsComplete": spot_correlation_metrics_complete,
         "fullDailyChartStatisticsComplete": full_daily_chart_statistics_complete,
         "spotObservationCount": spot_observation_count,

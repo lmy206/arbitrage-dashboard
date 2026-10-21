@@ -856,6 +856,13 @@ test("spot-reference pairs include expandable xtdata history charts", async () =
     assertHybridHistory(row.mainHistoryChart.series[0].points, pair);
     assert.equal(row.mainHistoryChart.series[0].points.at(-1).date, payload.dataDate);
   }
+  const growthChart = payload.rows.find((row) => row.pair === "创业板/沪深300").mainHistoryChart;
+  assert.equal(growthChart.overlaySeries.symbol, "399006.SZ");
+  assert.equal(growthChart.overlaySeries.label, "创业板指数（右轴）");
+  assert.equal(growthChart.overlaySeries.unit, "点位");
+  assert.deepEqual(growthChart.overlaySeries.points.map((point) => point.date), growthChart.series[0].points.map((point) => point.date));
+  assert.ok(growthChart.overlaySeries.points.every((point) => Number.isFinite(point.value) && point.value > 0));
+  assert.deepEqual(growthChart.quantileThresholds.map((threshold) => threshold.label), ["3%", "97%"]);
 });
 
 test("IM and IC term spreads expose down-quarter and skip-quarter observations without future data", async () => {

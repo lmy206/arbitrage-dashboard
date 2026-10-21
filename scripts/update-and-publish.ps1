@@ -280,6 +280,7 @@ function Assert-IntegrityReport {
     ($report.imIcSpotOverlayComplete -eq $true)
     ($report.icIfSpotOverlayComplete -eq $true)
     ($report.icIfSpotThresholdsComplete -eq $true)
+    ($report.growthSpotOverlayComplete -eq $true)
     ($report.aluminumAlloySpreadComplete -eq $true)
     ($report.spotCorrelationMetricsComplete -eq $true)
     ($report.fullDailyChartStatisticsComplete -eq $true)
