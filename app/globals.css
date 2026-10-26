@@ -1066,6 +1066,13 @@ tbody th {
   background: #ecfdf5;
 }
 
+.term-structure-badge.mixed,
+.term-structure-badge.flat {
+  border-color: #cbd5e1;
+  color: #475569;
+  background: #f8fafc;
+}
+
 .empty-state {
   display: grid;
   min-height: 180px;

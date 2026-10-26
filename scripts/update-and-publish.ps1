@@ -276,6 +276,7 @@ function Assert-IntegrityReport {
     ([int]$report.pairCount -eq [int]$report.expectedPairCount)
     ($report.futureDataDetected -eq $false)
     ($report.hierarchySorted -eq $true)
+    ($report.displayedTermStructuresComplete -eq $true)
     ($report.relatedObservationsComplete -eq $true)
     ($report.fundingPressureOverlayComplete -eq $true)
     ($report.riskPremiumOverlaysComplete -eq $true)

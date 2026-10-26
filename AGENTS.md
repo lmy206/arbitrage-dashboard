@@ -28,6 +28,7 @@
 1. 运行 `D:\anaconda\python.exe scripts\update_xtdata.py`。
 2. 读取 `E:\data\reports\arbitrage_dashboard_integrity.json`。
    创业板指数叠加线还必须满足 `growthSpotOverlayComplete=true`，否则保持上一个有效快照。
+   期限结构必须满足 `displayedTermStructuresComplete=true`：各腿仅使用该套利对实际展示的共同月份；不足两个展示月份不显示期限结构标签。
 3. 只有在 `status=ok`、`pairCount=expectedPairCount=37`、`indexTermHistoryComplete=true`、`indexTermThresholdsComplete=true`、`domesticFreshnessComplete=true`、`externalRowDatesComplete=true`、`futureDataDetected=false`、`hierarchySorted=true`、`relatedObservationsComplete=true`、`fundingPressureOverlayComplete=true`、`riskPremiumOverlaysComplete=true`、`imIfSpotOverlayComplete=true`、`imIfSpotThresholdsComplete=true`、`imIcSpotOverlayComplete=true`、`icIfSpotOverlayComplete=true`、`icIfSpotThresholdsComplete=true`、`aluminumAlloySpreadComplete=true`、`spotCorrelationMetricsComplete=true`、`fullDailyChartStatisticsComplete=true` 且 `externalSourcesComplete=true` 时，才运行：
    - 本地验证：`npm run build` 和 `node --test tests\rendered-html.test.mjs`
    - Cloudflare 静态发布验证：`npm run test:pages`

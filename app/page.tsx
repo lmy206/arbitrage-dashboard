@@ -8,13 +8,14 @@ type SourceStatus = "双源一致" | "口径不同" | "仅xtdata" | "需复核" 
 type StrategyType = "回归" | "趋势" | "外盘监控";
 
 type TermStructure = {
-  state: "Contango" | "Back";
+  state: "Contango" | "Back" | "混合" | "平坦";
   nearExpiry: string;
   farExpiry: string;
   nearPrice: number;
   farPrice: number;
   changePct: number;
   contractCount: number;
+  curve?: { expiry: string; symbol: string; price: number }[];
 };
 
 type ContractHistoryPoint = {
@@ -580,7 +581,15 @@ function contractRootLabel(symbol: string) {
 
 function termStructureTitle(symbol: string, structure: TermStructure) {
   const sign = structure.changePct > 0 ? "+" : "";
-  return `${contractRootLabel(symbol)}：${structure.nearExpiry} ${structure.nearPrice} → ${structure.farExpiry} ${structure.farPrice}（${sign}${structure.changePct.toFixed(2)}%）`;
+  const curve = structure.curve ?? [
+    { expiry: structure.nearExpiry, price: structure.nearPrice },
+    { expiry: structure.farExpiry, price: structure.farPrice },
+  ];
+  return `${contractRootLabel(symbol)}：${structure.curve ? "展示合约" : "比较合约"} ${curve.map((point) => `${point.expiry} ${point.price}`).join(" → ")}（首尾 ${sign}${structure.changePct.toFixed(2)}%）`;
+}
+
+function termStructureClass(structure: TermStructure) {
+  return { Contango: "contango", Back: "back", 混合: "mixed", 平坦: "flat" }[structure.state];
 }
 
 const seasonalSeriesStyles = [
@@ -1233,27 +1242,27 @@ export default function Home() {
                       <td className="tabular">{row.margin}</td>
                       <td className="term-structure-cell">
                         {row.leftStructure ? (
-                          <span className={`term-structure-badge ${row.leftStructure.state === "Contango" ? "contango" : "back"}`} title={termStructureTitle(baseRow.leftSymbol, row.leftStructure)}>
+                          <span className={`term-structure-badge ${termStructureClass(row.leftStructure)}`} title={termStructureTitle(baseRow.leftSymbol, row.leftStructure)}>
                             <small>{contractRootLabel(baseRow.leftSymbol)}</small>
                             <strong>{row.leftStructure.state}</strong>
                           </span>
-                        ) : <span className="muted">—</span>}
+                        ) : <span className="muted" title="展示月份少于2个，无法判断期限结构">—</span>}
                       </td>
                       <td className="term-structure-cell">
                         {row.rightStructure ? (
                           <span className={hasThreeLeg ? "term-structure-group" : undefined}>
-                            <span className={`term-structure-badge ${row.rightStructure.state === "Contango" ? "contango" : "back"}`} title={termStructureTitle(baseRow.rightSymbol, row.rightStructure)}>
+                            <span className={`term-structure-badge ${termStructureClass(row.rightStructure)}`} title={termStructureTitle(baseRow.rightSymbol, row.rightStructure)}>
                               <small>{contractRootLabel(baseRow.rightSymbol)}</small>
                               <strong>{row.rightStructure.state}</strong>
                             </span>
                             {baseRow.thirdSymbol && row.thirdStructure && (
-                              <span className={`term-structure-badge ${row.thirdStructure.state === "Contango" ? "contango" : "back"}`} title={termStructureTitle(baseRow.thirdSymbol, row.thirdStructure)}>
+                              <span className={`term-structure-badge ${termStructureClass(row.thirdStructure)}`} title={termStructureTitle(baseRow.thirdSymbol, row.thirdStructure)}>
                                 <small>{contractRootLabel(baseRow.thirdSymbol)}</small>
                                 <strong>{row.thirdStructure.state}</strong>
                               </span>
                             )}
                           </span>
-                        ) : <span className="muted">—</span>}
+                        ) : <span className="muted" title="展示月份少于2个，无法判断期限结构">—</span>}
                       </td>
                       <td className="favorite-cell">
                         <button

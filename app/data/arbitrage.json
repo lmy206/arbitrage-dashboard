@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-10-26",
-  "updatedAt": "2026-10-26T20:24:35+08:00",
+  "updatedAt": "2026-10-26T22:18:45+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -1632,8 +1632,8 @@
       "status": "live",
       "path": "E:\\data\\market\\external\\newyorkfed\\OBFR.csv",
       "startDate": "2016-08-25",
-      "endDate": "2026-10-22",
-      "rows": 2550,
+      "endDate": "2026-10-23",
+      "rows": 2551,
       "maxLagDays": 7,
       "quoteUnit": "%"
     },
@@ -10368,10 +10368,10 @@
         "unit": "基点",
         "month": "",
         "startDate": "2016-10-28",
-        "endDate": "2026-10-22",
+        "endDate": "2026-10-23",
         "source": "纽约联储官方日度OBFR；美联储理事会官方准备金管理利率，2021-07-29起使用IORB、此前使用IOER；标普500指数：新浪美股指数",
-        "grain": "更早周频 · 最近20个交易日日线收盘 · 外部数据截至2026-10-22 · 仅向后匹配已公布数据 · 标普500仅作右轴对照",
-        "statisticsPointCount": 2510,
+        "grain": "更早周频 · 最近20个交易日日线收盘 · 外部数据截至2026-10-23 · 仅向后匹配已公布数据 · 标普500仅作右轴对照",
+        "statisticsPointCount": 2511,
         "renderPointCount": 538,
         "quantileThresholds": [
           {
@@ -12458,10 +12458,6 @@
                 "value": -2.0
               },
               {
-                "date": "2026-09-23",
-                "value": -2.0
-              },
-              {
                 "date": "2026-09-24",
                 "value": -2.0
               },
@@ -12539,6 +12535,10 @@
               },
               {
                 "date": "2026-10-22",
+                "value": -2.0
+              },
+              {
+                "date": "2026-10-23",
                 "value": -2.0
               }
             ]
@@ -14618,10 +14618,6 @@
               "value": 7650.5
             },
             {
-              "date": "2026-09-24",
-              "value": 7704.1299
-            },
-            {
               "date": "2026-09-25",
               "value": 7743.4102
             },
@@ -14700,6 +14696,10 @@
             {
               "date": "2026-10-22",
               "value": 7663.4302
+            },
+            {
+              "date": "2026-10-23",
+              "value": 7623.6802
             }
           ]
         }
@@ -14707,10 +14707,10 @@
       "spotObservation": null,
       "mainContinuousObservation": null,
       "contracts": [],
-      "externalSourceDate": "2026-10-22",
+      "externalSourceDate": "2026-10-23",
       "externalSourceDates": {
-        "OBFR.NYFED": "2026-10-22",
-        "IORB_IOER.FED": "2026-10-22"
+        "OBFR.NYFED": "2026-10-23",
+        "IORB_IOER.FED": "2026-10-23"
       },
       "externalSourceMaxLagDays": 7,
       "obfrPct": 3.88,
@@ -18485,21 +18485,57 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2612",
         "farExpiry": "2706",
-        "nearPrice": 6682.4,
+        "nearPrice": 6637.0,
         "farPrice": 6331.6,
-        "changePct": -5.2496,
-        "contractCount": 4
+        "changePct": -4.6015,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "IC2612.IF",
+            "price": 6637.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "IC2703.IF",
+            "price": 6488.4
+          },
+          {
+            "expiry": "2706",
+            "symbol": "IC2706.IF",
+            "price": 6331.6
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2612",
         "farExpiry": "2706",
-        "nearPrice": 4077.0,
+        "nearPrice": 4049.0,
         "farPrice": 3892.2,
-        "changePct": -4.5327,
-        "contractCount": 4
+        "changePct": -3.8726,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "IF2612.IF",
+            "price": 4049.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "IF2703.IF",
+            "price": 3968.4
+          },
+          {
+            "expiry": "2706",
+            "symbol": "IF2706.IF",
+            "price": 3892.2
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "IC/IF比价主连走势",
@@ -38880,21 +38916,57 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2612",
         "farExpiry": "2706",
-        "nearPrice": 6604.8,
+        "nearPrice": 6555.8,
         "farPrice": 6231.8,
-        "changePct": -5.6474,
-        "contractCount": 4
+        "changePct": -4.9422,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "IM2612.IF",
+            "price": 6555.8
+          },
+          {
+            "expiry": "2703",
+            "symbol": "IM2703.IF",
+            "price": 6398.2
+          },
+          {
+            "expiry": "2706",
+            "symbol": "IM2706.IF",
+            "price": 6231.8
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2612",
         "farExpiry": "2706",
-        "nearPrice": 4077.0,
+        "nearPrice": 4049.0,
         "farPrice": 3892.2,
-        "changePct": -4.5327,
-        "contractCount": 4
+        "changePct": -3.8726,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "IF2612.IF",
+            "price": 4049.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "IF2703.IF",
+            "price": 3968.4
+          },
+          {
+            "expiry": "2706",
+            "symbol": "IF2706.IF",
+            "price": 3892.2
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "IM/IF比价主连走势",
@@ -44270,21 +44342,57 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2612",
         "farExpiry": "2706",
-        "nearPrice": 6604.8,
+        "nearPrice": 6555.8,
         "farPrice": 6231.8,
-        "changePct": -5.6474,
-        "contractCount": 4
+        "changePct": -4.9422,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "IM2612.IF",
+            "price": 6555.8
+          },
+          {
+            "expiry": "2703",
+            "symbol": "IM2703.IF",
+            "price": 6398.2
+          },
+          {
+            "expiry": "2706",
+            "symbol": "IM2706.IF",
+            "price": 6231.8
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2612",
         "farExpiry": "2706",
-        "nearPrice": 6682.4,
+        "nearPrice": 6637.0,
         "farPrice": 6331.6,
-        "changePct": -5.2496,
-        "contractCount": 4
+        "changePct": -4.6015,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "IC2612.IF",
+            "price": 6637.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "IC2703.IF",
+            "price": 6488.4
+          },
+          {
+            "expiry": "2706",
+            "symbol": "IC2706.IF",
+            "price": 6331.6
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "IM-IC价差主连走势",
@@ -49643,22 +49751,58 @@
       "pairType": "期货套利",
       "sourceStatus": "仅xtdata",
       "leftStructure": {
-        "state": "Contango",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 5335.0,
-        "farPrice": 5508.0,
-        "changePct": 3.2427,
-        "contractCount": 4
+        "state": "混合",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 5379.0,
+        "farPrice": 5385.0,
+        "changePct": 0.1115,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "a2701.DF",
+            "price": 5379.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "a2705.DF",
+            "price": 5508.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "a2709.DF",
+            "price": 5385.0
+          }
+        ]
       },
       "rightStructure": {
-        "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 3994.0,
-        "farPrice": 3735.0,
-        "changePct": -6.4847,
-        "contractCount": 4
+        "state": "混合",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 4032.0,
+        "farPrice": 3773.0,
+        "changePct": -6.4236,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "b2701.DF",
+            "price": 4032.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "b2705.DF",
+            "price": 3735.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "b2709.DF",
+            "price": 3773.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "豆一/豆二比价加权走势",
@@ -59927,22 +60071,58 @@
       "pairType": "期货套利",
       "sourceStatus": "仅xtdata",
       "leftStructure": {
-        "state": "Back",
+        "state": "混合",
+        "scope": "displayed_contracts",
         "nearExpiry": "2701",
         "farExpiry": "2709",
         "nearPrice": 3230.0,
         "farPrice": 2953.0,
         "changePct": -8.5759,
-        "contractCount": 4
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "m2701.DF",
+            "price": 3230.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "m2705.DF",
+            "price": 2871.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "m2709.DF",
+            "price": 2953.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Contango",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 2227.0,
-        "farPrice": 2247.0,
-        "changePct": 0.8981,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 2236.0,
+        "farPrice": 2302.0,
+        "changePct": 2.9517,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "RM701.ZF",
+            "price": 2236.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "RM705.ZF",
+            "price": 2247.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "RM709.ZF",
+            "price": 2302.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "蛋白质价差加权走势",
@@ -70219,22 +70399,58 @@
       "pairType": "期货套利",
       "sourceStatus": "仅xtdata",
       "leftStructure": {
-        "state": "Contango",
-        "nearExpiry": "2611",
+        "state": "混合",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
         "farExpiry": "2709",
-        "nearPrice": 9305.0,
+        "nearPrice": 9517.0,
         "farPrice": 9959.0,
-        "changePct": 7.0285,
-        "contractCount": 4
+        "changePct": 4.6443,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "p2701.DF",
+            "price": 9517.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "p2705.DF",
+            "price": 10105.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "p2709.DF",
+            "price": 9959.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 10585.0,
-        "farPrice": 9976.0,
-        "changePct": -5.7534,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 10320.0,
+        "farPrice": 9908.0,
+        "changePct": -3.9922,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "OI701.ZF",
+            "price": 10320.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "OI705.ZF",
+            "price": 9976.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "OI709.ZF",
+            "price": 9908.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "棕榈油/菜油比价加权走势",
@@ -80512,21 +80728,57 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 10585.0,
-        "farPrice": 9976.0,
-        "changePct": -5.7534,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 10320.0,
+        "farPrice": 9908.0,
+        "changePct": -3.9922,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "OI701.ZF",
+            "price": 10320.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "OI705.ZF",
+            "price": 9976.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "OI709.ZF",
+            "price": 9908.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 9007.0,
-        "farPrice": 8872.0,
-        "changePct": -1.4988,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 9092.0,
+        "farPrice": 8701.0,
+        "changePct": -4.3005,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "y2701.DF",
+            "price": 9092.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "y2705.DF",
+            "price": 8872.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "y2709.DF",
+            "price": 8701.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "菜油/豆油比价加权走势",
@@ -90804,21 +91056,57 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 9007.0,
-        "farPrice": 8872.0,
-        "changePct": -1.4988,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 9092.0,
+        "farPrice": 8701.0,
+        "changePct": -4.3005,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "y2701.DF",
+            "price": 9092.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "y2705.DF",
+            "price": 8872.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "y2709.DF",
+            "price": 8701.0
+          }
+        ]
       },
       "rightStructure": {
-        "state": "Contango",
-        "nearExpiry": "2611",
+        "state": "混合",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
         "farExpiry": "2709",
-        "nearPrice": 9305.0,
+        "nearPrice": 9517.0,
         "farPrice": 9959.0,
-        "changePct": 7.0285,
-        "contractCount": 4
+        "changePct": 4.6443,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "p2701.DF",
+            "price": 9517.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "p2705.DF",
+            "price": 10105.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "p2709.DF",
+            "price": 9959.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "豆棕价差加权走势",
@@ -101126,22 +101414,58 @@
       "pairType": "期货套利",
       "sourceStatus": "仅xtdata",
       "leftStructure": {
-        "state": "Back",
+        "state": "混合",
+        "scope": "displayed_contracts",
         "nearExpiry": "2701",
         "farExpiry": "2709",
         "nearPrice": 3230.0,
         "farPrice": 2953.0,
         "changePct": -8.5759,
-        "contractCount": 4
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "m2701.DF",
+            "price": 3230.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "m2705.DF",
+            "price": 2871.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "m2709.DF",
+            "price": 2953.0
+          }
+        ]
       },
       "rightStructure": {
-        "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 3994.0,
-        "farPrice": 3735.0,
-        "changePct": -6.4847,
-        "contractCount": 4
+        "state": "混合",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 4032.0,
+        "farPrice": 3773.0,
+        "changePct": -6.4236,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "b2701.DF",
+            "price": 4032.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "b2705.DF",
+            "price": 3735.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "b2709.DF",
+            "price": 3773.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "豆粕/豆二比价加权走势",
@@ -111411,21 +111735,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2612",
         "farExpiry": "2703",
         "nearPrice": 5845.0,
         "farPrice": 4827.0,
         "changePct": -17.4166,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "fu2612.SF",
+            "price": 5845.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "fu2701.SF",
+            "price": 5295.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "fu2702.SF",
+            "price": 5046.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "fu2703.SF",
+            "price": 4827.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2612",
         "farExpiry": "2703",
         "nearPrice": 728.1,
         "farPrice": 700.8,
         "changePct": -3.7495,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "sc2612.INE",
+            "price": 728.1
+          },
+          {
+            "expiry": "2701",
+            "symbol": "sc2701.INE",
+            "price": 721.2
+          },
+          {
+            "expiry": "2702",
+            "symbol": "sc2702.INE",
+            "price": 712.8
+          },
+          {
+            "expiry": "2703",
+            "symbol": "sc2703.INE",
+            "price": 700.8
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "燃料油/原油比价加权走势",
@@ -122597,21 +122967,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2612",
         "farExpiry": "2703",
         "nearPrice": 5845.0,
         "farPrice": 4827.0,
         "changePct": -17.4166,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "fu2612.SF",
+            "price": 5845.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "fu2701.SF",
+            "price": 5295.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "fu2702.SF",
+            "price": 5046.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "fu2703.SF",
+            "price": 4827.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2702",
-        "nearPrice": 5355.0,
-        "farPrice": 4748.0,
-        "changePct": -11.3352,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2612",
+        "farExpiry": "2703",
+        "nearPrice": 4965.0,
+        "farPrice": 4691.0,
+        "changePct": -5.5186,
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "bu2612.SF",
+            "price": 4965.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "bu2701.SF",
+            "price": 4828.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "bu2702.SF",
+            "price": 4748.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "bu2703.SF",
+            "price": 4691.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "燃料油/沥青比价加权走势",
@@ -134195,21 +134611,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2702",
         "nearPrice": 108830.0,
         "farPrice": 107170.0,
         "changePct": -1.5253,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "cu2611.SF",
+            "price": 108830.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "cu2612.SF",
+            "price": 108110.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "cu2701.SF",
+            "price": 107520.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "cu2702.SF",
+            "price": 107170.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2702",
         "nearPrice": 23730.0,
         "farPrice": 22920.0,
         "changePct": -3.4134,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "al2611.SF",
+            "price": 23730.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "al2612.SF",
+            "price": 23450.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "al2701.SF",
+            "price": 23160.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "al2702.SF",
+            "price": 22920.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "铜/铝比价加权走势",
@@ -147533,21 +147995,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2702",
         "nearPrice": 23195.0,
         "farPrice": 22690.0,
         "changePct": -2.1772,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "ad2611.SF",
+            "price": 23195.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "ad2612.SF",
+            "price": 23090.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "ad2701.SF",
+            "price": 22815.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "ad2702.SF",
+            "price": 22690.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2702",
         "nearPrice": 23730.0,
         "farPrice": 22920.0,
         "changePct": -3.4134,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "al2611.SF",
+            "price": 23730.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "al2612.SF",
+            "price": 23450.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "al2701.SF",
+            "price": 23160.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "al2702.SF",
+            "price": 22920.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "铝合金-沪铝价差加权走势",
@@ -154586,22 +155094,68 @@
       "pairType": "期货套利",
       "sourceStatus": "仅xtdata",
       "leftStructure": {
-        "state": "Contango",
+        "state": "混合",
+        "scope": "displayed_contracts",
         "nearExpiry": "2612",
-        "farExpiry": "2705",
+        "farExpiry": "2703",
         "nearPrice": 864.0,
-        "farPrice": 882.0,
-        "changePct": 2.0833,
-        "contractCount": 4
+        "farPrice": 862.0,
+        "changePct": -0.2315,
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "FG612.ZF",
+            "price": 864.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "FG701.ZF",
+            "price": 838.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "FG702.ZF",
+            "price": 881.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "FG703.ZF",
+            "price": 862.0
+          }
+        ]
       },
       "rightStructure": {
-        "state": "Back",
+        "state": "混合",
+        "scope": "displayed_contracts",
         "nearExpiry": "2612",
         "farExpiry": "2703",
         "nearPrice": 1573.0,
         "farPrice": 1534.0,
         "changePct": -2.4793,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "SH612.ZF",
+            "price": 1573.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "SH701.ZF",
+            "price": 1512.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "SH702.ZF",
+            "price": 1531.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "SH703.ZF",
+            "price": 1534.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "玻璃/烧碱比价加权走势",
@@ -158679,22 +159233,58 @@
       "pairType": "期货套利",
       "sourceStatus": "仅xtdata",
       "leftStructure": {
-        "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 3089.0,
-        "farPrice": 3050.0,
-        "changePct": -1.2625,
-        "contractCount": 4
+        "state": "Contango",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2710",
+        "nearPrice": 3037.0,
+        "farPrice": 3081.0,
+        "changePct": 1.4488,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "rb2701.SF",
+            "price": 3037.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "rb2705.SF",
+            "price": 3050.0
+          },
+          {
+            "expiry": "2710",
+            "symbol": "rb2710.SF",
+            "price": 3081.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 674.5,
-        "farPrice": 662.0,
-        "changePct": -1.8532,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2710",
+        "nearPrice": 671.5,
+        "farPrice": 652.5,
+        "changePct": -2.8295,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "i2701.DF",
+            "price": 671.5
+          },
+          {
+            "expiry": "2705",
+            "symbol": "i2705.DF",
+            "price": 662.0
+          },
+          {
+            "expiry": "2710",
+            "symbol": "i2710.DF",
+            "price": 652.5
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "螺/矿比价加权走势",
@@ -168832,21 +169422,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Contango",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2705",
         "nearPrice": 3149.0,
         "farPrice": 3211.0,
         "changePct": 1.9689,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "hc2611.SF",
+            "price": 3149.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "hc2701.SF",
+            "price": 3193.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "hc2703.SF",
+            "price": 3198.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "hc2705.SF",
+            "price": 3211.0
+          }
+        ]
       },
       "rightStructure": {
-        "state": "Back",
+        "state": "混合",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2705",
         "nearPrice": 3089.0,
         "farPrice": 3050.0,
         "changePct": -1.2625,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "rb2611.SF",
+            "price": 3089.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "rb2701.SF",
+            "price": 3037.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "rb2703.SF",
+            "price": 3033.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "rb2705.SF",
+            "price": 3050.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "卷-螺价差加权走势",
@@ -182048,22 +182684,68 @@
       "pairType": "期货套利",
       "sourceStatus": "仅xtdata",
       "leftStructure": {
-        "state": "Contango",
+        "state": "混合",
+        "scope": "displayed_contracts",
         "nearExpiry": "2612",
         "farExpiry": "2705",
         "nearPrice": 864.0,
         "farPrice": 882.0,
         "changePct": 2.0833,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "FG612.ZF",
+            "price": 864.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "FG701.ZF",
+            "price": 838.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "FG703.ZF",
+            "price": 862.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "FG705.ZF",
+            "price": 882.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Contango",
+        "scope": "displayed_contracts",
         "nearExpiry": "2612",
-        "farExpiry": "2703",
+        "farExpiry": "2705",
         "nearPrice": 964.0,
-        "farPrice": 995.0,
-        "changePct": 3.2158,
-        "contractCount": 4
+        "farPrice": 1014.0,
+        "changePct": 5.1867,
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "SA612.ZF",
+            "price": 964.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "SA701.ZF",
+            "price": 966.0
+          },
+          {
+            "expiry": "2703",
+            "symbol": "SA703.ZF",
+            "price": 995.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "SA705.ZF",
+            "price": 1014.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "玻璃/纯碱比价加权走势",
@@ -192966,22 +193648,68 @@
       "pairType": "期货套利",
       "sourceStatus": "仅xtdata",
       "leftStructure": {
-        "state": "Back",
+        "state": "混合",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2702",
         "nearPrice": 16625.0,
         "farPrice": 16590.0,
         "changePct": -0.2105,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "nr2611.INE",
+            "price": 16625.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "nr2612.INE",
+            "price": 16605.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "nr2701.INE",
+            "price": 16585.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "nr2702.INE",
+            "price": 16590.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2702",
         "nearPrice": 16530.0,
         "farPrice": 15965.0,
         "changePct": -3.418,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "br2611.SF",
+            "price": 16530.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "br2612.SF",
+            "price": 16380.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "br2701.SF",
+            "price": 16140.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "br2702.SF",
+            "price": 15965.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "20号胶/BR橡胶比价加权走势",
@@ -197514,21 +198242,57 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 2036.5,
-        "farPrice": 1857.0,
-        "changePct": -8.8141,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 1916.5,
+        "farPrice": 1855.5,
+        "changePct": -3.1829,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "j2701.DF",
+            "price": 1916.5
+          },
+          {
+            "expiry": "2705",
+            "symbol": "j2705.DF",
+            "price": 1857.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "j2709.DF",
+            "price": 1855.5
+          }
+        ]
       },
       "rightStructure": {
-        "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 1424.5,
-        "farPrice": 1316.0,
-        "changePct": -7.6167,
-        "contractCount": 4
+        "state": "混合",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 1405.5,
+        "farPrice": 1356.5,
+        "changePct": -3.4863,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "jm2701.DF",
+            "price": 1405.5
+          },
+          {
+            "expiry": "2705",
+            "symbol": "jm2705.DF",
+            "price": 1316.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "jm2709.DF",
+            "price": 1356.5
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "焦炭/焦煤比价加权走势",
@@ -209968,21 +210732,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2705",
         "nearPrice": 10834.0,
         "farPrice": 9016.0,
         "changePct": -16.7805,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "pp2611.DF",
+            "price": 10834.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "pp2612.DF",
+            "price": 10429.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "pp2701.DF",
+            "price": 10013.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "pp2705.DF",
+            "price": 9016.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
-        "farExpiry": "2702",
+        "farExpiry": "2705",
         "nearPrice": 3817.0,
-        "farPrice": 3292.0,
-        "changePct": -13.7543,
-        "contractCount": 4
+        "farPrice": 3041.0,
+        "changePct": -20.3301,
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "MA611.ZF",
+            "price": 3817.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "MA612.ZF",
+            "price": 3555.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "MA701.ZF",
+            "price": 3389.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "MA705.ZF",
+            "price": 3041.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "聚丙烯/甲醇比价加权走势",
@@ -225391,21 +226201,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Contango",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2702",
         "nearPrice": 118120.0,
         "farPrice": 118800.0,
         "changePct": 0.5757,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "ni2611.SF",
+            "price": 118120.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "ni2612.SF",
+            "price": 118300.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "ni2701.SF",
+            "price": 118590.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "ni2702.SF",
+            "price": 118800.0
+          }
+        ]
       },
       "rightStructure": {
         "state": "Contango",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2702",
         "nearPrice": 13515.0,
         "farPrice": 13570.0,
         "changePct": 0.407,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "ss2611.SF",
+            "price": 13515.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "ss2612.SF",
+            "price": 13545.0
+          },
+          {
+            "expiry": "2701",
+            "symbol": "ss2701.SF",
+            "price": 13560.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "ss2702.SF",
+            "price": 13570.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "镍/不锈钢比价加权走势",
@@ -234955,21 +235811,57 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2705",
-        "nearPrice": 9007.0,
-        "farPrice": 8872.0,
-        "changePct": -1.4988,
-        "contractCount": 4
+        "scope": "displayed_contracts",
+        "nearExpiry": "2701",
+        "farExpiry": "2709",
+        "nearPrice": 9092.0,
+        "farPrice": 8701.0,
+        "changePct": -4.3005,
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "y2701.DF",
+            "price": 9092.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "y2705.DF",
+            "price": 8872.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "y2709.DF",
+            "price": 8701.0
+          }
+        ]
       },
       "rightStructure": {
-        "state": "Back",
+        "state": "混合",
+        "scope": "displayed_contracts",
         "nearExpiry": "2701",
         "farExpiry": "2709",
         "nearPrice": 3230.0,
         "farPrice": 2953.0,
         "changePct": -8.5759,
-        "contractCount": 4
+        "contractCount": 3,
+        "curve": [
+          {
+            "expiry": "2701",
+            "symbol": "m2701.DF",
+            "price": 3230.0
+          },
+          {
+            "expiry": "2705",
+            "symbol": "m2705.DF",
+            "price": 2871.0
+          },
+          {
+            "expiry": "2709",
+            "symbol": "m2709.DF",
+            "price": 2953.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "油/粕比价加权走势",
@@ -245247,21 +246139,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Contango",
-        "nearExpiry": "2611",
+        "scope": "displayed_contracts",
+        "nearExpiry": "2612",
         "farExpiry": "2704",
-        "nearPrice": 861.82,
+        "nearPrice": 862.58,
         "farPrice": 867.04,
-        "changePct": 0.6057,
-        "contractCount": 4
+        "changePct": 0.5171,
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "au2612.SF",
+            "price": 862.58
+          },
+          {
+            "expiry": "2701",
+            "symbol": "au2701.SF",
+            "price": 863.6
+          },
+          {
+            "expiry": "2702",
+            "symbol": "au2702.SF",
+            "price": 864.88
+          },
+          {
+            "expiry": "2704",
+            "symbol": "au2704.SF",
+            "price": 867.04
+          }
+        ]
       },
       "rightStructure": {
         "state": "Back",
+        "scope": "displayed_contracts",
         "nearExpiry": "2612",
-        "farExpiry": "2703",
+        "farExpiry": "2704",
         "nearPrice": 728.1,
-        "farPrice": 700.8,
-        "changePct": -3.7495,
-        "contractCount": 4
+        "farPrice": 688.0,
+        "changePct": -5.5075,
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2612",
+            "symbol": "sc2612.INE",
+            "price": 728.1
+          },
+          {
+            "expiry": "2701",
+            "symbol": "sc2701.INE",
+            "price": 721.2
+          },
+          {
+            "expiry": "2702",
+            "symbol": "sc2702.INE",
+            "price": 712.8
+          },
+          {
+            "expiry": "2704",
+            "symbol": "sc2704.INE",
+            "price": 688.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "金/油比价加权走势",
@@ -255165,21 +256103,67 @@
       "sourceStatus": "仅xtdata",
       "leftStructure": {
         "state": "Contango",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
         "farExpiry": "2704",
         "nearPrice": 861.82,
         "farPrice": 867.04,
         "changePct": 0.6057,
-        "contractCount": 4
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "au2611.SF",
+            "price": 861.82
+          },
+          {
+            "expiry": "2612",
+            "symbol": "au2612.SF",
+            "price": 862.58
+          },
+          {
+            "expiry": "2702",
+            "symbol": "au2702.SF",
+            "price": 864.88
+          },
+          {
+            "expiry": "2704",
+            "symbol": "au2704.SF",
+            "price": 867.04
+          }
+        ]
       },
       "rightStructure": {
         "state": "Contango",
+        "scope": "displayed_contracts",
         "nearExpiry": "2611",
-        "farExpiry": "2702",
+        "farExpiry": "2704",
         "nearPrice": 13017.0,
-        "farPrice": 13076.0,
-        "changePct": 0.4533,
-        "contractCount": 4
+        "farPrice": 13108.0,
+        "changePct": 0.6991,
+        "contractCount": 4,
+        "curve": [
+          {
+            "expiry": "2611",
+            "symbol": "ag2611.SF",
+            "price": 13017.0
+          },
+          {
+            "expiry": "2612",
+            "symbol": "ag2612.SF",
+            "price": 13040.0
+          },
+          {
+            "expiry": "2702",
+            "symbol": "ag2702.SF",
+            "price": 13076.0
+          },
+          {
+            "expiry": "2704",
+            "symbol": "ag2704.SF",
+            "price": 13108.0
+          }
+        ]
       },
       "mainHistoryChart": {
         "title": "金/银比价加权走势",
@@ -266895,13 +267879,13 @@
     {
       "strategyType": "外盘监控",
       "pair": "美盘油粕比",
-      "current": "3.9226",
+      "current": "3.8788",
       "previous": "3.8557",
-      "change": "+0.0670",
-      "changeValue": 0.06698721,
-      "allTime": "93.50%",
+      "change": "+0.0231",
+      "changeValue": 0.02312968,
+      "allTime": "92.64%",
       "allTimeRange": "1.5036 ~ 4.9055",
-      "percentile": 86.94,
+      "percentile": 85.35,
       "fiveYearRange": "2.1802 ~ 4.9055",
       "signal": "偏高",
       "lots": "—",
@@ -266910,8 +267894,8 @@
       "margin": "—",
       "leftSymbol": "BO.SINA",
       "rightSymbol": "SM.SINA",
-      "leftChangePct": -0.5241,
-      "rightChangePct": -2.2229,
+      "leftChangePct": -1.2878,
+      "rightChangePct": -1.8764,
       "seriesMode": "external",
       "pairType": "外盘参考",
       "formulaLabel": "美豆油（美分/磅）×20 ÷ 美豆粕（美元/短吨）",
@@ -269098,7 +270082,7 @@
               },
               {
                 "date": "2026-10-26",
-                "value": 3.922645
+                "value": 3.878788
               }
             ]
           }
@@ -269113,22 +270097,22 @@
         "SM.SINA": "2026-10-26"
       },
       "externalSourceMaxLagDays": 7,
-      "soybeanOilCentsPerLb": 66.43,
-      "soybeanMealUsdPerShortTon": 338.7,
-      "soybeanOilUsdPerMetricTonne": 1464.530808,
-      "soybeanMealUsdPerMetricTonne": 373.352841,
+      "soybeanOilCentsPerLb": 65.92,
+      "soybeanMealUsdPerShortTon": 339.9,
+      "soybeanOilUsdPerMetricTonne": 1453.287232,
+      "soybeanMealUsdPerMetricTonne": 374.675615,
       "marketCategory": "农产品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "马盘棕榈油/美盘豆油",
-      "current": "72.12",
+      "current": "72.68",
       "previous": "72.13",
-      "change": "-0.0113",
-      "changeValue": -0.01134531,
-      "allTime": "35.06%",
+      "change": "+0.5466",
+      "changeValue": 0.54662989,
+      "allTime": "36.20%",
       "allTimeRange": "51.20 ~ 121.77",
-      "percentile": 39.28,
+      "percentile": 40.34,
       "fiveYearRange": "51.87 ~ 121.77",
       "signal": "中性",
       "lots": "—",
@@ -269138,7 +270122,7 @@
       "leftSymbol": "FCPO.SINA",
       "rightSymbol": "BO.SINA",
       "leftChangePct": -0.5398,
-      "rightChangePct": -0.5241,
+      "rightChangePct": -1.2878,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "马盘棕榈油报价（马币/公吨）÷ 美盘豆油报价（美分/磅）",
@@ -270657,7 +271641,7 @@
               },
               {
                 "date": "2026-10-26",
-                "value": 72.12103
+                "value": 72.679005
               }
             ]
           }
@@ -270673,19 +271657,19 @@
       },
       "externalSourceMaxLagDays": 7,
       "palmOilMyrPerMetricTonne": 4791.0,
-      "soybeanOilCentsPerLb": 66.43,
+      "soybeanOilCentsPerLb": 65.92,
       "marketCategory": "农产品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "铝内外盘比价",
-      "current": "7.7329",
+      "current": "7.7176",
       "previous": "7.6797",
-      "change": "+0.0532",
-      "changeValue": 0.0532357,
-      "allTime": "49.84%",
+      "change": "+0.0380",
+      "changeValue": 0.03796588,
+      "allTime": "48.68%",
       "allTimeRange": "5.8549 ~ 8.8167",
-      "percentile": 40.84,
+      "percentile": 39.85,
       "fiveYearRange": "6.1372 ~ 8.8167",
       "signal": "中性",
       "lots": "—",
@@ -270695,20 +271679,12 @@
       "leftSymbol": "al00.SF",
       "rightSymbol": "AHD.LME",
       "leftChangePct": 0.4283,
-      "rightChangePct": -0.2631,
+      "rightChangePct": -0.0658,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "al00.SF / AHD.LME",
       "sourceStatus": "外部补充",
-      "leftStructure": {
-        "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2702",
-        "nearPrice": 23730.0,
-        "farPrice": 22920.0,
-        "changePct": -3.4134,
-        "contractCount": 4
-      },
+      "leftStructure": null,
       "rightStructure": null,
       "mainHistoryChart": {
         "title": "铝内外盘比价走势",
@@ -272842,7 +273818,7 @@
               },
               {
                 "date": "2026-10-26",
-                "value": 7.732894
+                "value": 7.717624
               }
             ]
           }
@@ -274969,19 +275945,19 @@
       "externalSourceDate": "2026-10-26",
       "externalSourceMaxLagDays": 5,
       "domesticPrice": 23450.0,
-      "lmePriceUsdPerTonne": 3032.5,
+      "lmePriceUsdPerTonne": 3038.5,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "铜内外盘比价",
-      "current": "7.5469",
+      "current": "7.5517",
       "previous": "7.6122",
-      "change": "-0.0652",
-      "changeValue": -0.06523471,
-      "allTime": "18.78%",
+      "change": "-0.0605",
+      "changeValue": -0.06049019,
+      "allTime": "18.90%",
       "allTimeRange": "6.8790 ~ 8.5541",
-      "percentile": 12.54,
+      "percentile": 12.71,
       "fiveYearRange": "6.8790 ~ 8.5541",
       "signal": "偏低",
       "lots": "—",
@@ -274991,20 +275967,12 @@
       "leftSymbol": "cu00.SF",
       "rightSymbol": "CAD.LME",
       "leftChangePct": -0.5794,
-      "rightChangePct": 0.28,
+      "rightChangePct": 0.217,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "cu00.SF / CAD.LME",
       "sourceStatus": "外部补充",
-      "leftStructure": {
-        "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2702",
-        "nearPrice": 108830.0,
-        "farPrice": 107170.0,
-        "changePct": -1.5253,
-        "contractCount": 4
-      },
+      "leftStructure": null,
       "rightStructure": null,
       "mainHistoryChart": {
         "title": "铜内外盘比价走势",
@@ -277138,7 +278106,7 @@
               },
               {
                 "date": "2026-10-26",
-                "value": 7.546946
+                "value": 7.55169
               }
             ]
           }
@@ -279265,19 +280233,19 @@
       "externalSourceDate": "2026-10-26",
       "externalSourceMaxLagDays": 5,
       "domesticPrice": 108110.0,
-      "lmePriceUsdPerTonne": 14325.0,
+      "lmePriceUsdPerTonne": 14316.0,
       "marketCategory": "工业品"
     },
     {
       "strategyType": "外盘监控",
       "pair": "锌内外盘比价",
-      "current": "6.7747",
+      "current": "6.7989",
       "previous": "6.7859",
-      "change": "-0.0112",
-      "changeValue": -0.01120141,
-      "allTime": "2.39%",
+      "change": "+0.0130",
+      "changeValue": 0.01298436,
+      "allTime": "2.72%",
       "allTimeRange": "6.1944 ~ 9.0651",
-      "percentile": 4.7,
+      "percentile": 5.36,
       "fiveYearRange": "6.1944 ~ 8.8800",
       "signal": "偏低",
       "lots": "—",
@@ -279287,20 +280255,12 @@
       "leftSymbol": "zn00.SF",
       "rightSymbol": "ZSD.LME",
       "leftChangePct": 1.1408,
-      "rightChangePct": 1.3081,
+      "rightChangePct": 0.9477,
       "seriesMode": "external",
       "pairType": "跨市场套利",
       "formulaLabel": "zn00.SF / ZSD.LME",
       "sourceStatus": "外部补充",
-      "leftStructure": {
-        "state": "Back",
-        "nearExpiry": "2611",
-        "farExpiry": "2702",
-        "nearPrice": 25705.0,
-        "farPrice": 25695.0,
-        "changePct": -0.0389,
-        "contractCount": 4
-      },
+      "leftStructure": null,
       "rightStructure": null,
       "mainHistoryChart": {
         "title": "锌内外盘比价走势",
@@ -281434,7 +282394,7 @@
               },
               {
                 "date": "2026-10-26",
-                "value": 6.774704
+                "value": 6.798889
               }
             ]
           }
@@ -283561,7 +284521,7 @@
       "externalSourceDate": "2026-10-26",
       "externalSourceMaxLagDays": 5,
       "domesticPrice": 25710.0,
-      "lmePriceUsdPerTonne": 3795.0,
+      "lmePriceUsdPerTonne": 3781.5,
       "marketCategory": "工业品"
     }
   ],

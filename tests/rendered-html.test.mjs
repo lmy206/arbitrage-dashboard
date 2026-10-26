@@ -178,7 +178,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.doesNotMatch(html, /铜\/铝比价走势/);
   assert.match(html, /左腿结构/);
   assert.match(html, /右腿结构/);
-  assert.match(html, /Contango|Back/);
+  assert.match(html, /Contango|Back|混合|平坦/);
   assert.doesNotMatch(html, /<th[^>]*>校验<\/th>/);
   assert.doesNotMatch(html, /class="source-badge/);
   assert.doesNotMatch(html, /codex-preview|Building your site|react-loading-skeleton/i);
@@ -970,28 +970,35 @@ test("IM and IC term spreads expose down-quarter and skip-quarter observations w
   }
 });
 
-test("each tradable leg has a valid futures term-structure classification", async () => {
+test("term structures use exactly the contract months displayed for each pair", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   for (const row of payload.rows) {
-    if (row.pairType === "跨市场套利" && row.pair !== "马盘棕榈油/美盘豆油") {
-      assert.ok(row.leftStructure);
-      assert.ok(["Contango", "Back"].includes(row.leftStructure.state));
-      assert.equal(row.rightStructure, null);
-      continue;
-    }
-    if (["现货参考", "期限套利", "外盘参考"].includes(row.pairType) || row.pair === "马盘棕榈油/美盘豆油") {
+    if (row.contracts.length < 2) {
       assert.equal(row.leftStructure, null);
       assert.equal(row.rightStructure, null);
       continue;
     }
     const structures = [row.leftStructure, row.rightStructure];
     if (row.thirdSymbol) structures.push(row.thirdStructure);
-    for (const structure of structures) {
+    for (const [side, structure] of structures.entries()) {
       assert.ok(structure);
-      assert.ok(["Contango", "Back"].includes(structure.state));
-      assert.ok(structure.contractCount >= 2 && structure.contractCount <= 4);
+      assert.ok(["Contango", "Back", "混合", "平坦"].includes(structure.state));
+      assert.equal(structure.scope, "displayed_contracts");
+      assert.equal(structure.contractCount, row.contracts.length);
+      assert.deepEqual(structure.curve.map((point) => point.expiry), row.contracts.map((contract) => contract.expiry));
+      const symbolKey = ["leftSymbol", "rightSymbol", "thirdSymbol"][side];
+      assert.deepEqual(structure.curve.map((point) => point.symbol), row.contracts.map((contract) => contract[symbolKey]));
+      assert.ok(structure.curve.every((point) => Number.isFinite(point.price) && point.price > 0));
       assert.ok(structure.nearExpiry < structure.farExpiry);
-      assert.equal(structure.state, structure.changePct >= 0 ? "Contango" : "Back");
+      assert.equal(structure.nearExpiry, structure.curve[0].expiry);
+      assert.equal(structure.farExpiry, structure.curve.at(-1).expiry);
+      assert.equal(structure.nearPrice, structure.curve[0].price);
+      assert.equal(structure.farPrice, structure.curve.at(-1).price);
+      const movements = structure.curve.slice(1).map((point, index) => point.price - structure.curve[index].price);
+      const rising = movements.some((change) => change > 1e-8);
+      const falling = movements.some((change) => change < -1e-8);
+      assert.equal(structure.state, rising && falling ? "混合" : rising ? "Contango" : falling ? "Back" : "平坦");
+      assert.ok(Math.abs(structure.changePct - (structure.farPrice / structure.nearPrice - 1) * 100) < 0.00011);
     }
   }
 });

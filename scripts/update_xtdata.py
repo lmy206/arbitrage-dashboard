@@ -2418,51 +2418,52 @@ def build_contract_rows(
 
 
 def classify_term_structure(
-    continuous_symbol: str,
+    displayed_contracts: list[dict[str, Any]],
+    symbol_key: str,
     monthly_histories: dict[str, pd.DataFrame],
-    monthly_contracts: dict[str, dict[str, str]],
     common_latest_date: pd.Timestamp,
 ) -> dict[str, Any] | None:
+    if len(displayed_contracts) < 2:
+        return None
     observations: list[dict[str, Any]] = []
-    for expiry, symbol in monthly_contracts.get(continuous_symbol, {}).items():
+    for contract in displayed_contracts:
+        expiry, symbol = contract["expiry"], contract[symbol_key]
         frame = monthly_histories.get(symbol)
         if frame is None or common_latest_date not in frame.index:
-            continue
+            raise RuntimeError(f"展示合约 {symbol} 缺少当日行情，无法判断期限结构")
         latest = frame.loc[common_latest_date]
-        if pd.isna(latest["close"]) or pd.isna(latest["volume"]):
-            continue
         close = float(latest["close"])
-        volume = max(0, int(round(float(latest["volume"]))))
-        if not math.isfinite(close) or close <= 0 or volume <= 0:
-            continue
+        if not math.isfinite(close) or close <= 0:
+            raise RuntimeError(f"展示合约 {symbol} 收盘价无效，无法判断期限结构")
         observations.append(
             {
                 "expiry": expiry,
                 "symbol": symbol,
-                "price": close,
-                "volume": volume,
+                "price": round(close, 6),
             }
         )
 
-    liquid_contracts = sorted(
-        observations,
-        key=lambda item: (-item["volume"], item["expiry"]),
-    )[:4]
-    curve = sorted(liquid_contracts, key=lambda item: item["expiry"])
-    if len(curve) < 2:
-        return None
+    curve = sorted(observations, key=lambda item: item["expiry"])
+    if len({point["expiry"] for point in curve}) != len(curve):
+        raise RuntimeError("展示月份重复，无法判断期限结构")
+    changes = [far["price"] - near["price"] for near, far in zip(curve, curve[1:])]
+    rising = any(change > 1e-8 for change in changes)
+    falling = any(change < -1e-8 for change in changes)
+    state = "混合" if rising and falling else "Contango" if rising else "Back" if falling else "平坦"
 
     near = curve[0]
     far = curve[-1]
     change_pct = (far["price"] / near["price"] - 1) * 100
     return {
-        "state": "Contango" if change_pct >= 0 else "Back",
+        "state": state,
+        "scope": "displayed_contracts",
         "nearExpiry": near["expiry"],
         "farExpiry": far["expiry"],
         "nearPrice": round(float(near["price"]), 6),
         "farPrice": round(float(far["price"]), 6),
         "changePct": round(change_pct, 4),
         "contractCount": len(curve),
+        "curve": curve,
     }
 
 
@@ -3511,22 +3512,6 @@ def build_rows(
     # xtdata session. External rows keep their own source dates and may only
     # use already-published values at or before this domestic anchor.
     common_latest_date = dashboard_domestic_latest_date(histories)
-    required_futures_symbols = {
-        symbol
-        for definition in PAIRS
-        if definition.get("tradable", True)
-        or definition.get("custom_builder") == "lme_cross_market"
-        for symbol in definition_xt_symbols(definition)
-    }
-    term_structures = {
-        symbol: classify_term_structure(
-            main_continuous_symbol(symbol),
-            monthly_histories,
-            monthly_contracts,
-            common_latest_date,
-        )
-        for symbol in required_futures_symbols
-    }
 
     for definition in PAIRS:
         if definition.get("custom_builder") == "index_term":
@@ -3549,7 +3534,7 @@ def build_rows(
                 external_histories,
                 common_latest_date,
                 source_validation,
-                term_structures.get(definition["left"]),
+                None,
             )
             rows.append(row)
             domestic_row_dates.append(latest_date)
@@ -3620,6 +3605,9 @@ def build_rows(
         else:
             lots = deviation = notional = margin = "—"
 
+        displayed_contracts = build_contract_rows(
+            definition, monthly_histories, monthly_contracts, common_latest_date
+        )
         rows.append(
             {
                 "strategyType": definition.get("strategy_type", "回归"),
@@ -3656,9 +3644,9 @@ def build_rows(
                 "pairType": "期货套利" if tradable else "现货参考",
                 **({"contractSelection": definition["contract_selection"]} if definition.get("contract_selection") else {}),
                 "sourceStatus": pair_source_status(definition, source_validation),
-                "leftStructure": term_structures.get(left) if tradable else None,
-                "rightStructure": term_structures.get(right) if tradable else None,
-                **({"thirdStructure": term_structures.get(third)} if third and tradable else {}),
+                "leftStructure": classify_term_structure(displayed_contracts, "leftSymbol", monthly_histories, common_latest_date),
+                "rightStructure": classify_term_structure(displayed_contracts, "rightSymbol", monthly_histories, common_latest_date),
+                **({"thirdStructure": classify_term_structure(displayed_contracts, "thirdSymbol", monthly_histories, common_latest_date)} if third and tradable else {}),
                 "mainHistoryChart": (
                     build_observation_history_chart(
                         definition,
@@ -3700,12 +3688,7 @@ def build_rows(
                     common_latest_date,
                     source_validation,
                 ),
-                "contracts": build_contract_rows(
-                    definition,
-                    monthly_histories,
-                    monthly_contracts,
-                    common_latest_date,
-                ),
+                "contracts": displayed_contracts,
             }
         )
 
@@ -4127,7 +4110,37 @@ def write_outputs(
     expected_term_structure_count = sum(
         len(definition_symbols(definitions_by_pair[row["pair"]]))
         for row in tradable_rows
+        if len(row["contracts"]) >= 2
     )
+    def displayed_term_structure_complete(row: dict[str, Any]) -> bool:
+        contracts = row.get("contracts", [])
+        for side in ("left", "right", "third"):
+            if side == "third" and not row.get("thirdSymbol"):
+                continue
+            structure = row.get(f"{side}Structure")
+            if len(contracts) < 2:
+                if structure is not None:
+                    return False
+                continue
+            if not structure or structure.get("scope") != "displayed_contracts":
+                return False
+            curve = structure.get("curve", [])
+            if ([point["expiry"] for point in curve] != [contract["expiry"] for contract in contracts]
+                or [point["symbol"] for point in curve] != [contract[f"{side}Symbol"] for contract in contracts]
+                or structure.get("contractCount") != len(contracts)
+                or not all(math.isfinite(point["price"]) and point["price"] > 0 for point in curve)):
+                return False
+            changes = [far["price"] - near["price"] for near, far in zip(curve, curve[1:])]
+            rising, falling = any(change > 1e-8 for change in changes), any(change < -1e-8 for change in changes)
+            expected_state = "混合" if rising and falling else "Contango" if rising else "Back" if falling else "平坦"
+            if (structure["state"] != expected_state
+                or structure["nearExpiry"] != curve[0]["expiry"] or structure["farExpiry"] != curve[-1]["expiry"]
+                or structure["nearPrice"] != curve[0]["price"] or structure["farPrice"] != curve[-1]["price"]
+                or not math.isfinite(structure["changePct"])
+                or abs(structure["changePct"] - (curve[-1]["price"] / curve[0]["price"] - 1) * 100) > 0.00011):
+                return False
+        return True
+    displayed_term_structures_complete = all(displayed_term_structure_complete(row) for row in rows)
     index_term_definitions = {
         definition["pair"]: definition
         for definition in PAIRS
@@ -4283,6 +4296,7 @@ def write_outputs(
         full_daily_chart_statistics_complete,
         spot_observation_count == len(SPOT_OBSERVATIONS),
         term_structure_count == expected_term_structure_count,
+        displayed_term_structures_complete,
         index_term_history_complete,
         index_term_thresholds_complete,
         charts_complete,
@@ -4348,6 +4362,7 @@ def write_outputs(
         "expectedSpotObservationCount": len(SPOT_OBSERVATIONS),
         "termStructureCount": term_structure_count,
         "expectedTermStructureCount": expected_term_structure_count,
+        "displayedTermStructuresComplete": displayed_term_structures_complete,
         "indexTermRowCount": len(index_term_rows),
         "expectedIndexTermRowCount": len(index_term_definitions),
         "indexTermHistoryComplete": index_term_history_complete,
