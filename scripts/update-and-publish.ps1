@@ -114,6 +114,8 @@ function Invoke-LoggedCommand {
     [string[]]$ArgumentList,
     [string]$Step,
     [switch]$RetryGitNetwork,
+    [switch]$AllowSourceRecovery,
+    [string]$FailureReportPath,
     [ValidateRange(1, 6)]
     [int]$MaxAttempts = 4
   )
@@ -127,6 +129,7 @@ function Invoke-LoggedCommand {
     } else { $ArgumentList }
     Write-PublishLog "开始：$Step（第 $attempt/$attemptLimit 次）"
     $previousPreference = $ErrorActionPreference
+    $commandStartedAt = [DateTimeOffset]::Now
     $ErrorActionPreference = "Continue"
     try {
       $commandOutput = @(& $FilePath @commandArguments 2>&1)
@@ -148,7 +151,8 @@ function Invoke-LoggedCommand {
     $isPermanent = $failureText -match '(?i)authentication failed|permission denied|could not read Username|repository not found|non-fast-forward|fetch first|certificate|returned error: (?:401|403|404)'
     if (-not $RetryGitNetwork -or -not $isTransient -or $isPermanent -or $attempt -eq $attemptLimit) {
       $failure = New-Object System.Exception("$Step 失败，退出码 $exitCode，已尝试 $attempt 次；详见 $logPath")
-      $failure.Data["Retryable"] = [bool]($RetryGitNetwork -and $isTransient -and -not $isPermanent)
+      $retryableSource = $AllowSourceRecovery -and (Test-PublisherRetryableUpdateFailure -ReportPath $FailureReportPath -Since $commandStartedAt)
+      $failure.Data["Retryable"] = [bool](($RetryGitNetwork -and $isTransient -and -not $isPermanent) -or $retryableSource)
       throw $failure
     }
     $delaySeconds = [int][Math]::Min(5 * [Math]::Pow(2, $attempt - 1), 60)
@@ -419,7 +423,7 @@ if ($RecoverOnly -or $pending -or $script:unpublishedDataCommit -or $legacyRecov
 }
 
 Set-PublishStage -Stage "update"
-Invoke-LoggedCommand -FilePath $pythonPath -ArgumentList @("scripts\update_xtdata.py") -Step "更新 xtdata 与已批准外部补充数据" | Out-Null
+Invoke-LoggedCommand -FilePath $pythonPath -ArgumentList @("scripts\update_xtdata.py") -Step "更新 xtdata 与已批准外部补充数据" -AllowSourceRecovery -FailureReportPath $reportPath | Out-Null
 $currentDataDate = Assert-IntegrityReport
 $currentJson = Read-Utf8Text -Path $outputPath
 $currentUpdatedAt = Get-JsonUpdatedAt -JsonText $currentJson

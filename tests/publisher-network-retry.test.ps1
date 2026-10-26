@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $tokens = $null
 $parseErrors = $null
@@ -78,4 +78,44 @@ Assert-Equal $result "data updated" "Single-argument output"
 Assert-Equal $script:invocations[0].Count 1 "Single argument stays an array"
 Assert-Equal $script:invocations[0][0] "scripts\update_xtdata.py" "Script path is not split into characters"
 Write-Output "PASS: Windows PowerShell preserves a single Python script argument"
+
+$sourceFailureReportPath = Join-Path $runtimeDirectory "publisher-source-retry-test.json"
+function Set-SourceFailureReport {
+  param([string]$Message, [int]$AgeMinutes = 0, [string]$Status = "xtdata_unavailable")
+  Write-PublisherState -Path $sourceFailureReportPath -Value @{
+    status = $Status
+    checkedAt = [DateTimeOffset]::Now.AddMinutes(-$AgeMinutes).ToString("o")
+    error = $Message
+  }
+}
+$emptyServerStatus = "行情连接初始化异常, 未获取到市场权限, 当前连接状态:{}"
+Set-SourceFailureReport $emptyServerStatus
+Reset-FakeGit @(@{Code=1;Text="unreadable SDK console output"})
+$caught = $false
+try {
+  Invoke-LoggedCommand -FilePath "Invoke-FakeGit" -ArgumentList @("scripts\update_xtdata.py") -Step "source recovery" -AllowSourceRecovery -FailureReportPath $sourceFailureReportPath | Out-Null
+} catch { $caught = $true; $caughtFailure = $_.Exception }
+Assert-Equal $caught $true "Source failure still propagates"
+Assert-Equal $script:attempts 1 "Source update runs once per scheduled invocation"
+Assert-Equal $caughtFailure.Data["Retryable"] $true "Fresh empty SDK server status remains recoverable"
+$sourceFailedState = @{status="failed";cycleDate="2026-10-26";retryable=$caughtFailure.Data["Retryable"]}
+Assert-Equal (Test-PublisherScheduledWork "2026-10-26" $null $sourceFailedState $false) $true "Next scheduled check retries the failed source"
+Write-Output "PASS: temporary xtdata initialization failures remain eligible for scheduled recovery"
+
+foreach ($case in @(
+  @{Message="行情连接初始化异常, 当前连接状态:{server: permission denied}";Age=0;Status="xtdata_unavailable"},
+  @{Message="XTQUANT_TOKEN 未设置";Age=0;Status="xtdata_unavailable"},
+  @{Message=$emptyServerStatus;Age=5;Status="xtdata_unavailable"},
+  @{Message=$emptyServerStatus;Age=0;Status="warning"}
+)) {
+  Set-SourceFailureReport -Message $case.Message -AgeMinutes $case.Age -Status $case.Status
+  Reset-FakeGit @(@{Code=1;Text="Connection was reset"})
+  $caught = $false
+  try {
+    Invoke-LoggedCommand -FilePath "Invoke-FakeGit" -ArgumentList @("scripts\update_xtdata.py") -Step "nonrecoverable source" -AllowSourceRecovery -FailureReportPath $sourceFailureReportPath | Out-Null
+  } catch { $caught = $true; $caughtFailure = $_.Exception }
+  Assert-Equal $caught $true "Nonrecoverable source still fails"
+  Assert-Equal $caughtFailure.Data["Retryable"] $false "Permission, config, stale-report and validation failures require attention"
+}
+Write-Output "PASS: source recovery does not reclassify explicit authorization, configuration or stale-report failures"
 exit 0

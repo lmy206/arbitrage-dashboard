@@ -33,6 +33,21 @@ function Test-PublisherScheduledWork {
   return -not ($Completed -and $Completed.cycleDate -ge $CycleDate)
 }
 
+function Test-PublisherRetryableUpdateFailure {
+  param([string]$ReportPath, [DateTimeOffset]$Since)
+  if (-not $ReportPath -or -not (Test-Path -LiteralPath $ReportPath)) { return $false }
+  try {
+    $report = Read-PublisherState -Path $ReportPath
+    if (-not $report -or $report.status -ne "xtdata_unavailable" -or -not $report.checkedAt) { return $false }
+    $checkedAt = [DateTimeOffset]$report.checkedAt
+    # The JSON report is UTF-8 and belongs to this invocation. Console output
+    # can be garbled by Windows PowerShell, and a prior report must not classify
+    # an unrelated command failure as recoverable.
+    if ($checkedAt -lt $Since.AddSeconds(-1)) { return $false }
+    return [bool]([string]$report.error -match '^\s*行情连接初始化异常[^\r\n]*当前连接状态\s*[:：]\s*\{\s*\}\s*$')
+  } catch { return $false }
+}
+
 function Get-WindowsPublisherProxy {
   param([object]$Settings)
   if (-not $Settings -or $Settings.ProxyEnable -ne 1 -or -not $Settings.ProxyServer) { return $null }
