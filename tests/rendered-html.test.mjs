@@ -48,15 +48,6 @@ function assertHybridHistory(points, label = "history chart") {
   assert.ok(recentGaps.every((gap) => gap <= 15 * DAY_MS), `${label} latest observations should not have weekly spacing`);
 }
 
-function quantile(values, percentile) {
-  const sorted = [...values].sort((left, right) => left - right);
-  const position = (sorted.length - 1) * percentile;
-  const lowerIndex = Math.floor(position);
-  const upperIndex = Math.ceil(position);
-  const weight = position - lowerIndex;
-  return sorted[lowerIndex] + (sorted[upperIndex] - sorted[lowerIndex]) * weight;
-}
-
 test("server-renders the arbitrage dashboard", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -513,16 +504,16 @@ test("monthly contract details contain only current values and liquidity", async
     assert.equal(contract.historyChart.startDate, firstDate);
   }
 
-  const proteinJanuary = payload.rows
+  const proteinContract = payload.rows
     .find((row) => row.pair === "蛋白质价差")
-    .contracts.find((contract) => contract.expiry === "2701");
-  assert.ok(proteinJanuary.historyChart.series.length > 5, "2701 should include more than five historical January contracts");
-  assert.deepEqual(proteinJanuary.historyChart.series.map((series) => series.expiry).slice(-5), ["2301", "2401", "2501", "2601", "2701"]);
+    .contracts[0];
+  assert.ok(proteinContract.historyChart.series.length > 5, "protein spread should include more than five historical same-month contracts");
+  assert.equal(proteinContract.historyChart.series.at(-1).expiry, proteinContract.expiry);
   assert.ok(
-    Date.parse(proteinJanuary.historyChart.endDate) - Date.parse(proteinJanuary.historyChart.startDate) >= 3650 * 24 * 60 * 60 * 1000,
-    "2701 chart should span at least ten calendar years",
+    Date.parse(proteinContract.historyChart.endDate) - Date.parse(proteinContract.historyChart.startDate) >= 3650 * 24 * 60 * 60 * 1000,
+    "protein spread chart should span at least ten calendar years",
   );
-  assert.equal(proteinJanuary.historyChart.title, "蛋白质价差历年1月合约");
+  assert.equal(proteinContract.historyChart.title, `蛋白质价差历年${Number(proteinContract.expiry.slice(-2))}月合约`);
 
   const cokeCoal = payload.rows.find((row) => row.pair === "焦炭/焦煤比价");
   assert.ok(cokeCoal, "焦炭/焦煤比价 should be present");
@@ -540,13 +531,17 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(oilMeal.leftSymbol, "yJQ00.DF");
   assert.equal(oilMeal.rightSymbol, "mJQ00.DF");
   assert.equal(oilMeal.current, (Number(oilMeal.current)).toFixed(4));
-  const oilMealMay = oilMeal.contracts.find((contract) => contract.expiry === "2705");
-  const plottedValues = oilMealMay.historyChart.series.flatMap((series) => series.points.map((point) => point.value));
-  const fullDaily97 = oilMealMay.historyChart.quantileThresholds.find((item) => item.label === "97%").value;
-  const plotted97 = quantile(plottedValues, 0.97);
-  assert.ok(oilMealMay.historyChart.statisticsPointCount > oilMealMay.historyChart.renderPointCount);
-  assert.ok(Math.abs(fullDaily97 - plotted97) > 0.01, "full-daily threshold must not be recomputed from compact chart points");
-  assert.ok(Math.abs(fullDaily97 - 2.966376) < 0.01);
+  // Live rolling thresholds and listed delivery years change with new data.
+  // Full-daily calculation (including coincident compact/daily quantiles) is
+  // covered with controlled inputs in test_chart_statistics.py.
+  for (const contract of oilMeal.contracts) {
+    const chart = contract.historyChart;
+    assert.ok(chart.statisticsPointCount > chart.renderPointCount);
+    const thresholds = chart.quantileThresholds;
+    assert.deepEqual(thresholds.map((item) => item.label), ["3%", "97%"]);
+    assert.ok(thresholds.every((item) => Number.isFinite(item.value)));
+    assert.ok(thresholds[0].value <= thresholds[1].value);
+  }
 
   const addedRatios = new Map([
     ["棕榈油/菜油比价", ["pJQ00.DF", "OIJQ00.ZF"]],
