@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import {
+  assertDailyCalendarCoverage, assertDisplayedRatio, assertExternalDates, assertFormattedRatio,
+  assertMembers, calendarYearsBefore, compactPointLimit, snapshotShanghaiDate,
+} from "./snapshot-checks.mjs";
+
+const dataContract = JSON.parse(await readFile(new URL("../config/dashboard-contract.json", import.meta.url), "utf8"));
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -296,13 +302,13 @@ test("contract month rows can expand same-month ten-year charts without bridging
 
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.rows.length, 37);
+  assertMembers(payload.rows.map((row) => row.pair), dataContract.pairs, "dashboard pairs");
   assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价", "金/油比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
   assert.deepEqual(externalMonitorPairs, ["ERP：标普500", "美元银行融资压力代理", "美盘油粕比", "马盘棕榈油/美盘豆油", "铜内外盘比价", "铝内外盘比价", "锌内外盘比价"].sort());
-  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, 27);
+  assert.equal(payload.rows.filter((row) => row.strategyType === "回归").length, dataContract.pairs.length - trendPairs.length - externalMonitorPairs.length);
   assert.deepEqual(payload.rows.slice(0, 3).map((row) => row.pair), ["ERP：沪深300", "ERP：标普500", "美元银行融资压力代理"]);
 
   const expectedSignal = (percentile) => {
@@ -519,7 +525,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.ok(cokeCoal, "焦炭/焦煤比价 should be present");
   assert.equal(cokeCoal.leftSymbol, "jJQ00.DF");
   assert.equal(cokeCoal.rightSymbol, "jmJQ00.DF");
-  assert.equal(cokeCoal.current, (Number(cokeCoal.current)).toFixed(4));
+  assertFormattedRatio(cokeCoal.current);
   assert.ok(cokeCoal.contracts.length > 0 && cokeCoal.contracts.length <= 4);
   assert.ok(
     cokeCoal.contracts.every((contract) => ["01", "05", "09"].includes(contract.expiry.slice(-2))),
@@ -530,7 +536,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.ok(oilMeal, "油/粕比价 should be present");
   assert.equal(oilMeal.leftSymbol, "yJQ00.DF");
   assert.equal(oilMeal.rightSymbol, "mJQ00.DF");
-  assert.equal(oilMeal.current, (Number(oilMeal.current)).toFixed(4));
+  assertFormattedRatio(oilMeal.current);
   // Live rolling thresholds and listed delivery years change with new data.
   // Full-daily calculation (including coincident compact/daily quantiles) is
   // covered with controlled inputs in test_chart_statistics.py.
@@ -560,7 +566,7 @@ test("monthly contract details contain only current values and liquidity", async
     assert.match(row.pair, /比价$/);
     assert.equal(row.leftSymbol, leftSymbol);
     assert.equal(row.rightSymbol, rightSymbol);
-    assert.equal(row.current, Number(row.current).toFixed(4));
+    assertFormattedRatio(row.current);
   }
 
   const soyPalmSpread = payload.rows.find((row) => row.pair === "豆棕价差");
@@ -587,7 +593,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.equal(fuelCrude.marketCategory, "工业品");
   assert.equal(fuelCrude.mainHistoryChart.unit, "桶/吨");
   assert.equal(fuelCrude.mainHistoryChart.source, "xtdata");
-  assert.equal(fuelCrude.mainHistoryChart.series[0].points.at(-1).value.toFixed(4), fuelCrude.current);
+  assertDisplayedRatio(fuelCrude.current, fuelCrude.mainHistoryChart.series[0].points.at(-1).value);
   assert.match(fuelCrude.formulaLabel, /未作吨桶或税制换算/);
   assert.equal(fuelCrude.mainContinuousObservation.leftSymbol, "fu00.SF");
   assert.equal(fuelCrude.mainContinuousObservation.rightSymbol, "sc00.INE");
@@ -612,7 +618,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.match(goldOil.formulaLabel, /31\.1034768/);
   assert.equal(goldOil.mainContinuousObservation.leftSymbol, "au00.SF");
   assert.equal(goldOil.mainContinuousObservation.rightSymbol, "sc00.INE");
-  assert.equal(goldOil.mainHistoryChart.series[0].points.at(-1).value.toFixed(2), goldOil.current);
+  assertDisplayedRatio(goldOil.current, goldOil.mainHistoryChart.series[0].points.at(-1).value);
   for (const contract of goldOil.contracts) {
     assert.equal(contract.leftSymbol, `au${contract.expiry}.SF`);
     assert.equal(contract.rightSymbol, `sc${contract.expiry}.INE`);
@@ -627,7 +633,7 @@ test("monthly contract details contain only current values and liquidity", async
   assert.ok(glassSoda);
   assert.equal(glassSoda.leftSymbol, "FGJQ00.ZF");
   assert.equal(glassSoda.rightSymbol, "SAJQ00.ZF");
-  assert.equal(glassSoda.current, Number(glassSoda.current).toFixed(4));
+  assertFormattedRatio(glassSoda.current);
   assert.equal(payload.rows.some((row) => row.pair === "纯碱玻璃比"), false);
 
   const relatedObservations = new Map([
@@ -774,10 +780,10 @@ test("equity-index futures pairs include a pinned spot observation", async () =>
   assert.equal(imIcSpotChart.overlayThresholds, undefined);
   for (const [chart, pair] of [[imIfSpotChart, "IM/IF比价"], [imIcSpotChart, "IM-IC价差"], [icIfSpotChart, "IC/IF比价"]]) {
     assert.deepEqual(chart.correlations.map((item) => item.label), ["10年水平相关", "日变动相关"]);
-    for (const correlation of chart.correlations) {
+    for (const [index, correlation] of chart.correlations.entries()) {
       assert.ok(Number.isFinite(correlation.value), `${pair} ${correlation.label} should be finite`);
       assert.ok(correlation.value >= -1 && correlation.value <= 1, `${pair} ${correlation.label} should be bounded`);
-      assert.ok(correlation.sampleSize > 2000, `${pair} ${correlation.label} should use full daily history`);
+      assert.equal(correlation.sampleSize, chart.statisticsPointCount - index, `${pair} ${correlation.label} should use the full aligned daily sample`);
       assert.match(correlation.method, /Pearson/);
     }
     assert.match(chart.correlations[1].method, pair === "IM-IC价差" ? /价差一阶差分/ : /比价日收益率/);
@@ -1003,7 +1009,7 @@ test("xtdata-only integrity validation is internally consistent", async () => {
   const validation = payload.sourceValidation;
   assert.match(payload.source, /xtdata.*用户批准/);
   assert.equal(validation.mode, "xtdata_only");
-  assert.equal(validation.summary.total, 73);
+  assertMembers(validation.checks.map((check) => check.xtSymbol), dataContract.domesticSymbols, "domestic sources");
   assert.ok(validation.checks.every((check) => !/^(lh|c)(JQ00|00)\.DF$/.test(check.xtSymbol)));
   assert.equal(validation.checks.length, validation.summary.total);
   assert.equal(validation.summary.consistent, validation.summary.total);
@@ -1039,7 +1045,7 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assert.ok(row.lmePriceUsdPerTonne > 0);
     assert.equal(row.usdCnyMid, undefined);
     const expectedRatio = row.domesticPrice / row.lmePriceUsdPerTonne;
-    assert.ok(Math.abs(Number(row.current) - expectedRatio) < 0.0001);
+    assertDisplayedRatio(row.current, expectedRatio);
     assert.equal(row.formulaLabel, `${domesticSymbol} / ${lmeSymbol}.LME`);
     assert.ok(row.mainHistoryChart);
     assert.match(row.mainHistoryChart.source, /xtdata 00主力连续.*AKShare\/新浪 LME三个月电子盘/);
@@ -1055,10 +1061,8 @@ test("copper aluminum and zinc cross-market ratios use domestic main-continuous 
     assertIncreasingHistory(row.mainHistoryChart.series[0].points, row.pair);
   }
 
-  assert.equal(payload.externalSources.length, 15);
-  assert.ok(payload.externalSources.every((source) => source.endDate <= new Date().toISOString().slice(0, 10)));
-  assert.ok(payload.externalSources.every((source) => ["live", "cache"].includes(source.status)));
-  assert.ok(payload.rows.filter((row) => row.seriesMode === "external").some((row) => row.externalSourceDate < payload.dataDate));
+  assertMembers(payload.externalSources.map((source) => source.symbol), dataContract.externalSymbols, "approved external sources");
+  assertExternalDates(payload);
   assert.match(payload.externalSourcePolicy, /主数据日使用国内xtdata最新完整交易日.*外盘与外部指标保留各自实际来源日期.*国内主连÷LME三个月电子盘且不换汇.*风险溢价.*OBFR.*IORB.*IOER.*马盘棕榈油.*美盘油粕比/);
 });
 
@@ -1102,11 +1106,10 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.equal(dollarFunding.formulaLabel, "（OBFR − IORB/IOER）× 100 基点");
   assert.equal(dollarFunding.mainHistoryChart.unit, "基点");
   assert.equal(dollarFunding.mainHistoryChart.startDate, dollarFunding.mainHistoryChart.series[0].points[0].date);
-  const fundingHistoryWindowStart = new Date(`${dollarFunding.mainHistoryChart.endDate}T00:00:00Z`);
-  fundingHistoryWindowStart.setUTCFullYear(fundingHistoryWindowStart.getUTCFullYear() - 10);
+  const fundingHistoryWindowStart = Date.parse(`${calendarYearsBefore(dollarFunding.mainHistoryChart.endDate, 10)}T00:00:00Z`);
   const fundingHistoryStartLagDays = (
     Date.parse(`${dollarFunding.mainHistoryChart.startDate}T00:00:00Z`)
-    - fundingHistoryWindowStart.getTime()
+    - fundingHistoryWindowStart
   ) / DAY_MS;
   assert.ok(fundingHistoryStartLagDays >= 0 && fundingHistoryStartLagDays <= 7);
   assert.ok(dollarFunding.mainHistoryChart.series[0].points.length >= 500);
@@ -1123,7 +1126,7 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.equal(dollarFunding.pairType, "外盘参考");
   assert.equal(dollarFunding.strategyType, "外盘监控");
   assert.match(dollarFunding.interpretation, /美元银行融资压力代理.*不等同于完整离岸美元流动性指数/);
-  assert.ok(Math.abs(Number(nasdaqSp.current) - nasdaqSp.leftIndexLevel / nasdaqSp.rightIndexLevel) < 0.0001);
+  assertDisplayedRatio(nasdaqSp.current, nasdaqSp.leftIndexLevel / nasdaqSp.rightIndexLevel);
   assert.equal(nasdaqSp.strategyType, "回归");
   assert.equal(nasdaqSp.marketCategory, "股指");
   assert.ok(
@@ -1133,10 +1136,7 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.equal(palmSoy.leftSymbol, "FCPO.SINA");
   assert.equal(palmSoy.rightSymbol, "BO.SINA");
   assert.equal(palmSoy.formulaLabel, "马盘棕榈油报价（马币/公吨）÷ 美盘豆油报价（美分/磅）");
-  assert.equal(
-    palmSoy.current,
-    (palmSoy.palmOilMyrPerMetricTonne / palmSoy.soybeanOilCentsPerLb).toFixed(2),
-  );
+  assertDisplayedRatio(palmSoy.current, palmSoy.palmOilMyrPerMetricTonne / palmSoy.soybeanOilCentsPerLb);
   assert.equal(palmSoy.soybeanOilUsdPerMetricTonne, undefined);
   assert.equal(palmSoy.soybeanOilMyrPerMetricTonne, undefined);
   assert.equal(palmSoy.fxMyrPerUsd, undefined);
@@ -1179,8 +1179,8 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.equal(usOilMeal.leftSymbol, "BO.SINA");
   assert.equal(usOilMeal.rightSymbol, "SM.SINA");
   assert.equal(usOilMeal.formulaLabel, "美豆油（美分/磅）×20 ÷ 美豆粕（美元/短吨）");
-  assert.ok(Math.abs(Number(usOilMeal.current) - usOilMeal.soybeanOilCentsPerLb * 20 / usOilMeal.soybeanMealUsdPerShortTon) < 0.0001);
-  assert.ok(Math.abs(usOilMeal.soybeanOilUsdPerMetricTonne / usOilMeal.soybeanMealUsdPerMetricTonne - Number(usOilMeal.current)) < 0.0001);
+  assertDisplayedRatio(usOilMeal.current, usOilMeal.soybeanOilCentsPerLb * 20 / usOilMeal.soybeanMealUsdPerShortTon);
+  assertDisplayedRatio(usOilMeal.current, usOilMeal.soybeanOilUsdPerMetricTonne / usOilMeal.soybeanMealUsdPerMetricTonne);
   assert.equal(usOilMeal.mainHistoryChart.series[0].expiry, "外盘");
 
   const soybeanOil = payload.externalSources.find((source) => source.symbol === "BO.SINA");
@@ -1198,8 +1198,8 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
   assert.match(obfr.path, /newyorkfed[\\/]OBFR\.csv$/);
   assert.match(reserveRate.path, /federalreserve[\\/]IORB_IOER\.csv$/);
   assert.equal(reserveRate.startDate, "2008-10-09");
-  assert.ok(reserveRate.rows > 6500);
-  assert.ok(reserveRate.endDate <= new Date().toISOString().slice(0, 10));
+  assertDailyCalendarCoverage(reserveRate);
+  assert.ok(reserveRate.endDate <= snapshotShanghaiDate(payload.updatedAt));
   assert.equal(payload.externalSources.find((source) => source.symbol === "IORB.FED"), undefined);
   assert.equal(payload.externalSources.find((source) => source.symbol === "SOFR.NYFED"), undefined);
 
@@ -1209,14 +1209,13 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
 
 test("the six selected chart datasets are present in the requested order", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
-  assert.equal(payload.charts.length, 6);
   assert.deepEqual(
     payload.charts.map((chart) => chart.id),
-    ["im-ic-spread", "ic-if", "im-if", "rebar-ore", "soy-oil-meal", "copper-aluminum"],
+    dataContract.chartIds,
   );
   for (const chart of payload.charts) {
     assert.ok(chart.points.length >= 180, `${chart.pair} should retain hybrid observations for the available five-year window`);
-    assert.ok(chart.points.length <= 320, `${chart.pair} should stay within the compact five-year window`);
+    assert.ok(chart.points.length <= compactPointLimit(chart.startDate, chart.endDate), `${chart.pair} should stay within its compact calendar window`);
     assert.equal(chart.startDate, chart.points[0].date);
     assert.equal(chart.endDate, chart.points.at(-1).date);
     assert.ok(chart.points.every((point, index) => Number.isFinite(point.value) && (index === 0 || point.date > chart.points[index - 1].date)));

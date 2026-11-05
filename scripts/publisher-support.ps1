@@ -23,6 +23,43 @@ function Write-PublisherState {
   Move-Item -LiteralPath $temporaryPath -Destination $Path -Force
 }
 
+function Assert-PublisherMembers {
+  param([object[]]$Actual, [object[]]$Expected, [string]$Label)
+  $seen = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+  $configured = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+  foreach ($value in $Actual) {
+    if (-not $value -or -not $seen.Add([string]$value)) { throw "$Label 存在空值或重复项" }
+  }
+  foreach ($value in $Expected) {
+    if (-not $value -or -not $configured.Add([string]$value)) { throw "$Label 配置存在空值或重复项" }
+  }
+  if ($configured.Count -eq 0 -or -not $seen.SetEquals($configured)) { throw "$Label 与配置名单不一致" }
+}
+
+function Get-PublisherDataContract {
+  param([string]$ProjectRoot)
+  $contract = Read-PublisherState -Path (Join-Path $ProjectRoot 'config\dashboard-contract.json')
+  if (-not $contract -or $contract.schemaVersion -ne 1) { throw "看板数据名单配置不存在或版本不支持" }
+  foreach ($key in @('pairs', 'domesticSymbols', 'externalSymbols', 'chartIds')) {
+    Assert-PublisherMembers -Actual @($contract.$key) -Expected @($contract.$key) -Label $key
+  }
+  return $contract
+}
+
+function Assert-PublisherSnapshotContract {
+  param([object]$Snapshot, [object]$Contract)
+  Assert-PublisherMembers -Actual @($Snapshot.rows | ForEach-Object { $_.pair }) -Expected @($Contract.pairs) -Label '套利对'
+  Assert-PublisherMembers -Actual @($Snapshot.sourceValidation.checks | ForEach-Object { $_.xtSymbol }) -Expected @($Contract.domesticSymbols) -Label '国内行情'
+  Assert-PublisherMembers -Actual @($Snapshot.externalSources | ForEach-Object { $_.symbol }) -Expected @($Contract.externalSymbols) -Label '批准的外部来源'
+  Assert-PublisherMembers -Actual @($Snapshot.charts | ForEach-Object { $_.id }) -Expected @($Contract.chartIds) -Label '分析图表'
+  $summary = $Snapshot.sourceValidation.summary
+  if ($summary.total -ne @($Contract.domesticSymbols).Count -or $summary.consistent -ne $summary.total -or
+      $summary.review -ne 0 -or $summary.unavailable -ne 0 -or
+      @($Snapshot.sourceValidation.checks | Where-Object { $_.date -ne $Snapshot.dataDate -or $_.status -ne '完整' }).Count -gt 0) {
+    throw "国内行情完整性汇总与快照不一致"
+  }
+}
+
 function Test-PublisherScheduledWork {
   param([string]$CycleDate, [object]$Completed, [object]$LastStatus, [bool]$HasPending)
   if ($LastStatus -and $LastStatus.status -eq "failed" -and

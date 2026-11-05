@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Backfill five years of expired and active futures contracts with xtdata only."""
+"""Backfill requested expired and active futures history with xtdata only."""
 
 from __future__ import annotations
 
@@ -15,7 +15,10 @@ from typing import Any
 
 import pandas as pd
 
-import update_xtdata as dashboard
+if __package__:
+    from . import update_xtdata as dashboard
+else:
+    import update_xtdata as dashboard
 
 
 ROOT_INCEPTION_YEAR = {
@@ -44,12 +47,9 @@ ROOT_INCEPTION_YEAR = {
 
 # Zhengzhou futures use three-digit YMM codes.  Xtdata resolves those codes to
 # the current decade and does not expose the previous-decade contract under a
-# distinct symbol, so pre-2020 monthly contracts cannot be addressed safely.
-XTDATA_ADDRESSABLE_START_YEAR = {
-    continuous: 2020
-    for continuous in dashboard.CONTRACTS
-    if continuous.endswith(".ZF")
-}
+# distinct symbol. Resolve that boundary for the requested run, not as 2020.
+def addressable_start_year(continuous_symbol: str, asof: datetime) -> int:
+    return asof.year // 10 * 10 if continuous_symbol.endswith(".ZF") else 0
 
 
 def contract_symbol(continuous_symbol: str, year: int, month: int) -> str:
@@ -62,7 +62,8 @@ def contract_symbol(continuous_symbol: str, year: int, month: int) -> str:
     return f"{root}{code}.{suffix}"
 
 
-def contract_expiry(symbol: str) -> str:
+def contract_expiry(symbol: str, asof: datetime | None = None) -> str:
+    asof = asof or datetime.now(dashboard.SHANGHAI)
     stem, suffix = symbol.split(".", maxsplit=1)
     matching_roots = sorted(
         (
@@ -84,9 +85,9 @@ def contract_expiry(symbol: str) -> str:
         year = 2000 + int(code[:2])
         month = int(code[2:])
     else:
-        decade = datetime.now(dashboard.SHANGHAI).year // 10 * 10
+        decade = asof.year // 10 * 10
         year = decade + int(code[0])
-        if year > datetime.now(dashboard.SHANGHAI).year + 2:
+        if year > asof.year + 2:
             year -= 10
         month = int(code[1:])
     return f"{year:04d}{month:02d}"
@@ -126,14 +127,15 @@ def chunks(items: list[str], size: int):
         yield items[offset : offset + size]
 
 
-def make_candidates(start_year: int, end_year: int) -> tuple[list[str], dict[str, str]]:
+def make_candidates(start_year: int, end_year: int, asof: datetime | None = None) -> tuple[list[str], dict[str, str]]:
+    asof = asof or datetime.now(dashboard.SHANGHAI)
     candidates: list[str] = []
     roots: dict[str, str] = {}
     for continuous_symbol in dashboard.CONTRACTS:
         first_year = max(
             start_year,
             ROOT_INCEPTION_YEAR.get(continuous_symbol, start_year),
-            XTDATA_ADDRESSABLE_START_YEAR.get(continuous_symbol, start_year),
+            addressable_start_year(continuous_symbol, asof),
         )
         for year in range(first_year, end_year + 1):
             for month in range(1, 13):
@@ -148,11 +150,13 @@ def validate_coverage(
     roots_by_symbol: dict[str, str],
     start_year: int,
     current_year: int,
+    asof: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], bool, list[str]]:
     expiries_by_root: dict[str, set[str]] = defaultdict(set)
     future_data_detected = False
     invalid_files: list[str] = []
-    today = datetime.now(dashboard.SHANGHAI).date()
+    asof = asof or datetime.now(dashboard.SHANGHAI)
+    today = asof.date()
 
     for symbol, frame in stored.items():
         if frame.empty:
@@ -161,7 +165,7 @@ def validate_coverage(
             invalid_files.append(symbol)
         if frame.index.max().date() > today:
             future_data_detected = True
-        expiries_by_root[roots_by_symbol[symbol]].add(contract_expiry(symbol))
+        expiries_by_root[roots_by_symbol[symbol]].add(contract_expiry(symbol, asof))
 
     root_coverage: dict[str, Any] = {}
     for continuous_symbol in dashboard.CONTRACTS:
@@ -171,7 +175,7 @@ def validate_coverage(
         )
         addressable_first_year = max(
             requested_first_year,
-            XTDATA_ADDRESSABLE_START_YEAR.get(continuous_symbol, requested_first_year),
+            addressable_start_year(continuous_symbol, asof),
         )
         expiries = sorted(expiries_by_root.get(continuous_symbol, set()))
         covered_years = {int(expiry[:4]) for expiry in expiries if int(expiry[:4]) <= current_year}
@@ -200,12 +204,13 @@ def validate_coverage(
     for definition in dashboard.PAIRS:
         if not definition.get("tradable", True):
             continue
-        left = definition["left"]
-        right = definition["right"]
+        left = dashboard.main_continuous_symbol(definition["left"])
+        right = dashboard.main_continuous_symbol(definition["right"])
         common = sorted(expiries_by_root.get(left, set()) & expiries_by_root.get(right, set()))
         left_first = root_coverage[left]["firstAvailableYear"]
         right_first = root_coverage[right]["firstAvailableYear"]
-        first_year = max(year for year in (left_first, right_first) if year is not None)
+        available_starts = [year for year in (left_first, right_first) if year is not None]
+        first_year = max(available_starts) if available_starts else max(root_coverage[left]["addressableFirstYear"], root_coverage[right]["addressableFirstYear"])
         required_years = set(range(first_year, current_year + 1))
         common_years = {int(expiry[:4]) for expiry in common if int(expiry[:4]) <= current_year}
         pair_coverage[definition["pair"]] = {

@@ -37,19 +37,22 @@ class ExternalAvailabilityTests(unittest.TestCase):
         self.assertEqual(updater.FUTURE_EXTERNAL_ROWS_DISCARDED, 0)
 
     def test_failed_integrity_preserves_the_last_good_dashboard(self):
-        payload = json.loads(updater.OUTPUT_PATH.read_text(encoding="utf-8"))
-        calendar = pd.DatetimeIndex(pd.read_csv(updater.INDEX_DIR / "000300_SH.csv", parse_dates=["date"])["date"])
-        with tempfile.TemporaryDirectory(dir=updater.PROJECT_ROOT / ".runtime") as directory:
+        with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "arbitrage.json"
             output.write_text("previous valid dashboard", encoding="utf-8")
-            with patch.object(updater, "OUTPUT_PATH", output), patch.object(updater, "REPORT_DIR", Path(directory)), patch.object(updater, "write_manifest"):
-                report = updater.write_outputs(
-                    payload["rows"], payload["charts"], payload["dataDate"], calendar,
-                    True, 0, payload["sourceValidation"], [], payload["externalSources"], [],
-                )
-            self.assertEqual(report["status"], "warning")
+            report = {"status": "warning"}
+            with patch.object(updater, "OUTPUT_PATH", output):
+                updater.persist_dashboard_snapshot({"rows": []}, report)
             self.assertTrue(report["lastGoodOutputPreserved"])
             self.assertEqual(output.read_text(encoding="utf-8"), "previous valid dashboard")
+
+    def test_successful_integrity_persists_only_the_validated_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "new" / "arbitrage.json"
+            payload = {"dataDate": "2028-01-04", "rows": [{"current": "3.0000"}]}
+            with patch.object(updater, "OUTPUT_PATH", output):
+                updater.persist_dashboard_snapshot(payload, {"status": "ok"})
+            self.assertEqual(json.loads(output.read_text(encoding="utf-8")), payload)
 
 
 if __name__ == "__main__":

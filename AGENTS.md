@@ -22,14 +22,17 @@
 - 外部补充数据写入共享数据目录；不得自行增加或替换为其他网页、AkShare 接口或行情源。
 - 看板主数据日使用国内 xtdata 最新完整交易日；外盘与外部指标保留各自实际来源日期并只向后匹配已公布值，不得因外盘尚未收盘而回退全部国内行。
 - 所有历史统计与回测必须检查未来数据风险。
+- 组合、国内行情、已批准外部来源和图表的完整名单维护在 `config/dashboard-contract.json`，采集器、发布器和页面测试共同使用；增删配置时同步名单，禁止在其他地方再写固定数量代替身份核验。
+- 国内新鲜度按本次请求覆盖到当前月末的 xtdata 交易日历判断；长假不使用固定自然日差拦截。仍禁止遗漏应有交易日、未来行情、未批准来源或复用其他生成批次的完整性报告。
 
 ## 更新与验证
 
 1. 运行 `D:\anaconda\python.exe scripts\update_xtdata.py`。
 2. 读取 `E:\data\reports\arbitrage_dashboard_integrity.json`。
+   必须满足 `configurationComplete=true`；完整性报告 `checkedAt` 与快照 `updatedAt` 必须指向同一次生成结果。自动发布在采集前先运行 `test_*.py` 固定输入回归；页面发布验证同时运行 `snapshot-checks.test.mjs`。
    创业板指数叠加线还必须满足 `growthSpotOverlayComplete=true`，否则保持上一个有效快照。
    期限结构必须满足 `displayedTermStructuresComplete=true`：各腿仅使用该套利对实际展示的共同月份；不足两个展示月份不显示期限结构标签。
-3. 只有在 `status=ok`、`pairCount=expectedPairCount=37`、`indexTermHistoryComplete=true`、`indexTermThresholdsComplete=true`、`domesticFreshnessComplete=true`、`externalRowDatesComplete=true`、`futureDataDetected=false`、`hierarchySorted=true`、`relatedObservationsComplete=true`、`fundingPressureOverlayComplete=true`、`riskPremiumOverlaysComplete=true`、`imIfSpotOverlayComplete=true`、`imIfSpotThresholdsComplete=true`、`imIcSpotOverlayComplete=true`、`icIfSpotOverlayComplete=true`、`icIfSpotThresholdsComplete=true`、`aluminumAlloySpreadComplete=true`、`spotCorrelationMetricsComplete=true`、`fullDailyChartStatisticsComplete=true` 且 `externalSourcesComplete=true` 时，才运行：
+3. 只有在 `status=ok`、`pairCount=expectedPairCount=配置名单长度`、`configurationComplete=true`、`indexTermHistoryComplete=true`、`indexTermThresholdsComplete=true`、`domesticFreshnessComplete=true`、`externalRowDatesComplete=true`、`futureDataDetected=false`、`hierarchySorted=true`、`relatedObservationsComplete=true`、`fundingPressureOverlayComplete=true`、`riskPremiumOverlaysComplete=true`、`imIfSpotOverlayComplete=true`、`imIfSpotThresholdsComplete=true`、`imIcSpotOverlayComplete=true`、`icIfSpotOverlayComplete=true`、`icIfSpotThresholdsComplete=true`、`aluminumAlloySpreadComplete=true`、`spotCorrelationMetricsComplete=true`、`fullDailyChartStatisticsComplete=true` 且 `externalSourcesComplete=true` 时，才运行：
    - 本地验证：`npm run build` 和 `node --test tests\rendered-html.test.mjs`
    - Cloudflare 静态发布验证：`npm run test:pages`
 4. `scripts/update-and-publish.ps1` 仅在规范化后的数据内容相对 `HEAD` 有实质变化、上述校验通过、当前分支为 `main` 或 `automation/publisher`、本地与 `origin/main` 可安全同步，且没有其他已跟踪文件修改时，才提交 `app/data/arbitrage.json` 并推送 `main`；仅 `updatedAt` 变化时必须恢复生成文件并退出。

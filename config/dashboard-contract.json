@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "pairs": [
+    "IM-IC价差", "IM期限套", "IC期限套", "豆一/豆二比价", "IC/IF比价",
+    "卷-螺价差", "铜/铝比价", "铝合金-沪铝价差", "铜内外盘比价", "铝内外盘比价",
+    "锌内外盘比价", "棕榈油/菜油比价", "豆棕价差", "IM/IF比价", "玻璃/纯碱比价",
+    "焦炭/焦煤比价", "油/粕比价", "菜油/豆油比价", "螺/矿比价", "金/银比价",
+    "金/油比价", "燃料油/沥青比价", "燃料油/原油比价", "20号胶/BR橡胶比价", "玻璃/烧碱比价",
+    "镍/不锈钢比价", "聚丙烯/甲醇比价", "豆粕/豆二比价", "蛋白质价差", "科创50/上证50",
+    "创业板/沪深300", "ERP：沪深300", "ERP：标普500", "美元银行融资压力代理",
+    "纳斯达克/标普500", "马盘棕榈油/美盘豆油", "美盘油粕比"
+  ],
+  "domesticSymbols": [
+    "IC00.IF", "IM00.IF", "IF00.IF", "a00.DF", "b00.DF", "OI00.ZF", "RM00.ZF",
+    "rb00.SF", "hc00.SF", "cu00.SF", "al00.SF", "ad00.SF", "zn00.SF", "p00.DF",
+    "SA00.ZF", "FG00.ZF", "j00.DF", "jm00.DF", "m00.DF", "y00.DF", "i00.DF",
+    "au00.SF", "ag00.SF", "fu00.SF", "sc00.INE", "bu00.SF", "nr00.INE", "br00.SF",
+    "SH00.ZF", "ni00.SF", "ss00.SF", "pp00.DF", "MA00.ZF", "TA00.ZF", "PX00.ZF",
+    "aJQ00.DF", "bJQ00.DF", "OIJQ00.ZF", "RMJQ00.ZF", "rbJQ00.SF", "hcJQ00.SF",
+    "cuJQ00.SF", "alJQ00.SF", "adJQ00.SF", "znJQ00.SF", "pJQ00.DF", "SAJQ00.ZF",
+    "FGJQ00.ZF", "jJQ00.DF", "jmJQ00.DF", "mJQ00.DF", "yJQ00.DF", "iJQ00.DF",
+    "auJQ00.SF", "agJQ00.SF", "fuJQ00.SF", "scJQ00.INE", "buJQ00.SF", "nrJQ00.INE",
+    "brJQ00.SF", "SHJQ00.ZF", "niJQ00.SF", "ssJQ00.SF", "ppJQ00.DF", "MAJQ00.ZF",
+    "TAJQ00.ZF", "PXJQ00.ZF", "000300.SH", "000905.SH", "000852.SH", "000688.SH",
+    "000016.SH", "399006.SZ"
+  ],
+  "externalSymbols": [
+    "CAD", "AHD", "ZSD", "USDCNY_MID.SAFE", "CSI300_PE_TTM.CSINDEX", "CN10Y.CHINABOND",
+    "US10Y.EASTMONEY", "SP500_PE.MULTPL", "IXIC.SINA", "INX.SINA", "FCPO.SINA",
+    "BO.SINA", "SM.SINA", "OBFR.NYFED", "IORB_IOER.FED"
+  ],
+  "chartIds": ["im-ic-spread", "ic-if", "im-if", "rebar-ore", "soy-oil-meal", "copper-aluminum"]
+}

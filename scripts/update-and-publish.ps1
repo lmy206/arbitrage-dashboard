@@ -267,10 +267,12 @@ function Assert-IntegrityReport {
   }
 
   $report = Read-Utf8Text -Path $reportPath | ConvertFrom-Json
+  $contract = Get-PublisherDataContract -ProjectRoot $projectRoot
   $checks = @(
     ($report.status -eq "ok")
-    ([int]$report.pairCount -eq 37)
-    ([int]$report.expectedPairCount -eq 37)
+    ([int]$report.pairCount -eq @($contract.pairs).Count)
+    ([int]$report.expectedPairCount -eq @($contract.pairs).Count)
+    ($report.configurationComplete -eq $true)
     ($report.indexTermHistoryComplete -eq $true)
     ($report.indexTermThresholdsComplete -eq $true)
     ([int]$report.pairCount -eq [int]$report.expectedPairCount)
@@ -300,9 +302,15 @@ function Assert-IntegrityReport {
   if (-not (Test-Path -LiteralPath $outputPath)) {
     throw "看板数据文件不存在：$outputPath"
   }
-  $outputDate = Get-JsonDataDate -JsonText (Read-Utf8Text -Path $outputPath)
+  $snapshot = Read-Utf8Text -Path $outputPath | ConvertFrom-Json
+  Assert-PublisherSnapshotContract -Snapshot $snapshot -Contract $contract
+  $outputDate = [string]$snapshot.dataDate
   if ($outputDate -ne [string]$report.dataDate) {
     throw "数据文件日期 $outputDate 与完整性报告日期 $($report.dataDate) 不一致"
+  }
+  if (-not $report.checkedAt -or -not $snapshot.updatedAt -or
+      [DateTimeOffset]$report.checkedAt -ne [DateTimeOffset]$snapshot.updatedAt) {
+    throw "完整性报告与数据快照不是同一次生成结果"
   }
   return $outputDate
 }
@@ -411,6 +419,9 @@ if ($DryRun) {
   $publishLock.Dispose()
   exit 0
 }
+
+Set-PublishStage -Stage "test"
+Invoke-LoggedCommand -FilePath $pythonPath -ArgumentList @("-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py") -Step "验证日期、换月与统计回归" | Out-Null
 
 $pending = Read-PublisherState -Path $pendingPath
 $legacyRecovery = $Scheduled -and $previousStatus.status -eq "failed" -and $previousStatus.dataDate -eq $committedDataDate

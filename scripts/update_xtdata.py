@@ -19,6 +19,7 @@ import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_CONTRACT = json.loads((PROJECT_ROOT / "config" / "dashboard-contract.json").read_text(encoding="utf-8"))
 SHARED_ROOT = Path(os.environ.get("E_SHARED_DATA_ROOT", r"E:\data"))
 MARKET_DIR = SHARED_ROOT / "market" / "futures_daily"
 INDEX_DIR = SHARED_ROOT / "market" / "index_daily"
@@ -679,6 +680,32 @@ def expected_domestic_data_date(
     return pd.Timestamp(calendar[-1])
 
 
+def trading_calendar_end_date(data_date: pd.Timestamp, now: datetime) -> str:
+    # A late series must not truncate the calendar to its own stale month.
+    anchor = max(pd.Timestamp(data_date), pd.Timestamp(now.date()))
+    return anchor.to_period("M").end_time.strftime("%Y%m%d")
+
+
+def domestic_data_is_fresh(data_date: str, trading_calendar: pd.DatetimeIndex, now: datetime) -> bool:
+    return expected_domestic_data_date(trading_calendar, now) <= pd.Timestamp(data_date) <= pd.Timestamp(now.date())
+
+
+def configured_members_complete(actual: list[str], key: str) -> bool:
+    expected = DATA_CONTRACT[key]
+    return bool(expected) and len(set(actual)) == len(actual) == len(set(expected)) == len(expected) and set(actual) == set(expected)
+
+
+def validate_update_configuration() -> None:
+    checks = [
+        DATA_CONTRACT.get("schemaVersion") == 1,
+        configured_members_complete([definition["pair"] for definition in PAIRS], "pairs"),
+        configured_members_complete([*FUTURES_SERIES, *INDEXES], "domesticSymbols"),
+        configured_members_complete([definition["id"] for definition in HISTORY_CHARTS], "chartIds"),
+    ]
+    if not all(checks):
+        raise RuntimeError("更新配置与 config/dashboard-contract.json 的组合、行情或图表名单不一致")
+
+
 HISTORY_CHARTS: list[dict[str, Any]] = [
     {"id": "im-ic-spread", "pair": "IM-IC价差", "left": "IM00.IF", "right": "IC00.IF", "formula": spread, "kind": "spread"},
     {"id": "ic-if", "pair": "IC/IF比价", "left": "IC00.IF", "right": "IF00.IF", "formula": ratio, "kind": "ratio"},
@@ -1011,7 +1038,7 @@ def fetch_history() -> tuple[
         symbol for definition in PAIRS for symbol in definition_xt_symbols(definition)
     }
     common_latest_date = min(histories[symbol].index.max() for symbol in required_symbols)
-    calendar_end = common_latest_date.to_period("M").end_time.strftime("%Y%m%d")
+    calendar_end = trading_calendar_end_date(common_latest_date, datetime.now(SHANGHAI))
     trading_calendar = pd.DatetimeIndex(
         pd.to_datetime(
             xtdata.get_trading_calendar(
@@ -2164,7 +2191,11 @@ def build_observation_history_chart(
     formula_label: str | None = None,
     histories: dict[str, pd.Series] | None = None,
 ) -> dict[str, Any] | None:
-    start_date = common_latest_date - pd.DateOffset(years=SEASONAL_CONTRACT_YEARS)
+    start_date = (
+        pd.Timestamp(definition["history_start_date"])
+        if definition.get("full_daily_history") and definition.get("history_start_date")
+        else common_latest_date - pd.DateOffset(years=SEASONAL_CONTRACT_YEARS)
+    )
     window = values[
         (values.index >= start_date) & (values.index <= common_latest_date)
     ].dropna()
@@ -3769,6 +3800,14 @@ def build_history_charts(
     return charts
 
 
+def persist_dashboard_snapshot(payload: dict[str, Any], report: dict[str, Any]) -> None:
+    if report["status"] == "ok":
+        OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    else:
+        report["lastGoodOutputPreserved"] = OUTPUT_PATH.exists()
+
+
 def write_outputs(
     rows: list[dict[str, Any]],
     charts: list[dict[str, Any]],
@@ -3802,10 +3841,13 @@ def write_outputs(
     latest = pd.Timestamp(data_date).date()
     lag_days = (now.date() - latest).days
     expected_domestic_date = expected_domestic_data_date(trading_calendar, now)
-    domestic_freshness_complete = (
-        pd.Timestamp(data_date) >= expected_domestic_date
-        and pd.Timestamp(data_date) <= pd.Timestamp(now.date())
-    )
+    domestic_freshness_complete = domestic_data_is_fresh(data_date, trading_calendar, now)
+    configuration_complete = all([
+        configured_members_complete([row["pair"] for row in rows], "pairs"),
+        configured_members_complete([check["xtSymbol"] for check in source_validation["checks"]], "domesticSymbols"),
+        configured_members_complete([source["symbol"] for source in external_sources], "externalSymbols"),
+        configured_members_complete([chart["id"] for chart in charts], "chartIds"),
+    ])
     tradable_rows = [row for row in rows if row["pairType"] == "期货套利"]
     definitions_by_pair = {definition["pair"]: definition for definition in PAIRS}
     contract_rows_complete = all(
@@ -4274,7 +4316,7 @@ def write_outputs(
     integrity_checks = [
         not future_data_detected,
         domestic_freshness_complete,
-        lag_days <= 4,
+        configuration_complete,
         len(rows) == len(PAIRS),
         contract_rows_complete,
         contract_history_charts_complete,
@@ -4313,6 +4355,7 @@ def write_outputs(
         "expectedDomesticDataDate": expected_domestic_date.strftime("%Y-%m-%d"),
         "minimumExpectedDomesticDataDate": expected_domestic_date.strftime("%Y-%m-%d"),
         "domesticFreshnessComplete": domestic_freshness_complete,
+        "configurationComplete": configuration_complete,
         "calendarLagDays": lag_days,
         "pairCount": len(rows),
         "expectedPairCount": len(PAIRS),
@@ -4435,10 +4478,7 @@ def write_outputs(
         "xtdataPort": port,
         "output": str(OUTPUT_PATH),
     }
-    if report["status"] == "ok":
-        OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    else:
-        report["lastGoodOutputPreserved"] = OUTPUT_PATH.exists()
+    persist_dashboard_snapshot(payload, report)
     (REPORT_DIR / "arbitrage_dashboard_integrity.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -4489,6 +4529,7 @@ def record_failure(error: Exception) -> None:
 
 def main() -> int:
     try:
+        validate_update_configuration()
         histories, monthly_histories, monthly_contracts, trading_calendar, port = fetch_history()
         external_histories, external_sources, external_errors = fetch_external_market_history()
         latest_allowed_date = pd.Timestamp(datetime.now(SHANGHAI).date())
