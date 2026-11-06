@@ -36,6 +36,35 @@ button { color: inherit; }
   padding: 28px;
 }
 
+.dashboard-tabs {
+  display: flex;
+  gap: 8px;
+  width: min(1440px, 100%);
+  margin: 0 auto 16px;
+}
+
+.dashboard-tab {
+  padding: 11px 24px;
+  border: 1px solid #dfe5ee;
+  border-radius: 10px;
+  color: #667185;
+  background: rgba(255, 255, 255, .85);
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.dashboard-tab:hover { border-color: #aab6dd; color: #344ab5; }
+.dashboard-tab.active { border-color: #344ab5; color: #fff; background: #344ab5; }
+.dashboard-tab:focus-visible { outline: 2px solid #344ab5; outline-offset: 3px; }
+.dashboard-panel[hidden] { display: none; }
+.im-term-panel { width: min(1440px, 100%); margin: 0 auto; overflow: hidden; border: 1px solid #e6e9ed; border-radius: 14px; background: #fff; }
+.im-term-actions { display: flex; justify-content: flex-end; padding: 11px 16px; border-bottom: 1px solid #e6e9ed; }
+.im-term-actions a { color: #536278; font-size: 12px; text-decoration: none; }
+.im-term-actions a:hover { color: #344ab5; text-decoration: underline; }
+.im-term-frame { display: block; width: 100%; height: max(1000px, calc(100vh - 150px)); border: 0; background: #fff; }
+.im-term-message { margin: 0; padding: 28px; color: #667185; font-size: 14px; }
+
 .dashboard {
   width: min(1440px, 100%);
   margin: 0 auto;

@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import dashboardData from "./data/arbitrage.json";
+import DashboardTabs from "./DashboardTabs";
 
 type Signal = "极度偏高" | "偏高" | "中性" | "偏低" | "极度偏低";
 type SourceStatus = "双源一致" | "口径不同" | "仅xtdata" | "需复核" | "待校验" | "外部补充";
@@ -1039,6 +1040,7 @@ export default function Home() {
 
   return (
     <main className="dashboard-shell" data-snapshot-updated-at={dashboardData.updatedAt}>
+      <DashboardTabs>
       <section className="dashboard" aria-labelledby="dashboard-title">
         <header className="dashboard-header">
           <div>
@@ -1385,7 +1387,7 @@ export default function Home() {
           <span>国内数据日：{dashboardData.dataDate} · 更新时间：每日 20:00</span>
         </footer>
       </section>
-
+      </DashboardTabs>
     </main>
   );
 }

@@ -29,7 +29,7 @@ function Test-DashboardResponse {
     $response = Invoke-WebRequest `
       -Uri "http://localhost:$Port/" `
       -UseBasicParsing `
-      -TimeoutSec 5 `
+      -TimeoutSec 45 `
       -ErrorAction Stop
 
     return $response.StatusCode -eq 200
@@ -47,7 +47,7 @@ function Stop-StalledDashboard {
   }
 
   $expectedRoot = [Regex]::Escape($projectRoot)
-  if ($process.CommandLine -notmatch $expectedRoot -or $process.CommandLine -notmatch "vinext.*dev.*$Port") {
+  if ($process.CommandLine -notmatch $expectedRoot -or $process.CommandLine -notmatch "(vinext.*dev|local-dashboard-server\.mjs).*${Port}") {
     Write-MonitorLog "Port $Port is occupied by an unrelated process ($ProcessId); no process was stopped."
     return $false
   }
@@ -85,9 +85,14 @@ $stdoutPath = Join-Path $runtimeDirectory "dashboard-$dateStamp.stdout.log"
 $stderrPath = Join-Path $runtimeDirectory "dashboard-$dateStamp.stderr.log"
 
 Write-MonitorLog "Port $Port is idle; starting the local dashboard."
+$staticEntry = Join-Path $projectRoot "dist\client\index.html"
+$localServer = Join-Path $projectRoot "scripts\local-dashboard-server.mjs"
+$nodePath = (Get-Command node.exe -ErrorAction Stop).Source
+$serverCommand = if ((Test-Path -LiteralPath $staticEntry) -and (Test-Path -LiteralPath $localServer)) { $nodePath } else { $npmPath }
+$serverArguments = if ($serverCommand -eq $nodePath) { @($localServer, "--port", $Port) } else { @("run", "dev", "--", "--port", $Port) }
 $process = Start-Process `
-  -FilePath $npmPath `
-  -ArgumentList @("run", "dev", "--", "--port", $Port) `
+  -FilePath $serverCommand `
+  -ArgumentList $serverArguments `
   -WorkingDirectory $projectRoot `
   -WindowStyle Hidden `
   -RedirectStandardOutput $stdoutPath `

@@ -1,6 +1,7 @@
 import { access, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { exportImTerm } from "./export-im-term.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const serverEntry = path.join(projectRoot, "dist", "server", "index.js");
@@ -40,3 +41,4 @@ if (written.length !== html.length) {
 }
 
 console.log(`Cloudflare Pages static entry written: ${outputPath}`);
+await exportImTerm();

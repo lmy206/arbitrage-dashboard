@@ -1,5 +1,13 @@
 {
   "schemaVersion": 1,
+  "views": ["arbitrage", "im-term"],
+  "imTerm": {
+    "appId": "dashboard:6ba08e54-a81e-4bf5-9baa-cf2d755e55f8",
+    "source": "xtdata",
+    "lowerAnnualRatePct": 9,
+    "upperAnnualRatePct": 12,
+    "extremeDisplayMethod": "current_pair_lifetime"
+  },
   "pairs": [
     "IM-IC价差", "IM期限套", "IC期限套", "豆一/豆二比价", "IC/IF比价",
     "卷-螺价差", "铜/铝比价", "铝合金-沪铝价差", "铜内外盘比价", "铝内外盘比价",

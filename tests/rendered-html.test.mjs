@@ -61,6 +61,11 @@ test("server-renders the arbitrage dashboard", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>套利监测看板<\/title>/i);
+  assert.match(html, /role="tablist" aria-label="看板切换"/);
+  assert.ok(html.indexOf('id="dashboard-tab-arbitrage"') < html.indexOf('id="dashboard-tab-im-term"'), "套利看板 tab precedes IM期限套");
+  assert.match(html, /id="dashboard-tab-arbitrage"[^>]*aria-selected="true"/);
+  assert.match(html, /id="dashboard-tab-im-term"[^>]*aria-selected="false"/);
+  assert.match(html, /id="dashboard-panel-im-term"[^>]*hidden=""/);
   assert.match(html, /立即更新数据/);
   assert.match(html, /立即使用xtdata更新看板数据/);
   assert.match(html, /国内数据 \d{4}-\d{2}-\d{2}/);

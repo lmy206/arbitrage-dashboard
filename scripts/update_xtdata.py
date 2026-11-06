@@ -3835,6 +3835,13 @@ def write_outputs(
         "rows": rows,
         "charts": charts,
     }
+    # Read the canonical IM app in the local publisher; cloud builds use this
+    # reviewed snapshot only and never connect to the user's xtdata service.
+    import importlib.util
+    im_spec = importlib.util.spec_from_file_location("arbitrage_im_snapshot", PROJECT_ROOT / "scripts/im_term_snapshot.py")
+    im_reader = importlib.util.module_from_spec(im_spec)
+    im_spec.loader.exec_module(im_reader)
+    im_reader.attach_im_term_snapshot(payload, OUTPUT_PATH)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     REPORT_DIR.mkdir(parents=True, exist_ok=True)

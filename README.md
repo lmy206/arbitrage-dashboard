@@ -6,6 +6,17 @@
 
 ## 数据流程
 
+首页顶部提供“套利看板”和“IM期限套”两个标签，默认打开套利看板。
+`http://localhost:3001/?tab=im-term` 可直接打开第二个标签；浏览器前进、后退会恢复标签。
+本机IM期限套嵌入现有的 `http://127.0.0.1:8768/?view=1&tab=dashboard`，两端极值、
+合约选择、点位试算及每日更新均继续由原IM应用维护；切换标签不会卸载页面或重置试算。
+用户已批准同步到现有Cloudflare套利看板。线上第二标签载入同站点的 `/im-term/`，
+不依赖访问者的回环服务；IM原Data app身份和编译界面保留。每日采集将当前已核验的
+IM快照写入 `arbitrage.json.imTerm`，静态导出为带SHA-256的不可变JSON，沿用原有
+只提交 `app/data/arbitrage.json` 的自动发布流程。IM行情不可用时保留上一有效日期并标注延迟。
+`config/im-term/` 为原应用经校验的编译模板，界面代码变动后需从原IM应用重新构建同步。
+
+
 1. `scripts/update_xtdata.py` 连接 `xtdata`，下载商品期货持仓量加权连续、商品与股指期货主力连续、具体月份和现货指数的全部可得日线历史。
 2. xtdata 数据写入 `E:\data\market\futures_daily` 和 `E:\data\market\index_daily`。
 3. 脚本更新 `catalog.sqlite`、`manifest.jsonl` 和完整性报告。
