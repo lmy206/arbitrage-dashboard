@@ -3,6 +3,8 @@ import path from "node:path";
 import { readFile, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { styleImTermHtml } from "./im-term-presentation.mjs";
+import { createHash } from "node:crypto";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicRoot = path.join(root, "dist", "client");
@@ -31,6 +33,31 @@ function json(response, status, payload) {
 const server = http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, "http://localhost");
+    // Preserve the independent IM app and its live daily updates. Only its
+    // integration presentation changes; snapshots are forwarded byte-for-byte.
+    const imPath = /^\/im-term\/(index\.html|data-app-build\.json|snapshot\.[a-f0-9]+\.json)?$/.exec(url.pathname);
+    if (imPath && ["GET", "HEAD"].includes(request.method)) {
+      try {
+        const upstream = await fetch(`http://127.0.0.1:8768/${imPath[1] || ""}${url.search}`, { signal: AbortSignal.timeout(4000) });
+        if (upstream.ok) {
+          const isHtml = !imPath[1] || imPath[1] === "index.html";
+          let bytes;
+          if (isHtml) bytes = Buffer.from(await styleImTermHtml(await upstream.text()));
+          else if (imPath[1] === "data-app-build.json") {
+            const manifest = await upstream.json();
+            const source = await fetch("http://127.0.0.1:8768/index.html", { signal: AbortSignal.timeout(4000) });
+            if (!source.ok) throw new Error("IM HTML unavailable");
+            const styled = Buffer.from(await styleImTermHtml(await source.text()));
+            manifest.html.sha256 = createHash("sha256").update(styled).digest("hex");
+            manifest.html.bytes = styled.length;
+            bytes = Buffer.from(JSON.stringify(manifest));
+          } else bytes = Buffer.from(await upstream.arrayBuffer());
+          response.writeHead(200, { "Content-Type": isHtml ? "text/html; charset=utf-8" : "application/json; charset=utf-8", "Cache-Control": "no-store", "Content-Length": bytes.length });
+          response.end(request.method === "HEAD" ? undefined : bytes);
+          return;
+        }
+      } catch { /* The last built, dated snapshot remains available below. */ }
+    }
     if (url.pathname === "/api/manual-update") {
       if (request.method !== "POST") return json(response, 405, { ok: false, error: "仅支持 POST" });
       const origin = request.headers.origin;

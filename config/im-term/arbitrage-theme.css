@@ -1,0 +1,117 @@
+/* IM presentation inside the arbitrage dashboard. The reviewed data and renderer
+   are unchanged. The user explicitly requested removal of the top-right actions. */
+:root {
+  color-scheme: light !important;
+  --adaptive-theme: 0;
+  --font-sans-default: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: var(--font-sans-default) !important;
+  --background: #ffffff !important;
+  --dashboard-background: #f5f7fa !important;
+  --surface: #ffffff !important;
+  --surface-raised: #ffffff !important;
+  --muted: #eef2f6 !important;
+  --control: #ffffff !important;
+  --control-hover: #eef2f6 !important;
+  --interaction-hover: #f8fafc !important;
+  --interaction-active: #edf2ff !important;
+  --text: #172033 !important;
+  --secondary: #667185 !important;
+  --border: #e4e8ed !important;
+  --border-strong: #cdd3da !important;
+  --accent: #4f65d9 !important;
+  --positive: #07846c !important;
+  --negative: #e5484d !important;
+  --chart-1: #4f65d9 !important;
+  --chart-2: #6d28d9 !important;
+  --chart-3: #07846c !important;
+  --chart-4: #b86b15 !important;
+  --chart-neutral-fill: #f5f7fa !important;
+  --data-app-chrome-background: #ffffff !important;
+  --data-app-chrome-text: #172033 !important;
+  --data-card-background: #ffffff !important;
+  --card-radius: 10px !important;
+  --data-card-radius: 10px !important;
+  --control-radius: 8px !important;
+  --card-shadow: 0 2px 8px rgb(35 48 67 / 3%) !important;
+  --shadow: 0 12px 32px rgb(35 48 67 / 10%) !important;
+}
+
+/* The selected region: more, edit, Ask ChatGPT and Publish. Title and timestamp stay. */
+.dashboard-topbar-actions { display: none !important; }
+
+.im-dashboard {
+  --im-green: #07846c;
+  --im-orange: #a15b00;
+  --im-blue: #344ab5;
+  font-family: var(--font-sans);
+  color: #172033;
+  gap: 20px;
+  padding-top: 6px;
+}
+
+.im-context { gap: 16px; margin-bottom: 0; }
+.im-pair { font-size: 15px; font-weight: 700; gap: 10px; }
+.im-icon { background: #344ab5; color: #fff; border-radius: 8px; width: 32px; height: 32px; }
+.im-pair>b { padding: 5px 9px; background: #eef2f6; color: #667185; border-radius: 5px; font-size: 11px; }
+.im-contract select { background: #fff; border: 1px solid #dfe5ee; border-radius: 8px; font-size: 13px; font-weight: 650; padding: 9px 27px 9px 12px; }
+.im-contract>span, .im-freshness, .im-secondary { color: #667185; font-size: 11px; }
+.im-kpis { grid-template-columns: 1.14fr 1fr 1fr; gap: 16px; }
+.im-kpi { min-height: 92px; gap: 18px; padding: 4px 0; }
+.im-index-value, .im-value { font-size: 34px; font-weight: 750; letter-spacing: -.8px; line-height: 1.15; }
+.im-index-value { color: #172033; }
+.im-index-value em, .im-value em { font-size: 11px; color: #8993a2; }
+.im-kpi-note { color: #667185; font-size: 11px; }
+.im-rate-badge { padding: 4px 7px; border: 1px solid #cce8df; border-radius: 5px; background: #edf8f3; font-size: 11px; font-weight: 700; }
+.im-rate-badge.im-orange { border-color: #f4cf9b; background: #fff6e8; }
+.im-position { padding: 4px 2px; }
+.im-position-copy { gap: 12px; }
+.im-direction { font-size: 13px; font-weight: 700; }
+.im-track { background: #e8edf3; height: 8px; }
+.im-marker strong { background: #172033; color: #fff; font-size: 11px; border-radius: 6px; }
+.im-marker b { background: #172033; }
+.im-tick>strong { font-size: 12px; font-weight: 650; }
+.im-tick small { color: #7d8795; font-size: 10px; }
+.im-legs { border-color: #e4e8ed; color: #7d8795; font-size: 12px; }
+.im-legs b { color: #273244; font-size: 12px; font-weight: 650; }
+.im-legs>strong { color: #172033; font-size: 20px; font-weight: 750; }
+.im-table { font-size: 12px; }
+.im-table thead { background: #eef2f6; }
+.im-table thead th { height: 43px; padding: 10px 12px; color: #171d2a; font-size: 12px; font-weight: 700; border-bottom-color: #cdd3da; }
+.im-table th, .im-table td { padding: 13px 12px; }
+.im-table th:first-child { padding-left: 12px; }
+.im-table tbody th { color: #53606f; font-size: 12px; }
+.im-table tbody tr+tr { border-color: #e4e8ed; }
+.im-table tbody tr:hover { background: #f8fafc; }
+.im-table .im-col-lower { background: #f0f8f4; }
+.im-table .im-col-upper { background: #fff7ed; }
+.im-table .im-total { background: #f5f8ff; }
+.im-table .im-total th { color: #172033; font-weight: 700; }
+.im-table .im-total td { font-size: 21px; font-weight: 750; }
+.im-rate-help, .im-calibration-note, .im-division-rule, .im-formula, .im-history-note { color: #7d8795; font-size: 11px; line-height: 1.7; }
+.im-calibration-note { margin-top: 10px; }
+.im-formula { border-color: #e4e8ed; }
+.im-period { gap: 3px; background: #eef2f6; border-radius: 8px; padding: 3px; }
+.im-period button { border-radius: 5px; padding: 6px 12px; font-size: 11px; font-weight: 600; }
+.im-period button[aria-pressed=true] { background: #344ab5; color: #fff; box-shadow: none; }
+.im-input { border-color: #dfe5ee; border-radius: 8px; background: #fff; }
+.im-input input { padding: 11px 12px; color: #172033; font-size: 14px; font-weight: 600; }
+.im-input>span { color: #8993a2; font-size: 11px; }
+.im-scenario label { color: #667185; font-size: 12px; }
+.im-scenario-output { border-color: #e4e8ed; padding: 18px 2px; }
+.im-scenario-output strong { color: #172033; font-size: 28px; font-weight: 750; }
+.im-scenario>p, .im-rule p, .im-rule-note { color: #7d8795; font-size: 11px; }
+.im-reset { border-color: #c8d2ef; border-radius: 8px; background: #f2f5ff; color: #344ab5; padding: 10px 12px; font-size: 12px; font-weight: 650; }
+.im-reset:hover { background: #e8edff; }
+.im-rule b { color: #273244; font-size: 12px; font-weight: 700; }
+.im-rule-icon { border-radius: 8px; background: #eef2f6; }
+.im-rule-note, .im-footer { border-color: #e4e8ed; }
+.im-footer { color: #8993a2; font-size: 10px; }
+
+@media(max-width:780px) {
+  .im-kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .im-kpi { min-height: 82px; }
+  .im-index-value, .im-value { font-size: 30px; }
+  .im-contract select { padding: 8px 22px 8px 9px; font-size: 12px; }
+  .im-table thead th, .im-table th, .im-table td { padding: 12px 10px; }
+  .im-table .im-total td { font-size: 19px; }
+}

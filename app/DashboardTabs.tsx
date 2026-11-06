@@ -7,7 +7,7 @@ const tabs = [
   { id: "im-term", label: "IM期限套" },
 ] as const;
 type TabId = typeof tabs[number]["id"];
-const imUrl = "http://127.0.0.1:8768/?view=1&tab=dashboard";
+const imUrl = "/im-term/?view=1&tab=dashboard";
 
 export default function DashboardTabs({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<TabId>("arbitrage");
@@ -17,8 +17,7 @@ export default function DashboardTabs({ children }: { children: ReactNode }) {
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
-    const local = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(window.location.hostname);
-    setFrameUrl(local ? imUrl : "/im-term/?view=1&tab=dashboard");
+    setFrameUrl(imUrl);
     const restore = () => {
       const next = new URL(window.location.href).searchParams.get("tab") === "im-term" ? "im-term" : "arbitrage";
       setActive(next);

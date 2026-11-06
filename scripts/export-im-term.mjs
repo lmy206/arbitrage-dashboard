@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { styleImTermHtml } from "./im-term-presentation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
@@ -25,6 +26,7 @@ export async function exportImTerm() {
     html = html.replace(pattern, (_match, before, after) => before + value + after);
   }
   html = html.replace(/<meta name="data-app-local-thread" content="[^"]*">\s*/g, "");
+  html = await styleImTermHtml(html);
   const manifest = { version: 1, kind: "separate-data-v1",
     html: { path: "index.html", sha256: sha(Buffer.from(html)), bytes: Buffer.byteLength(html) },
     snapshot: { path: snapshotPath, sha256: hash, bytes: bytes.length },

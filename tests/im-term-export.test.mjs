@@ -23,7 +23,14 @@ test("published IM app preserves its verified renderer and binds the reviewed da
   assert.equal(snapshot.imMetadata.extremeDisplayMethod, contract.imTerm.extremeDisplayMethod);
   assert.ok(!html.toString().includes('name="data-app-local-thread"'));
   assert.ok(html.toString().includes(`content="${manifest.snapshot.path}"`));
+  assert.ok(html.toString().includes('<style id="im-arbitrage-theme">'));
+  const skin = (await read("config/im-term/arbitrage-theme.css")).toString();
+  assert.match(skin, /color-scheme:\s*light\s*!important/);
+  assert.match(skin, /\.dashboard-topbar-actions\s*\{\s*display:\s*none\s*!important/);
+  assert.match(skin, /--text:\s*#172033/);
+  assert.match(skin, /--control:\s*#ffffff/);
   const stripBinding = value => value.toString()
+    .replace(/<style id="im-arbitrage-theme">[\s\S]*?<\/style>\s*/g, "")
     .replace(/<meta name="data-app-local-thread" content="[^"]*">\s*/g, "")
     .replace(/<meta name="data-app-(?:local-snapshot|snapshot-sha256)" content="[^"]*">/g, "");
   assert.equal(stripBinding(html), stripBinding(await read("config/im-term/app-template.html")));
