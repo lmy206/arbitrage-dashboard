@@ -384,28 +384,6 @@ ADDITIONAL_EXTERNAL_PAIRS = {
 PAIRS: list[dict[str, Any]] = [
     {"pair": "IM-IC价差", "left": "IM00.IF", "right": "IC00.IF", "formula": spread, "kind": "spread", "contract_months": EQUITY_INDEX_QUARTER_MONTHS},
     {
-        "pair": "IM期限套",
-        "left": "IM00.IF",
-        "right": "IM00.IF",
-        "formula": ratio,
-        "kind": "ratio",
-        "custom_builder": "index_term",
-        "term_root": "IM",
-        "term_spot_symbol": "000852.SH",
-        "term_spot_label": "中证1000",
-        "term_start_date": "2022-07-22",
-        "term_fixed_thresholds": {
-            "下季": [
-                {"label": "低位 9.07%", "value": 0.0907},
-                {"label": "高位 11.77%", "value": 0.1177},
-            ],
-            "隔季": [
-                {"label": "低位 9.17%", "value": 0.0917},
-                {"label": "高位 11.80%", "value": 0.1180},
-            ],
-        },
-    },
-    {
         "pair": "IC期限套",
         "left": "IC00.IF",
         "right": "IC00.IF",
@@ -3830,7 +3808,7 @@ def write_outputs(
         "externalSources": external_sources,
         "externalSourcePolicy": "看板主数据日使用国内xtdata最新完整交易日；外盘与外部指标保留各自实际来源日期，不阻塞国内数据更新。铜铝锌内外盘比价沿用国内主连÷LME三个月电子盘且不换汇；风险溢价分别使用沪深300/标普500盈利收益率减对应10年期国债收益率；美元银行融资压力代理使用纽约联储OBFR减美联储理事会准备金管理利率并换算为基点，2021-07-29起使用IORB、此前使用IOER，只作为银行广义无担保隔夜融资相对准备金管理利率的压力代理；马盘棕榈油/美盘豆油直接使用FCPO与CBOT美豆油原始报价相除，不做单位或汇率换算；美盘油粕比将CBOT美豆油由美分/磅换算为美元/短吨后除以美豆粕美元/短吨报价。所有跨日合并只向后匹配已公布值。",
         "period": "1d",
-        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
+        "contractMode": "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值",
         "updateSchedule": "每日20:00 Asia/Shanghai",
         "rows": rows,
         "charts": charts,
@@ -4251,11 +4229,8 @@ def write_outputs(
         {row["pair"] for row in index_term_rows} == set(index_term_definitions)
         and all(index_term_thresholds_complete_for_row(row) for row in index_term_rows)
     )
-    im_term_rows = [row for row in index_term_rows if row["pair"] == "IM期限套"]
     ic_term_rows = [row for row in index_term_rows if row["pair"] == "IC期限套"]
-    im_term_observations = im_term_rows[0].get("termObservations", []) if im_term_rows else []
     ic_term_observations = ic_term_rows[0].get("termObservations", []) if ic_term_rows else []
-    im_term_history_complete = len(im_term_rows) == 1 and index_term_row_complete(im_term_rows[0])
     ic_term_history_complete = len(ic_term_rows) == 1 and index_term_row_complete(ic_term_rows[0])
     full_daily_chart_statistics_complete = all(
         (
@@ -4425,27 +4400,6 @@ def write_outputs(
             }
             for row in index_term_rows
         },
-        "imTermHistoryComplete": im_term_history_complete,
-        "imTermHistoryPointCounts": {
-            item["label"]: len(item["historyChart"]["series"][0]["points"])
-            for item in im_term_observations
-            if item.get("historyChart")
-        },
-        "imTermLatestNear": im_term_rows[0]["leftSymbol"] if im_term_rows else None,
-        "imTermLatestFar": im_term_rows[0]["rightSymbol"] if im_term_rows else None,
-        "imTermLatestSkipFar": (
-            im_term_observations[1]["rightSymbol"]
-            if len(im_term_observations) == 2
-            else None
-        ),
-        "imTermSpotSymbol": (
-            index_term_definitions["IM期限套"]["term_spot_symbol"]
-            if "IM期限套" in index_term_definitions
-            else None
-        ),
-        "imTermRollRule": (
-            im_term_rows[0]["rollRule"] if im_term_rows else None
-        ),
         "icTermHistoryComplete": ic_term_history_complete,
         "icTermHistoryPointCounts": {
             item["label"]: len(item["historyChart"]["series"][0]["points"])

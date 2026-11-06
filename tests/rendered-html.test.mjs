@@ -74,8 +74,8 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /title="外部数据实际来源日：\d{4}-\d{2}-\d{2}"/);
   assert.match(html, /IM-IC价差/);
   assert.match(html, /IM期限套/);
-  assert.match(html, /title="\(IM当月 − IM下季\) × 12 \/ 月差 \/ 中证1000"/);
-  assert.match(html, /展开IM期限套观察口径/);
+  assert.doesNotMatch(html, /title="\(IM当月 − IM下季\) × 12 \/ 月差 \/ 中证1000"/);
+  assert.doesNotMatch(html, /展开IM期限套观察口径/);
   assert.match(html, /IC期限套/);
   assert.match(html, /title="\(IC当月 − IC下季\) × 12 \/ 月差 \/ 中证500"/);
   assert.match(html, /展开IC期限套观察口径/);
@@ -308,7 +308,7 @@ test("contract month rows can expand same-month ten-year charts without bridging
 test("monthly contract details contain only current values and liquidity", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   assertMembers(payload.rows.map((row) => row.pair), dataContract.pairs, "dashboard pairs");
-  assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IM与IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
+  assert.equal(payload.contractMode, "商品期货持仓量加权(JQ00)；股指及铜铝锌内外盘国内腿使用主力连续(00)；LME使用三个月行情；IC期限套展示当月对下季及隔季；外部股指、估值、纽约联储参考利率与CBOT油粕指标使用各源公布值");
   const trendPairs = payload.rows.filter((row) => row.strategyType === "趋势").map((row) => row.pair).sort();
   assert.deepEqual(trendPairs, ["油/粕比价", "金/银比价", "金/油比价"].sort());
   const externalMonitorPairs = payload.rows.filter((row) => row.strategyType === "外盘监控").map((row) => row.pair).sort();
@@ -871,20 +871,11 @@ test("spot-reference pairs include expandable xtdata history charts", async () =
   assert.deepEqual(growthChart.quantileThresholds.map((threshold) => threshold.label), ["3%", "97%"]);
 });
 
-test("IM and IC term spreads expose down-quarter and skip-quarter observations without future data", async () => {
+test("IC term spread retains its observations after the duplicate IM table row is removed", async () => {
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
+  assert.equal(payload.rows.some((row) => row.pair === "IM期限套"), false);
+  assert.deepEqual(payload.rows.filter((row) => row.pairType === "期限套利").map((row) => row.pair), ["IC期限套"]);
   const configurations = [
-    {
-      pair: "IM期限套",
-      root: "IM",
-      spotSymbol: "000852.SH",
-      spotLabel: "中证1000",
-      startDate: "2022-07-22",
-      thresholds: {
-        下季: [{ label: "低位 9.07%", value: 0.0907 }, { label: "高位 11.77%", value: 0.1177 }],
-        隔季: [{ label: "低位 9.17%", value: 0.0917 }, { label: "高位 11.80%", value: 0.118 }],
-      },
-    },
     {
       pair: "IC期限套",
       root: "IC",
