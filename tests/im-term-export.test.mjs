@@ -35,6 +35,33 @@ test("published IM app preserves its verified renderer and binds the reviewed da
     .replace(/<meta name="data-app-(?:local-snapshot|snapshot-sha256)" content="[^"]*">/g, "");
   assert.equal(stripBinding(html), stripBinding(await read("config/im-term/app-template.html")));
   assert.ok(snapshot.queries.latest.rows.length > 0);
+  for (const { queryId: key } of contract.imTerm.historyViews) {
+    const history = snapshot.queries[key];
+    const info = snapshot.imMetadata.termHistory[key];
+    if (info.status === "unavailable") {
+      assert.equal(history.rows.length, 0, "unavailable history must never invent points");
+      continue;
+    }
+    assert.ok(history.rows.length > 20, `${key} keeps the original multi-year history`);
+    assert.equal(history.rows[0].date, "2022-07-22");
+    if (info.status === "ok") {
+      assert.equal(history.rows.at(-1).date, snapshot.queries.latest.rows[0].date);
+      assert.equal(history.rows.length, info.renderPointCount);
+      assert.ok(info.statisticsPointCount >= history.rows.length);
+    } else {
+      assert.equal(info.status, "stale");
+      assert.ok(history.rows.at(-1).date <= snapshot.queries.latest.rows[0].date);
+      assert.equal(history.rows[0].historyStatus, "stale");
+    }
+    for (const row of history.rows) {
+      assert.ok(Math.abs(row["annualized(%)"] - row.rawAnnualizedRate * 100) < 1e-9);
+      assert.equal(row["lower(%)"], 9);
+      assert.equal(row["upper(%)"], 12);
+      assert.ok(row.monthGap > 0);
+      assert.match(row.nearSymbol, /^IM\d{4}\.IF$/);
+      assert.match(row.farSymbol, /^IM\d{4}\.IF$/);
+    }
+  }
   for (const q of snapshot.queries.latest.rows) {
     assert.equal(q.lowerAnnualRatePct, contract.imTerm.lowerAnnualRatePct);
     assert.equal(q.upperAnnualRatePct, contract.imTerm.upperAnnualRatePct);

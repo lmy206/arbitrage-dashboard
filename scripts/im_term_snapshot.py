@@ -14,7 +14,11 @@ def load_im_term_snapshot(previous=None):
         spec = importlib.util.spec_from_file_location("published_im_threshold_reader", script)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        snapshot, _ = module.make_snapshot(module.load(module.STATE / "metadata.json"), "shared_cache")
+        history_spec = importlib.util.spec_from_file_location("publisher_im_history", Path(__file__).with_name("im_term_history.py"))
+        history_reader = importlib.util.module_from_spec(history_spec)
+        history_spec.loader.exec_module(history_reader)
+        snapshot, _ = module.make_snapshot(module.load(module.STATE / "metadata.json"), "shared_cache",
+                                          term_history_builder=history_reader.build_history_queries)
         assert snapshot["imMetadata"]["sourceOnly"] == "xtdata"
         assert snapshot["imMetadata"]["extremeDisplayMethod"] == "current_pair_lifetime"
         assert snapshot["queries"]["latest"]["rows"]
@@ -28,8 +32,9 @@ def load_im_term_snapshot(previous=None):
             query["source"]["files"] = [Path(name).name for name in query["source"].get("files", [])]
         metadata = snapshot["imMetadata"]
         metadata.pop("sharedRoot", None)
-        for record in metadata["records"]:
-            record["path"] = Path(record["path"]).name
+        for collection in ("records", "termHistoryRecords"):
+            for record in metadata.get(collection, []):
+                record["path"] = Path(record["path"]).name
         return snapshot
     except Exception:
         if previous and previous.get("queries", {}).get("latest", {}).get("rows"):

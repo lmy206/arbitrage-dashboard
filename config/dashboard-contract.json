@@ -6,7 +6,11 @@
     "source": "xtdata",
     "lowerAnnualRatePct": 9,
     "upperAnnualRatePct": 12,
-    "extremeDisplayMethod": "current_pair_lifetime"
+    "extremeDisplayMethod": "current_pair_lifetime",
+    "historyViews": [
+      {"queryId": "term-down-history", "label": "下季", "farRank": 1},
+      {"queryId": "term-skip-history", "label": "隔季", "farRank": 2}
+    ]
   },
   "pairs": [
     "IM-IC价差", "IC期限套", "豆一/豆二比价", "IC/IF比价",
