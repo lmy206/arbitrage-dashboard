@@ -38,6 +38,14 @@
 
 /* The selected region: more, edit, Ask ChatGPT and Publish. Title and timestamp stay. */
 .dashboard-topbar-actions { display: none !important; }
+/* Reserve the right side of this existing header for the parent's open link. */
+.dashboard-topbar-inner { padding-right: 156px !important; }
+.dashboard-topbar-copy { flex-wrap: nowrap; }
+@media(max-width:520px) {
+  .dashboard-topbar-inner { padding-left: 16px !important; padding-right: 132px !important; }
+  .dashboard-freshness-full { display: none !important; }
+  .dashboard-freshness-compact { display: inline !important; }
+}
 
 .im-dashboard {
   --im-green: #07846c;
