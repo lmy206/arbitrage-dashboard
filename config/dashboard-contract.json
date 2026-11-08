@@ -2,6 +2,8 @@
   "schemaVersion": 1,
   "views": ["arbitrage", "im-term"],
   "imTerm": {
+    "refreshCadence": "daily",
+    "interactiveRefresh": false,
     "appId": "dashboard:6ba08e54-a81e-4bf5-9baa-cf2d755e55f8",
     "source": "xtdata",
     "lowerAnnualRatePct": 9,

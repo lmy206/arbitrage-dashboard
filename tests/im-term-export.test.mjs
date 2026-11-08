@@ -21,6 +21,15 @@ test("published IM app preserves its verified renderer and binds the reviewed da
   assert.equal(snapshot.buildStatus, "complete");
   assert.equal(snapshot.imMetadata.sourceOnly, contract.imTerm.source);
   assert.equal(snapshot.imMetadata.extremeDisplayMethod, contract.imTerm.extremeDisplayMethod);
+  assert.equal(contract.imTerm.refreshCadence, "daily");
+  assert.equal(contract.imTerm.interactiveRefresh, false);
+  assert.match(html.toString(), /<meta name="data-app-static-demo" content="readonly-v1">/);
+  const executable = [...html.toString().matchAll(/<script src="data:text\/javascript;charset=utf-8;base64,([^"]+)"/g)]
+    .map((match) => Buffer.from(match[1], "base64").toString("utf8")).join("\n")
+    .replace(/\\u([0-9a-f]{4})/gi, (_match, hex) => String.fromCharCode(parseInt(hex, 16)));
+  assert.match(executable, /staticDemo:\s*true/);
+  assert.match(executable, /日度收盘/);
+  assert.doesNotMatch(executable, /等待最新收盘数据|载入最新数据/);
   assert.ok(!html.toString().includes('name="data-app-local-thread"'));
   assert.ok(html.toString().includes(`content="${manifest.snapshot.path}"`));
   assert.ok(html.toString().includes('<style id="im-arbitrage-theme">'));
