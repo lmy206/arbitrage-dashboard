@@ -313673,6 +313673,106 @@
             "code": "build_index_term_series -> build_observation_history_chart; display percentage = stored rate * 100"
           }
         ]
+      },
+      "term-structure": {
+        "rows": [
+          {
+            "date": "2026-11-06",
+            "symbol": "IM2611.IF",
+            "contract": "IM2611",
+            "monthIndex": 24323,
+            "expiry": "20261120",
+            "expiryDate": "2026-11-20",
+            "indexClose": 6505.347,
+            "futuresClose": 6500.0,
+            "discountPoints": 5.347,
+            "discount(%)": 0.08219392447474362,
+            "status": "ok"
+          },
+          {
+            "date": "2026-11-06",
+            "symbol": "IM2612.IF",
+            "contract": "IM2612",
+            "monthIndex": 24324,
+            "expiry": "20261218",
+            "expiryDate": "2026-12-18",
+            "indexClose": 6505.347,
+            "futuresClose": 6460.8,
+            "discountPoints": 44.547,
+            "discount(%)": 0.6847751549609883,
+            "status": "ok"
+          },
+          {
+            "date": "2026-11-06",
+            "symbol": "IM2703.IF",
+            "contract": "IM2703",
+            "monthIndex": 24327,
+            "expiry": "20270319",
+            "expiryDate": "2027-03-19",
+            "indexClose": 6505.347,
+            "futuresClose": 6317.6,
+            "discountPoints": 187.747,
+            "discount(%)": 2.8860412826556368,
+            "status": "ok"
+          },
+          {
+            "date": "2026-11-06",
+            "symbol": "IM2706.IF",
+            "contract": "IM2706",
+            "monthIndex": 24330,
+            "expiry": "20270618",
+            "expiryDate": "2027-06-18",
+            "indexClose": 6505.347,
+            "futuresClose": 6151.0,
+            "discountPoints": 354.347,
+            "discount(%)": 5.4470115122221765,
+            "status": "ok"
+          }
+        ],
+        "source": {
+          "name": "IM贴水结构（日度收盘）",
+          "type": "file",
+          "provider": "xtdata",
+          "period": "2026-11-06",
+          "freshness": "2026-11-06T22:58:01.763935+08:00",
+          "executedAt": "2026-11-06T22:58:01.763935+08:00",
+          "files": [
+            "000852_SH.csv",
+            "IM2611_IF.csv",
+            "IM2612_IF.csv",
+            "IM2703_IF.csv",
+            "IM2706_IF.csv"
+          ],
+          "evidenceFlow": [
+            {
+              "title": "行情",
+              "detail": "复用已核验的中证1000及当前有效IM合约同日已完成日收盘，不使用盘中或跨日期价格。"
+            },
+            {
+              "title": "计算",
+              "detail": "discountPoints = indexClose - futuresClose; discountPct = discountPoints / indexClose * 100。合约按monthIndex升序；缺收盘时保留空值，不填零。"
+            }
+          ],
+          "metricDefinitions": [
+            {
+              "label": "贴水点数",
+              "definition": "同一交易日中证1000收盘减去各张已上市IM合约收盘；正值为贴水，负值为升水。横轴为合约实际到期日，按真实期限间距绘制。"
+            },
+            {
+              "label": "贴水率",
+              "definition": "贴水点数÷同日中证1000收盘×100%，为非年化贴水率。"
+            }
+          ],
+          "caveats": [
+            "这是各合约相对现货指数的贴水横截面；上方两腿价差阈值仍按固定年化9%和12%计算。"
+          ]
+        },
+        "methods": [
+          {
+            "language": "python",
+            "code": "discountPoints = indexClose - futuresClose; discountPct = discountPoints / indexClose * 100"
+          }
+        ]
       }
     },
     "imMetadata": {

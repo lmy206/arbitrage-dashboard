@@ -29,6 +29,8 @@ test("published IM app preserves its verified renderer and binds the reviewed da
     .replace(/\\u([0-9a-f]{4})/gi, (_match, hex) => String.fromCharCode(parseInt(hex, 16)));
   assert.match(executable, /staticDemo:\s*true/);
   assert.match(executable, /日度收盘/);
+  assert.match(executable, /IM贴水结构/);
+  assert.doesNotMatch(executable, /价差位置/);
   assert.doesNotMatch(executable, /等待最新收盘数据|载入最新数据/);
   assert.ok(!html.toString().includes('name="data-app-local-thread"'));
   assert.ok(html.toString().includes(`content="${manifest.snapshot.path}"`));
@@ -44,6 +46,28 @@ test("published IM app preserves its verified renderer and binds the reviewed da
     .replace(/<meta name="data-app-(?:local-snapshot|snapshot-sha256)" content="[^"]*">/g, "");
   assert.equal(stripBinding(html), stripBinding(await read("config/im-term/app-template.html")));
   assert.ok(snapshot.queries.latest.rows.length > 0);
+  const curve = snapshot.queries[contract.imTerm.structureQueryId];
+  const contracts = snapshot.queries.contracts.rows;
+  assert.deepEqual(curve.rows.map(r => r.symbol), [...contracts].sort((a, b) => a.monthIndex - b.monthIndex).map(r => r.symbol));
+  for (const row of curve.rows) {
+    const future = contracts.find(c => c.symbol === row.symbol);
+    assert.equal(row.date, snapshot.queries.latest.rows[0].date);
+    assert.equal(row.indexClose, snapshot.queries.latest.rows[0].indexClose);
+    assert.equal(row.futuresClose, future.close);
+    assert.equal(row.expiryDate, `${future.expiry.slice(0, 4)}-${future.expiry.slice(4, 6)}-${future.expiry.slice(6, 8)}`);
+    if (row.status === "ok") {
+      assert.ok(Math.abs(row.discountPoints - (row.indexClose - row.futuresClose)) < 1e-9);
+      assert.ok(Math.abs(row["discount(%)"] - row.discountPoints / row.indexClose * 100) < 1e-9);
+    } else {
+      assert.equal(row.discountPoints, null);
+      assert.equal(row["discount(%)"], null);
+    }
+  }
+  for (const q of snapshot.queries.latest.rows) {
+    const n = curve.rows.find(r => r.symbol === q.nearSymbol);
+    const f = curve.rows.find(r => r.symbol === q.farSymbol);
+    if (n.status === "ok" && f.status === "ok") assert.ok(Math.abs(f.discountPoints - n.discountPoints - q.spread) < 1e-9);
+  }
   for (const { queryId: key } of contract.imTerm.historyViews) {
     const history = snapshot.queries[key];
     const info = snapshot.imMetadata.termHistory[key];

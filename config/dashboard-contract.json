@@ -9,6 +9,8 @@
     "lowerAnnualRatePct": 9,
     "upperAnnualRatePct": 12,
     "extremeDisplayMethod": "current_pair_lifetime",
+    "structureQueryId": "term-structure",
+    "structureMeasure": "index-close-minus-futures-close",
     "historyViews": [
       {"queryId": "term-down-history", "label": "下季", "farRank": 1},
       {"queryId": "term-skip-history", "label": "隔季", "farRank": 2}
