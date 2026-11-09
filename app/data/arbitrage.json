@@ -313730,7 +313730,7 @@
           }
         ],
         "source": {
-          "name": "IM贴水结构（日度收盘）",
+          "name": "IM合约收盘点位（日度收盘）",
           "type": "file",
           "provider": "xtdata",
           "period": "2026-11-06",
@@ -313749,28 +313749,28 @@
               "detail": "复用已核验的中证1000及当前有效IM合约同日已完成日收盘，不使用盘中或跨日期价格。"
             },
             {
-              "title": "计算",
-              "detail": "discountPoints = indexClose - futuresClose; discountPct = discountPoints / indexClose * 100。合约按monthIndex升序；缺收盘时保留空值，不填零。"
+              "title": "展示",
+              "detail": "仅绘制futuresClose与indexClose的实际点位，不绘制基差或贴水率。合约按monthIndex升序；缺收盘时保留空值，不填零。旧辅助字段仅保留用于核验。"
             }
           ],
           "metricDefinitions": [
             {
-              "label": "贴水点数",
-              "definition": "同一交易日中证1000收盘减去各张已上市IM合约收盘；正值为贴水，负值为升水。横轴为合约实际到期日，按真实期限间距绘制。"
+              "label": "IM合约收盘点位",
+              "definition": "各张已上市IM合约在所标交易日的实际收盘点位；横轴为合约实际到期日，按真实期限间距绘制。"
             },
             {
-              "label": "贴水率",
-              "definition": "贴水点数÷同日中证1000收盘×100%，为非年化贴水率。"
+              "label": "中证1000参考点位",
+              "definition": "与合约同一交易日的中证1000收盘点位，以水平参考线展示。"
             }
           ],
           "caveats": [
-            "这是各合约相对现货指数的贴水横截面；上方两腿价差阈值仍按固定年化9%和12%计算。"
+            "现货参考线为同日已完成收盘，并非未来指数预测。其他跨期阈值的计算规则保持独立。"
           ]
         },
         "methods": [
           {
             "language": "python",
-            "code": "discountPoints = indexClose - futuresClose; discountPct = discountPoints / indexClose * 100"
+            "code": "plotted_fields = ['futuresClose', 'indexClose']; x_field = 'expiryDate'"
           }
         ]
       }

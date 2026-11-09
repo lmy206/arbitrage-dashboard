@@ -29,7 +29,7 @@ test("published IM app preserves its verified renderer and binds the reviewed da
     .replace(/\\u([0-9a-f]{4})/gi, (_match, hex) => String.fromCharCode(parseInt(hex, 16)));
   assert.match(executable, /staticDemo:\s*true/);
   assert.match(executable, /日度收盘/);
-  assert.match(executable, /IM贴水结构/);
+  assert.match(executable, /IM合约收盘点位/);
   assert.doesNotMatch(executable, /价差位置/);
   assert.doesNotMatch(executable, /等待最新收盘数据|载入最新数据/);
   assert.ok(!html.toString().includes('name="data-app-local-thread"'));

@@ -34,7 +34,15 @@ test("compiled IM view renders with original reviewed rows in every scoped sourc
   const publicApi = {
     useDataApp: () => ({ reviewedRows: id => snapshot.queries[id]?.rows || [] }),
     DataComponent: props => { checkScopes(props); return React.createElement("section", { "data-component": props.id }, props.children); },
-    EvidenceChart: props => { checkScopes(props); return React.createElement("section", { "data-component": props.id }, props.title, props.children); },
+    EvidenceChart: props => {
+      checkScopes(props);
+      if (props.id === "im-spread-position") {
+        assert.equal(props.spec.y, "futuresClose");
+        assert.deepEqual(Array.from(props.spec.fields), ["futuresClose", "indexClose"]);
+        assert.equal(props.spec.startAtZero, false);
+      }
+      return React.createElement("section", { "data-component": props.id }, props.title, props.children);
+    },
     ChartTooltip: () => null,
     SectionHeader: props => React.createElement("h2", null, props.title),
   };
@@ -55,7 +63,7 @@ test("compiled IM view renders with original reviewed rows in every scoped sourc
   assert.ok(mounted?.createContent, "compiled Data app bootstrap must mount authored content");
   const content = mounted.createContent(snapshot);
   const rendered = renderToString(React.createElement(content.DashboardContent));
-  assert.match(rendered, /IM贴水结构/);
+  assert.match(rendered, /IM合约收盘点位/);
   assert.ok(checked.includes("im-spread-position"));
   assert.ok(checked.includes("im-term-down-history"));
   assert.ok(checked.includes("im-term-skip-history"));
