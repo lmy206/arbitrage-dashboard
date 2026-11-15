@@ -36,6 +36,7 @@
    国债利差必须满足 `treasuryYieldSpreadComplete=true`：方向、bp换算、共同数据日、最新图点和计算值一致。
    `treasuryFuturesComplete=true` 验证各共同季月的TL/T期货价格比及DV01配平口径。利率差走势必须单独保留；季度手数禁止调用市值配平、禁止用30/10直接当久期比。缺少本季度同日已核验CTD/DV01时，明确标注“待DV01”，仅阻塞手数，不阻塞有效的利率差和季度比价。
    用户另已授权从中债登查询本次T/TL对应CTD的久期/基点价值；仅在券、季度、转换因子、单位及日期均可核验时接入，公开样例不匹配目标券时记为不可用，不采用标准券模型估算。
+   国债季月比价复用其他套利对的观察口径明细：涨跌幅、成交量、可配对成交量、分位、判断及主要观察；季度图和分位只使用上市后可得同月合约日线。利率差走势独立保留，不能因切换主要观察而被期货比价替换。
 3. 只有在 `status=ok`、`pairCount=expectedPairCount=配置名单长度`、`configurationComplete=true`、`indexTermHistoryComplete=true`、`indexTermThresholdsComplete=true`、`domesticFreshnessComplete=true`、`externalRowDatesComplete=true`、`futureDataDetected=false`、`hierarchySorted=true`、`relatedObservationsComplete=true`、`fundingPressureOverlayComplete=true`、`riskPremiumOverlaysComplete=true`、`imIfSpotOverlayComplete=true`、`imIfSpotThresholdsComplete=true`、`imIcSpotOverlayComplete=true`、`icIfSpotOverlayComplete=true`、`icIfSpotThresholdsComplete=true`、`aluminumAlloySpreadComplete=true`、`spotCorrelationMetricsComplete=true`、`fullDailyChartStatisticsComplete=true` 且 `externalSourcesComplete=true` 时，才运行：
    - 本地验证：`npm run build` 和 `node --test tests\rendered-html.test.mjs`
    - Cloudflare 静态发布验证：`npm run test:pages`

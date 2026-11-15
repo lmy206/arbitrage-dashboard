@@ -1071,6 +1071,15 @@ def fetch_history() -> tuple[
     )
 
     archive_symbols: set[str] = set()
+    treasury_months = set(monthly_contracts["TL00.IF"]) & set(monthly_contracts["T00.IF"])
+    treasury_start = histories["TL00.IF"].index.min().strftime("%y%m")
+    for expiry in treasury_months:
+        if int(expiry[-2:]) not in {3, 6, 9, 12}:
+            continue
+        for historical_expiry in seasonal_expiries(expiry):
+            if historical_expiry >= treasury_start:
+                for continuous_symbol in TREASURY_FUTURES:
+                    archive_symbols.add(contract_symbol_for_expiry(continuous_symbol, historical_expiry))
     for definition in PAIRS:
         if not definition.get("tradable", True) or is_equity_index_definition(definition):
             continue
@@ -2485,6 +2494,33 @@ def build_contract_rows(
     return selected
 
 
+def enrich_treasury_statistics(contracts: list[dict[str, Any]], monthly_histories: dict[str, pd.DataFrame]) -> None:
+    definition = {"pair": "TL/T比价", "left": "TL00.IF", "right": "T00.IF", "formula": ratio, "kind": "ratio"}
+    for contract in contracts:
+        if contract["ratio"] is None or contract["priceDate"] is None:
+            continue
+        latest_date = pd.Timestamp(contract["priceDate"])
+        series = build_contract_history_series(definition, contract["expiry"], monthly_histories, latest_date)
+        if not any(item["expiry"] == contract["expiry"] for item in series):
+            continue
+        values = pd.concat([item["values"] for item in series]).sort_index()
+        current = round(contract["leftPrice"] / contract["rightPrice"], 6)
+        five_year = values[values.index >= latest_date - pd.DateOffset(years=5)]
+        if five_year.empty:
+            continue
+        percentile_value = round(float((five_year <= current).mean() * 100), 2)
+        chart = build_contract_history_chart(definition, contract["expiry"], monthly_histories, latest_date, series)
+        chart["startDate"] = min(point["date"] for item in chart["series"] for point in item["points"])
+        contract.update({
+            "statisticsStatus": "ok", "statisticsScope": "same_month_available_since_listing",
+            "statisticsStartDate": values.index.min().strftime("%Y-%m-%d"),
+            "allTime": f"{round(float((values <= current).mean() * 100), 2):.2f}%",
+            "allTimeRange": display_range(values, "ratio"), "percentile": percentile_value,
+            "fiveYearRange": display_range(five_year, "ratio"), "signal": signal_for(percentile_value),
+            "historyChart": chart,
+        })
+
+
 def classify_term_structure(
     displayed_contracts: list[dict[str, Any]],
     symbol_key: str,
@@ -3669,6 +3705,7 @@ def build_rows(
             if definition.get("custom_builder") == "cn_treasury_yield_spread":
                 row["treasuryContracts"] = build_quarter_ratios(monthly_contracts, monthly_histories, common_latest_date,
                     load_verified_risk(SHARED_ROOT, common_latest_date.strftime("%Y-%m-%d")))
+                enrich_treasury_statistics(row["treasuryContracts"], monthly_histories)
                 row["balanceMethod"] = "dv01"
                 row["lots"] = "DV01配平"
             rows.append(row)
@@ -4438,6 +4475,17 @@ def write_outputs(
     treasury_futures_complete = (len(treasury_rows) == 1
         and treasury_rows[0].get("balanceMethod") == "dv01"
         and quarter_ratios_complete(treasury_rows[0].get("treasuryContracts", []), data_date))
+    treasury_contract_statistics_complete = bool(treasury_rows and all(
+        (contract.get("statisticsStatus") == "ok"
+         and contract.get("percentile") is not None and 0 <= contract["percentile"] <= 100
+         and contract.get("signal") == signal_for(contract["percentile"])
+         and contract.get("historyChart", {}).get("unit") == "比值"
+         and chart_statistics_complete(contract.get("historyChart")))
+        or (contract.get("statisticsStatus") == "unavailable" and contract.get("percentile") is None
+            and contract.get("signal") is None and contract.get("historyChart") is None)
+        for contract in treasury_rows[0].get("treasuryContracts", [])))
+    treasury_futures_complete = treasury_futures_complete and treasury_contract_statistics_complete
+    full_daily_chart_statistics_complete = full_daily_chart_statistics_complete and treasury_contract_statistics_complete
     integrity_checks = [
         not future_data_detected,
         domestic_freshness_complete,
@@ -4485,6 +4533,7 @@ def write_outputs(
         "configurationComplete": configuration_complete,
         "treasuryYieldSpreadComplete": treasury_yield_spread_complete,
         "treasuryFuturesComplete": treasury_futures_complete,
+        "treasuryContractStatisticsComplete": treasury_contract_statistics_complete,
         "treasuryDv01Available": bool(treasury_rows and all(
             r["hedge"]["status"] == "verified" for r in treasury_rows[0].get("treasuryContracts", []))),
         "treasuryDv01MissingContracts": [r["expiry"] for r in (treasury_rows[0].get("treasuryContracts", []) if treasury_rows else [])

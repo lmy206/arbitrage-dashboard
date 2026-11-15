@@ -284,7 +284,7 @@ test("contract month rows can expand same-month ten-year charts without bridging
   assert.match(pageSource, /className="contract-history-formula">公式：{formula}/);
   assert.match(pageSource, /chart\.correlations/);
   assert.match(pageSource, /完整日频样本 \$\{correlation\.sampleSize\}/);
-  assert.match(pageSource, /<span>近5年分位<\/span>/);
+  assert.match(pageSource, /<span[^>]*>近5年分位<\/span>/);
   assert.match(pageSource, /<span>判断<\/span>/);
   assert.match(pageSource, /当月涨跌幅/);
   assert.match(pageSource, /远季涨跌幅/);
@@ -1234,10 +1234,21 @@ test("TL-T spread uses same-day thirty-year minus ten-year government yields in 
       assert.ok(Math.abs(contract.ratio - contract.leftPrice / contract.rightPrice) <= 1e-8);
       assertDisplayedRatio(contract.current, contract.leftPrice / contract.rightPrice);
       assert.ok(contract.priceDate <= payload.dataDate);
+      assert.equal(contract.statisticsStatus, "ok");
+      assert.ok(contract.percentile >= 0 && contract.percentile <= 100);
+      assert.ok(["极度偏高", "偏高", "中性", "偏低", "极度偏低"].includes(contract.signal));
+      assert.ok(Number.isFinite(contract.leftChangePct) && Number.isFinite(contract.rightChangePct));
+      assert.ok(contract.leftVolume >= 0 && contract.rightVolume >= 0);
+      assert.equal(contract.historyChart.unit, "比值");
+      assert.equal(contract.historyChart.month, contract.expiry.slice(-2));
+      assert.ok(contract.historyChart.series.some(series => series.expiry === contract.expiry));
+      assert.ok(contract.historyChart.series.every(series => series.expiry.slice(-2) === contract.expiry.slice(-2)));
+      assert.ok(contract.historyChart.statisticsPointCount >= contract.historyChart.renderPointCount);
     }
     if (contract.hedge.status === "xtdata_unavailable") {
       assert.equal(contract.hedge.lots, "待DV01");
       assert.equal(contract.hedge.dv01DeviationPct, null);
+      assert.equal(contract.pairedVolume, null);
     }
   }
   const source = payload.externalSources.find((item) => item.symbol === "CN30Y.CHINABOND");
@@ -1248,6 +1259,9 @@ test("TL-T spread uses same-day thirty-year minus ten-year government yields in 
   assert.match(html, /TL-T利率差/);
   assert.match(html, /展开TL-T利率差利率差走势及季度TL\/T比价/);
   assert.match(html, /30年国债收益率 − 10年国债收益率/);
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(pageSource, /TreasuryQuarterTable|treasury-contract-table/);
+  assert.match(pageSource, /hasContracts \|\| hasTermObservations \|\| hasTreasuryContracts/);
 });
 
 test("the six selected chart datasets are present in the requested order", async () => {

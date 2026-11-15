@@ -130,8 +130,9 @@ type ObservationOption = {
   label: string;
   detail?: string;
   current: string;
-  percentile: number;
-  signal: Signal;
+  percentile: number | null;
+  signal: Signal | null;
+  available?: boolean;
   leftSymbol: string;
   rightSymbol: string;
   thirdSymbol?: string;
@@ -161,6 +162,19 @@ type TreasuryQuarter = {
   rightPrice: number | null;
   priceDate: string | null;
   priceStatus: "ok" | "stale" | "unavailable";
+  changeValue: number | null;
+  leftChangePct: number | null;
+  rightChangePct: number | null;
+  leftVolume: number | null;
+  rightVolume: number | null;
+  pairedVolume: number | null;
+  allTime: string;
+  allTimeRange: string;
+  percentile: number | null;
+  fiveYearRange: string;
+  signal: Signal | null;
+  statisticsStatus: "ok" | "unavailable";
+  historyChart: ContractHistoryChartData | null;
   hedge: { method: "dv01"; status: "verified" | "xtdata_unavailable"; lots: string;
     dv01DeviationPct: number | null; reason: string; tlDv01PerLot?: number; tDv01PerLot?: number };
 };
@@ -322,7 +336,7 @@ function pairCodeFormula(
 function pairHoverFormula(
   row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol" | "thirdSymbol" | "formulaLabel" | "thirtyYearYieldPct" | "tenYearYieldPct" | "yieldSpreadBp">,
 ) {
-  if (row.pair === "TL-T利率差" && row.thirtyYearYieldPct != null && row.tenYearYieldPct != null && row.yieldSpreadBp != null) {
+  if (row.leftSymbol === "CN30Y.CHINABOND" && row.thirtyYearYieldPct != null && row.tenYearYieldPct != null && row.yieldSpreadBp != null) {
     return `${row.formulaLabel}；30年 ${row.thirtyYearYieldPct.toFixed(4)}%，10年 ${row.tenYearYieldPct.toFixed(4)}%，利差 ${row.yieldSpreadBp.toFixed(2)}bp`;
   }
   if (row.formulaLabel) {
@@ -333,8 +347,9 @@ function pairHoverFormula(
 
 function historyToggleLabel(pair: string, optionLabel: string, expanded: boolean) {
   const action = expanded ? "收起" : "展开";
+  const historyPair = pair === "TL-T利率差" && /^\d{4}$/.test(optionLabel) ? "TL/T比价" : pair;
   return /^\d{4}$/.test(optionLabel)
-    ? `${action}${pair}${optionLabel}历年同月合约折线图`
+    ? `${action}${historyPair}${optionLabel}历年同月合约折线图`
     : `${action}${pair}${optionLabel}折线图`;
 }
 
@@ -347,6 +362,17 @@ function signalClass(signal: Signal) {
 }
 
 function applyPrimaryObservation(row: PairRow, selection?: string): PairRow {
+  const treasury = row.treasuryContracts?.find((contract) => contract.expiry === selection);
+  if (treasury?.statisticsStatus === "ok" && treasury.priceStatus === "ok" && treasury.percentile != null && treasury.signal != null) {
+    return { ...row, current: treasury.current, previous: treasury.previous, change: treasury.change,
+      changeValue: treasury.changeValue, allTime: treasury.allTime, allTimeRange: treasury.allTimeRange,
+      percentile: treasury.percentile, fiveYearRange: treasury.fiveYearRange, signal: treasury.signal,
+      lots: treasury.hedge.lots, deviation: treasury.hedge.dv01DeviationPct == null ? "—" : `${treasury.hedge.dv01DeviationPct.toFixed(2)}%`,
+      notional: "—", margin: "—", leftSymbol: treasury.leftSymbol, rightSymbol: treasury.rightSymbol,
+      leftChangePct: treasury.leftChangePct, rightChangePct: treasury.rightChangePct,
+      sourceStatus: "仅xtdata", formulaKind: "ratio", formulaLabel: `${treasury.leftSymbol} / ${treasury.rightSymbol}`,
+      externalSourceDate: undefined, externalSourceDates: undefined, externalSourceMaxLagDays: undefined };
+  }
   const observation = selection === "spot"
     ? row.spotObservation
     : row.termObservations?.find((item) => item.key === selection)
@@ -382,6 +408,19 @@ function applyPrimaryObservation(row: PairRow, selection?: string): PairRow {
 }
 
 function observationOptionsFor(row: PairRow): ObservationOption[] {
+  if (row.treasuryContracts?.length) {
+    return [{ key: "default", label: "利差（bp）", detail: "30年−10年国债收益率", current: row.current,
+      percentile: row.percentile, signal: row.signal, leftSymbol: row.leftSymbol, rightSymbol: row.rightSymbol,
+      leftChangePct: null, rightChangePct: null, leftVolume: null, rightVolume: null, pairedVolume: null,
+      pinned: true, spot: false, term: false, historyChart: null },
+      ...row.treasuryContracts.map(contract => ({ key: contract.expiry, label: contract.expiry,
+        detail: `${contract.leftSymbol} / ${contract.rightSymbol}`, current: contract.current,
+        percentile: contract.percentile, signal: contract.signal, leftSymbol: contract.leftSymbol, rightSymbol: contract.rightSymbol,
+        leftChangePct: contract.leftChangePct, rightChangePct: contract.rightChangePct,
+        leftVolume: contract.leftVolume, rightVolume: contract.rightVolume, pairedVolume: contract.pairedVolume,
+        pinned: false, spot: false, term: false, historyChart: contract.historyChart,
+        available: contract.statisticsStatus === "ok" && contract.priceStatus === "ok" }))];
+  }
   if (row.termObservations?.length) {
     return row.termObservations.map((observation) => ({
       key: observation.key,
@@ -874,27 +913,6 @@ function ContractHistoryChart({ chart, formula }: { chart: ContractHistoryChartD
   );
 }
 
-function TreasuryQuarterTable({ contracts }: { contracts: TreasuryQuarter[] }) {
-  const price = (value: number | null) => value == null ? "—" : value.toFixed(3);
-  return <section className="treasury-contract-panel" aria-label="季度TL/T期货比价与DV01配平" data-balance-method="dv01">
-    <h3>各季度合约 · TL/T比价</h3>
-    <div className="treasury-contract-scroll"><table className="treasury-contract-table">
-      <thead><tr><th>季度</th><th>TL合约 / 收盘价</th><th>T合约 / 收盘价</th><th>TL/T比价</th><th>前日比价</th><th>变动</th><th>DV01手数（TL:T）</th><th>DV01偏差</th><th>行情日</th></tr></thead>
-      <tbody>{contracts.map(contract => <tr key={contract.expiry} data-treasury-expiry={contract.expiry}>
-        <th scope="row">{contract.expiry}</th>
-        <td>{contract.leftSymbol.replace(".IF", "")} / {price(contract.leftPrice)}</td>
-        <td>{contract.rightSymbol.replace(".IF", "")} / {price(contract.rightPrice)}</td>
-        <td className="tabular treasury-ratio">{contract.current}{contract.priceStatus === "stale" && <small>待更新</small>}</td>
-        <td className="tabular">{contract.previous}</td><td className="tabular">{contract.change}</td>
-        <td title={contract.hedge.reason}>{contract.hedge.lots}</td>
-        <td>{contract.hedge.dv01DeviationPct == null ? "—" : `${contract.hedge.dv01DeviationPct.toFixed(2)}%`}</td>
-        <td>{contract.priceDate ?? "行情待补"}</td>
-      </tr>)}</tbody>
-    </table></div>
-    <p>比价＝TL同季度收盘价 / T同季度收盘价。手数按每手DV01配平；缺少已核验CTD/DV01时暂不提供手数。</p>
-  </section>;
-}
-
 export default function Home() {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("percentile");
@@ -928,6 +946,7 @@ export default function Home() {
             (expiry === "spot" && row.spotObservation !== null) ||
             row.termObservations?.some((observation) => observation.key === expiry) ||
             row.relatedObservations?.some((observation) => observation.key === expiry) ||
+            row.treasuryContracts?.some((contract) => contract.expiry === expiry && contract.statisticsStatus === "ok" && contract.priceStatus === "ok") ||
             row.contracts.some((contract) => contract.expiry === expiry)
           )
         ) {
@@ -1213,7 +1232,7 @@ export default function Home() {
                 const hasTreasuryContracts = (baseRow.treasuryContracts?.length ?? 0) > 0;
                 const hasTermObservations = (baseRow.termObservations?.length ?? 0) > 0;
                 const hasThreeLeg = Boolean(baseRow.thirdSymbol);
-                const hasObservationPanel = hasContracts || hasTermObservations;
+                const hasObservationPanel = hasContracts || hasTermObservations || hasTreasuryContracts;
                 const standaloneHistoryChart = ["现货参考", "跨市场套利", "外盘参考"].includes(baseRow.pairType)
                   ? baseRow.mainHistoryChart
                   : null;
@@ -1226,7 +1245,9 @@ export default function Home() {
                 const selectedLabel = selectedObservation === "spot"
                   ? "现货"
                   : selectedTermLabel ?? selectedRelatedLabel ?? (
-                      baseRow.contracts.some((contract) => contract.expiry === selectedObservation)
+                      baseRow.treasuryContracts?.some((contract) => contract.expiry === selectedObservation)
+                        ? `TL/T ${selectedObservation}`
+                        : baseRow.contracts.some((contract) => contract.expiry === selectedObservation)
                         ? selectedObservation
                         : undefined
                     );
@@ -1244,7 +1265,7 @@ export default function Home() {
                               type="button"
                               className="expand-button"
                               aria-expanded={isExpanded}
-                              aria-controls={hasTreasuryContracts ? `${detailId} ${detailId}-treasury` : detailId}
+                              aria-controls={hasTreasuryContracts ? `${detailId} ${detailId}-yield-history` : detailId}
                               aria-label={`${isExpanded ? "收起" : "展开"}${row.pair}${hasTreasuryContracts ? "利率差走势及季度TL/T比价" : hasContracts ? "合约月份" : hasTermObservations ? "观察口径" : baseRow.pairType === "外盘参考" ? "外盘折线图" : "现货折线图"}`}
                               onClick={() => togglePair(row.pair)}
                             >
@@ -1325,19 +1346,28 @@ export default function Home() {
                         </button>
                       </td>
                     </tr>
+                    {isExpanded && !hasContracts && standaloneHistoryChart && (
+                      <tr className="contract-detail-row reference-history-row">
+                        <td colSpan={columns.length} id={hasTreasuryContracts ? `${detailId}-yield-history` : detailId}>
+                          <div className="contract-history-expanded">
+                            <ContractHistoryChart chart={standaloneHistoryChart} formula={baseRow.formulaLabel} />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     {isExpanded && hasObservationPanel && (
                       <tr className="contract-detail-row">
                         <td colSpan={columns.length} id={detailId}>
-                          <div className="contract-panel" aria-label={hasTermObservations ? `${row.pair}下季与隔季观察口径` : row.contractSelection === "nearest" ? `${row.pair}观察口径及最近四个共同合约月份` : `${row.pair}观察口径及成交量前四的合约月份`}>
+                          <div className="contract-panel" data-balance-method={hasTreasuryContracts ? "dv01" : undefined} aria-label={hasTreasuryContracts ? `${row.pair}观察口径及季度TL/T合约比价` : hasTermObservations ? `${row.pair}下季与隔季观察口径` : row.contractSelection === "nearest" ? `${row.pair}观察口径及最近四个共同合约月份` : `${row.pair}观察口径及成交量前四的合约月份`}>
                             <div className="contract-grid contract-grid-header">
                               <span>{row.contractSelection === "nearest" ? "观察口径（近四个月）" : "观察口径"}</span>
                               <span>当前值</span>
-                              <span>{hasTermObservations ? "当月涨跌幅" : `${contractRootLabel(baseRow.leftSymbol)} 涨跌幅`}</span>
-                              <span>{hasTermObservations ? "当月合约" : `${contractRootLabel(baseRow.contracts[0].leftSymbol)} 成交量`}</span>
-                              <span>{hasTermObservations ? "远季涨跌幅" : hasThreeLeg ? "PTA / MEG 涨跌幅" : `${contractRootLabel(baseRow.rightSymbol)} 涨跌幅`}</span>
-                              <span>{hasTermObservations ? "远季合约" : hasThreeLeg ? "PTA / MEG 成交量" : `${contractRootLabel(baseRow.contracts[0].rightSymbol)} 成交量`}</span>
-                              <span>{hasTermObservations ? "现货指数" : row.contractSelection === "nearest" ? "可配对成交量" : "可配对成交量 ↓"}</span>
-                              <span>近5年分位</span>
+                              <span>{hasTreasuryContracts ? "TL 涨跌幅" : hasTermObservations ? "当月涨跌幅" : `${contractRootLabel(baseRow.leftSymbol)} 涨跌幅`}</span>
+                              <span>{hasTreasuryContracts ? "TL 成交量" : hasTermObservations ? "当月合约" : `${contractRootLabel(baseRow.contracts[0].leftSymbol)} 成交量`}</span>
+                              <span>{hasTreasuryContracts ? "T 涨跌幅" : hasTermObservations ? "远季涨跌幅" : hasThreeLeg ? "PTA / MEG 涨跌幅" : `${contractRootLabel(baseRow.rightSymbol)} 涨跌幅`}</span>
+                              <span>{hasTreasuryContracts ? "T 成交量" : hasTermObservations ? "远季合约" : hasThreeLeg ? "PTA / MEG 成交量" : `${contractRootLabel(baseRow.contracts[0].rightSymbol)} 成交量`}</span>
+                              <span title={hasTreasuryContracts ? "按DV01平衡手数折算两腿成交量，DV01缺失时待补" : undefined}>{hasTermObservations ? "现货指数" : hasTreasuryContracts || row.contractSelection === "nearest" ? "可配对成交量" : "可配对成交量 ↓"}</span>
+                              <span title={hasTreasuryContracts ? "近5年内可得的TL上市后同月合约日频样本" : undefined}>近5年分位</span>
                               <span>判断</span>
                               <span>主要观察</span>
                             </div>
@@ -1385,13 +1415,14 @@ export default function Home() {
                                           : formatVolume(option.rightVolume)}
                                     </span>
                                     <span className="tabular paired-volume">{option.term ? option.denominatorSymbol?.replace(".SH", "") : formatVolume(option.pairedVolume)}</span>
-                                    <span className="tabular contract-percentile">{option.percentile.toFixed(option.percentile % 1 === 0 ? 1 : 2)}%</span>
-                                    <span><i className={`signal contract-signal ${signalClass(option.signal)}`}>{option.signal}</i></span>
+                                    <span className="tabular contract-percentile">{option.percentile == null ? "—" : `${option.percentile.toFixed(option.percentile % 1 === 0 ? 1 : 2)}%`}</span>
+                                    <span>{option.signal == null ? "—" : <i className={`signal contract-signal ${signalClass(option.signal)}`}>{option.signal}</i>}</span>
                                     <span>
                                       <button
                                         type="button"
                                         className={`primary-observation-button ${isPrimaryObservation ? "active" : ""}`}
                                         aria-pressed={isPrimaryObservation}
+                                        disabled={option.available === false}
                                         aria-label={`${isPrimaryObservation ? "当前为" : "设为"}${row.pair}${option.label}主要观察`}
                                         onClick={() => togglePrimaryObservation(row.pair, option.key)}
                                       >
@@ -1407,23 +1438,10 @@ export default function Home() {
                                 </Fragment>
                               );
                             })}
+                            {hasTreasuryContracts && <p className="contract-panel-note">
+                              分位使用近5年内可得的同月合约日线（TL自2023年上市）。DV01配平（TL:T）：{baseRow.treasuryContracts?.map(contract => `${contract.expiry} ${contract.hedge.lots}`).join("；")}。DV01缺失时可配对成交量待补。
+                            </p>}
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                    {isExpanded && !hasContracts && standaloneHistoryChart && (
-                      <tr className="contract-detail-row reference-history-row">
-                        <td colSpan={columns.length} id={detailId}>
-                          <div className="contract-history-expanded">
-                            <ContractHistoryChart chart={standaloneHistoryChart} formula={baseRow.formulaLabel} />
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                    {isExpanded && hasTreasuryContracts && (
-                      <tr className="contract-detail-row treasury-detail-row">
-                        <td colSpan={columns.length} id={`${detailId}-treasury`}>
-                          <TreasuryQuarterTable contracts={baseRow.treasuryContracts ?? []} />
                         </td>
                       </tr>
                     )}

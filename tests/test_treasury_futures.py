@@ -73,6 +73,29 @@ class TreasuryFuturesTests(unittest.TestCase):
         self.assertFalse(updater.is_equity_index_definition({"left": "TL00.IF", "right": "T00.IF"}))
         self.assertTrue(updater.is_equity_index_definition({"left": "IM00.IF", "right": "IF00.IF"}))
 
+    def test_leg_returns_and_pairable_volume_follow_dv01_quantities(self):
+        self.histories["TL2612.IF"]["volume"] = [100, 100]
+        self.histories["T2612.IF"]["volume"] = [210, 210]
+        rows = build_quarter_ratios(self.months, self.histories, self.asof, self.risk)
+        self.assertAlmostEqual(rows[0]["leftChangePct"], (121 / 120 - 1) * 100, places=5)
+        self.assertEqual(rows[0]["rightChangePct"], 0)
+        self.assertEqual(rows[0]["pairedVolume"], 15)
+        self.assertIsNone(rows[1]["pairedVolume"])
+
+    def test_same_month_full_daily_statistics_and_history_are_available(self):
+        previous_dates = pd.to_datetime(["2025-11-12", "2025-11-13"])
+        self.histories["TL2512.IF"] = pd.DataFrame({"close": [130, 140], "volume": [10, 10]}, index=previous_dates)
+        self.histories["T2512.IF"] = pd.DataFrame({"close": [100, 100], "volume": [10, 10]}, index=previous_dates)
+        rows = build_quarter_ratios(self.months, self.histories, self.asof)
+        updater.enrich_treasury_statistics(rows, self.histories)
+        current = rows[0]
+        self.assertEqual(current["statisticsStatus"], "ok")
+        self.assertEqual(current["percentile"], 50)
+        self.assertEqual(current["signal"], "中性")
+        self.assertEqual(current["historyChart"]["unit"], "比值")
+        self.assertEqual(current["historyChart"]["statisticsPointCount"], 4)
+        self.assertEqual(current["historyChart"]["series"][-1]["expiry"], "2612")
+
 
 if __name__ == "__main__":
     unittest.main()

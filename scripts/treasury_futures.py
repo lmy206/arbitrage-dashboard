@@ -60,6 +60,9 @@ def build_quarter_ratios(monthly_contracts: dict, histories: dict, asof: pd.Time
                "current": "—", "previous": "—", "change": "—", "ratio": None,
                "leftPrice": None, "rightPrice": None, "priceDate": None,
                "priceStatus": "unavailable", "leftVolume": None, "rightVolume": None,
+               "leftChangePct": None, "rightChangePct": None, "pairedVolume": None,
+               "changeValue": None, "allTime": "—", "allTimeRange": "—", "percentile": None,
+               "fiveYearRange": "—", "signal": None, "statisticsStatus": "unavailable", "historyChart": None,
                "hedge": {"method": "dv01", "status": "xtdata_unavailable", "lots": "待DV01",
                          "dv01DeviationPct": None, "reason": "缺少该季度同日的已核验CTD/DV01"}}
         tl, t = histories.get(tl_symbol), histories.get(t_symbol)
@@ -76,6 +79,9 @@ def build_quarter_ratios(monthly_contracts: dict, histories: dict, asof: pd.Time
                 if len(aligned) >= 2:
                     previous = float(aligned.iloc[-2]["tl"] / aligned.iloc[-2]["t"])
                     row.update({"previous": f"{previous:.4f}", "change": f"{ratio - previous:+.4f}"})
+                    row["changeValue"] = round(ratio - previous, 8)
+                    row["leftChangePct"] = round((float(aligned.iloc[-1]["tl"] / aligned.iloc[-2]["tl"]) - 1) * 100, 6)
+                    row["rightChangePct"] = round((float(aligned.iloc[-1]["t"] / aligned.iloc[-2]["t"]) - 1) * 100, 6)
                 for frame, key in ((tl, "leftVolume"), (t, "rightVolume")):
                     if "volume" in frame and date in frame.index and pd.notna(frame.loc[date, "volume"]):
                         row[key] = max(0, int(frame.loc[date, "volume"]))
@@ -85,6 +91,8 @@ def build_quarter_ratios(monthly_contracts: dict, histories: dict, asof: pd.Time
                     if tl_dv01 is not None and t_dv01 is not None:
                         row["hedge"] = {"method": "dv01", "status": "verified", "dataDate": row["priceDate"],
                                         "reason": "CTD DV01 / 转换因子，按每手利率风险配平", **balance_dv01(tl_dv01, t_dv01)}
+                        if row["leftVolume"] is not None and row["rightVolume"] is not None:
+                            row["pairedVolume"] = min(row["leftVolume"] // row["hedge"]["tlLots"], row["rightVolume"] // row["hedge"]["tLots"])
         result.append(row)
     return result
 
