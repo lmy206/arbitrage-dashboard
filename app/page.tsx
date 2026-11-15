@@ -347,6 +347,7 @@ function pairHoverFormula(
 
 function historyToggleLabel(pair: string, optionLabel: string, expanded: boolean) {
   const action = expanded ? "收起" : "展开";
+  if (pair === "TL-T利率差" && optionLabel === "利差（bp）") return `${action}30年−10年国债利差走势图`;
   const historyPair = pair === "TL-T利率差" && /^\d{4}$/.test(optionLabel) ? "TL/T比价" : pair;
   return /^\d{4}$/.test(optionLabel)
     ? `${action}${historyPair}${optionLabel}历年同月合约折线图`
@@ -412,7 +413,7 @@ function observationOptionsFor(row: PairRow): ObservationOption[] {
     return [{ key: "default", label: "利差（bp）", detail: "30年−10年国债收益率", current: row.current,
       percentile: row.percentile, signal: row.signal, leftSymbol: row.leftSymbol, rightSymbol: row.rightSymbol,
       leftChangePct: null, rightChangePct: null, leftVolume: null, rightVolume: null, pairedVolume: null,
-      pinned: true, spot: false, term: false, historyChart: null },
+      pinned: true, spot: false, term: false, historyChart: row.mainHistoryChart },
       ...row.treasuryContracts.map(contract => ({ key: contract.expiry, label: contract.expiry,
         detail: `${contract.leftSymbol} / ${contract.rightSymbol}`, current: contract.current,
         percentile: contract.percentile, signal: contract.signal, leftSymbol: contract.leftSymbol, rightSymbol: contract.rightSymbol,
@@ -1233,7 +1234,7 @@ export default function Home() {
                 const hasTermObservations = (baseRow.termObservations?.length ?? 0) > 0;
                 const hasThreeLeg = Boolean(baseRow.thirdSymbol);
                 const hasObservationPanel = hasContracts || hasTermObservations || hasTreasuryContracts;
-                const standaloneHistoryChart = ["现货参考", "跨市场套利", "外盘参考"].includes(baseRow.pairType)
+                const standaloneHistoryChart = !hasTreasuryContracts && ["现货参考", "跨市场套利", "外盘参考"].includes(baseRow.pairType)
                   ? baseRow.mainHistoryChart
                   : null;
                 const hasExpandableContent = hasObservationPanel || hasTreasuryContracts || standaloneHistoryChart !== null;
@@ -1265,7 +1266,7 @@ export default function Home() {
                               type="button"
                               className="expand-button"
                               aria-expanded={isExpanded}
-                              aria-controls={hasTreasuryContracts ? `${detailId} ${detailId}-yield-history` : detailId}
+                              aria-controls={detailId}
                               aria-label={`${isExpanded ? "收起" : "展开"}${row.pair}${hasTreasuryContracts ? "利率差走势及季度TL/T比价" : hasContracts ? "合约月份" : hasTermObservations ? "观察口径" : baseRow.pairType === "外盘参考" ? "外盘折线图" : "现货折线图"}`}
                               onClick={() => togglePair(row.pair)}
                             >
@@ -1348,7 +1349,7 @@ export default function Home() {
                     </tr>
                     {isExpanded && !hasContracts && standaloneHistoryChart && (
                       <tr className="contract-detail-row reference-history-row">
-                        <td colSpan={columns.length} id={hasTreasuryContracts ? `${detailId}-yield-history` : detailId}>
+                        <td colSpan={columns.length} id={detailId}>
                           <div className="contract-history-expanded">
                             <ContractHistoryChart chart={standaloneHistoryChart} formula={baseRow.formulaLabel} />
                           </div>
