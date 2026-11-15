@@ -54,6 +54,7 @@ INDEX_TERM_ROLL_RULE = "当月合约正常跟踪至到期，到期后自然切�
 USD_CNY_MID_SYMBOL = "USDCNY_MID.SAFE"
 CSI300_PE_SYMBOL = "CSI300_PE_TTM.CSINDEX"
 CN10Y_SYMBOL = "CN10Y.CHINABOND"
+CN30Y_SYMBOL = "CN30Y.CHINABOND"
 US10Y_SYMBOL = "US10Y.EASTMONEY"
 SP500_PE_SYMBOL = "SP500_PE.MULTPL"
 NASDAQ_SYMBOL = "IXIC.SINA"
@@ -193,7 +194,7 @@ AGRICULTURAL_PRODUCT_ROOTS = {
     "y",
 }
 STRATEGY_TYPE_ORDER = {"回归": 0, "趋势": 1, "外盘监控": 2}
-MARKET_CATEGORY_ORDER = {"股指": 0, "农产品": 1, "工业品": 2}
+MARKET_CATEGORY_ORDER = {"股指": 0, "国债": 1, "农产品": 2, "工业品": 3}
 PINNED_PAIR_ORDER = {
     "ERP：沪深300": 0,
     "ERP：标普500": 1,
@@ -511,6 +512,17 @@ PAIRS: list[dict[str, Any]] = [
         "history_overlay": {"symbol": "399006.SZ", "label": "创业板指数（右轴）", "unit": "点位"},
     },
     {
+        "pair": "TL-T利率差",
+        "left": CN30Y_SYMBOL,
+        "right": CN10Y_SYMBOL,
+        "formula": spread,
+        "kind": "basis_points",
+        "tradable": False,
+        "custom_builder": "cn_treasury_yield_spread",
+        "strategy_type": "回归",
+        "market_category": "国债",
+    },
+    {
         "pair": "ERP：沪深300",
         "left": CSI300_PE_SYMBOL,
         "right": CN10Y_SYMBOL,
@@ -625,6 +637,7 @@ def definition_xt_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
     if definition.get("custom_builder") == "lme_cross_market":
         return (definition["left"],)
     if definition.get("custom_builder") in {
+        "cn_treasury_yield_spread",
         "cn_equity_risk_premium",
         "us_equity_risk_premium",
         "external_ratio",
@@ -1189,7 +1202,7 @@ def normalize_value_frame(
     )
 
 
-def fetch_chinabond_cn10y(ak: Any) -> pd.DataFrame:
+def fetch_chinabond_yield_curve(ak: Any) -> pd.DataFrame:
     start = pd.Timestamp(EXTERNAL_HISTORY_START)
     end = pd.Timestamp.now(tz=SHANGHAI).tz_localize(None).normalize()
     frames: list[pd.DataFrame] = []
@@ -1204,8 +1217,18 @@ def fetch_chinabond_cn10y(ak: Any) -> pd.DataFrame:
         )
         cursor = chunk_end + pd.Timedelta(days=1)
     raw = pd.concat(frames, ignore_index=True)
-    raw = raw[raw["曲线名称"] == "中债国债收益率曲线"]
-    return normalize_value_frame(raw, "日期", "10年")
+    return raw[raw["曲线名称"] == "中债国债收益率曲线"].copy()
+
+
+def normalize_chinabond_yield(raw: pd.DataFrame, maturity: str) -> pd.DataFrame:
+    if maturity not in {"10年", "30年"}:
+        raise ValueError(f"未批准的中债收益率期限: {maturity}")
+    government = raw[raw["曲线名称"] == "中债国债收益率曲线"]
+    return normalize_value_frame(government, "日期", maturity)
+
+
+def fetch_chinabond_cn10y(ak: Any) -> pd.DataFrame:
+    return normalize_chinabond_yield(fetch_chinabond_yield_curve(ak), "10年")
 
 
 def fetch_multpl_sp500_pe() -> pd.DataFrame:
@@ -1337,6 +1360,16 @@ def fetch_external_market_history() -> tuple[
 
     safe_raw: pd.DataFrame | None = None
     us_rate_raw: pd.DataFrame | None = None
+    chinabond_raw: pd.DataFrame | None = None
+
+    def fetch_chinabond_raw() -> pd.DataFrame:
+        nonlocal chinabond_raw
+        if chinabond_raw is None:
+            if ak is None:
+                raise RuntimeError("AkShare 不可用")
+            # Both maturities must use the same government-curve response.
+            chinabond_raw = fetch_chinabond_yield_curve(ak)
+        return chinabond_raw
 
     def fetch_safe_raw() -> pd.DataFrame:
         nonlocal safe_raw
@@ -1411,9 +1444,22 @@ def fetch_external_market_history() -> tuple[
                 "source": "akshare_chinabond",
                 "dataset_type": "bond_yield",
                 "path": CHINABOND_EXTERNAL_DIR / "CN10Y.csv",
-                "fetch": (lambda: fetch_chinabond_cn10y(ak)) if ak is not None else None,
-                "normalize": lambda raw: raw,
+                "fetch": fetch_chinabond_raw if ak is not None else None,
+                "normalize": lambda raw: normalize_chinabond_yield(raw, "10年"),
                 "maxLagDays": 7,
+                "quoteUnit": "%",
+            },
+            {
+                "symbol": CN30Y_SYMBOL,
+                "name": "中国30年期国债收益率",
+                "provider": "AKShare/中国债券信息网",
+                "source": "akshare_chinabond",
+                "dataset_type": "bond_yield",
+                "path": CHINABOND_EXTERNAL_DIR / "CN30Y.csv",
+                "fetch": fetch_chinabond_raw if ak is not None else None,
+                "normalize": lambda raw: normalize_chinabond_yield(raw, "30年"),
+                "maxLagDays": 7,
+                "quoteUnit": "%",
             },
             {
                 "symbol": US10Y_SYMBOL,
@@ -1577,6 +1623,7 @@ def fetch_external_market_history() -> tuple[
         USD_CNY_MID_SYMBOL,
         CSI300_PE_SYMBOL,
         CN10Y_SYMBOL,
+        CN30Y_SYMBOL,
         US10Y_SYMBOL,
         SP500_PE_SYMBOL,
         NASDAQ_SYMBOL,
@@ -3190,6 +3237,25 @@ def align_external_asof(
     return aligned.set_index("date")["value"].dropna()
 
 
+def align_treasury_yields(
+    thirty_year: pd.Series,
+    ten_year: pd.Series,
+    asof: pd.Timestamp,
+    max_lag_days: int = 7,
+) -> pd.DataFrame:
+    if thirty_year.index.has_duplicates or ten_year.index.has_duplicates:
+        raise ExternalDataError("国债收益率日期重复，无法核对同日利差")
+    aligned = pd.concat(
+        [pd.to_numeric(thirty_year, errors="coerce").rename("left"),
+         pd.to_numeric(ten_year, errors="coerce").rename("right")],
+        axis=1, join="inner",
+    ).replace([math.inf, -math.inf], float("nan")).dropna().sort_index()
+    aligned = aligned[aligned.index <= asof]
+    if len(aligned) < 2 or (asof - aligned.index[-1]).days > max_lag_days:
+        raise ExternalDataError("30年与10年国债同日收益率不足或共同数据日已过期")
+    return aligned
+
+
 def build_external_reference_row(
     definition: dict[str, Any],
     histories: dict[str, pd.Series],
@@ -3202,7 +3268,21 @@ def build_external_reference_row(
     unit = "比值"
     source_date_specs: list[tuple[str, pd.Series, int]] = []
 
-    if builder == "cn_equity_risk_premium":
+    if builder == "cn_treasury_yield_spread":
+        aligned = align_treasury_yields(
+            external_histories[CN30Y_SYMBOL], external_histories[CN10Y_SYMBOL], common_latest_date,
+        )
+        # Curve quotes are percentages: 0.50 percentage points = 50bp.
+        # Round before ranks so mathematically equal spreads remain ties.
+        values = ((aligned["left"] - aligned["right"]) * 100).round(6)
+        formula_label = "（30年国债收益率 − 10年国债收益率）× 100（bp）；中债现货曲线，TL/T期限参考"
+        source = "中国债券信息网：中债国债收益率曲线（到期），30年与10年同日值"
+        unit = "基点"
+        source_date_specs = [
+            (CN30Y_SYMBOL, external_histories[CN30Y_SYMBOL], 7),
+            (CN10Y_SYMBOL, external_histories[CN10Y_SYMBOL], 7),
+        ]
+    elif builder == "cn_equity_risk_premium":
         pe = external_histories[CSI300_PE_SYMBOL]
         anchor = pe.index
         pe_aligned = align_external_asof(anchor, pe, 5)
@@ -3380,6 +3460,8 @@ def build_external_reference_row(
         "跨市场套利": "跨市场",
         "外盘参考": "外盘",
     }[pair_type]
+    if builder == "cn_treasury_yield_spread":
+        chart["series"][0]["expiry"] = "30年−10年"
     if builder == "cn_equity_risk_premium":
         chart_dates = pd.DatetimeIndex(
             [point["date"] for point in chart["series"][0]["points"]]
@@ -3430,7 +3512,15 @@ def build_external_reference_row(
     basis_points = definition["kind"] == "basis_points"
     latest_components = aligned.loc[latest_date]
     extra_fields: dict[str, Any] = {}
-    if builder in {"cn_equity_risk_premium", "us_equity_risk_premium"}:
+    if builder == "cn_treasury_yield_spread":
+        extra_fields = {
+            "thirtyYearYieldPct": round(float(latest_components["left"]), 6),
+            "tenYearYieldPct": round(float(latest_components["right"]), 6),
+            "yieldSpreadBp": round(current, 6),
+            "yieldCurveName": "中债国债收益率曲线（到期）",
+            "referenceFutures": ["TL", "T"],
+        }
+    elif builder in {"cn_equity_risk_premium", "us_equity_risk_premium"}:
         extra_fields = {
             "priceEarningsRatio": round(float(latest_components["left"]), 6),
             "bondYieldPct": round(float(latest_components["right"]), 6),
@@ -3550,6 +3640,7 @@ def build_rows(
             continue
 
         if definition.get("custom_builder") in {
+            "cn_treasury_yield_spread",
             "cn_equity_risk_premium",
             "us_equity_risk_premium",
             "external_ratio",
@@ -3778,6 +3869,30 @@ def build_history_charts(
     return charts
 
 
+def treasury_yield_spread_row_complete(row: dict[str, Any], data_date: str) -> bool:
+    try:
+        date = row["externalSourceDate"]
+        chart = row["mainHistoryChart"]
+        spread_bp = float(row["yieldSpreadBp"])
+        expected = (float(row["thirtyYearYieldPct"]) - float(row["tenYearYieldPct"])) * 100
+        return bool(
+            row["leftSymbol"] == CN30Y_SYMBOL and row["rightSymbol"] == CN10Y_SYMBOL
+            and row["marketCategory"] == "国债" and row["pairType"] == "现货参考"
+            and math.isfinite(spread_bp) and math.isfinite(expected) and abs(spread_bp - expected) <= 0.000001
+            and row["current"] == display_basis_points(spread_bp)
+            and row["externalSourceDates"] == {CN30Y_SYMBOL: date, CN10Y_SYMBOL: date}
+            and pd.Timestamp(date) <= pd.Timestamp(data_date)
+            and (pd.Timestamp(data_date) - pd.Timestamp(date)).days <= row["externalSourceMaxLagDays"]
+            and chart["unit"] == "基点" and chart["endDate"] == date
+            and chart["series"][0]["points"][-1]["date"] == date
+            and abs(chart["series"][0]["points"][-1]["value"] - spread_bp) <= 0.000001
+            and not row["contracts"] and row["leftStructure"] is None and row["rightStructure"] is None
+            and all(row[key] == "—" for key in ("lots", "deviation", "notional", "margin"))
+        )
+    except (KeyError, TypeError, ValueError, IndexError):
+        return False
+
+
 def persist_dashboard_snapshot(payload: dict[str, Any], report: dict[str, Any]) -> None:
     if report["status"] == "ok":
         OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -4001,7 +4116,7 @@ def write_outputs(
     spot_reference_histories_complete = all(
         chart is not None
         and len(chart["series"]) == 1
-        and chart["series"][0]["expiry"] in {"现货", "外盘", "美元融资压力（左轴）", "ERP（左轴）"}
+        and chart["series"][0]["expiry"] in {"现货", "外盘", "美元融资压力（左轴）", "ERP（左轴）", "30年−10年"}
         and len(chart["series"][0]["points"]) >= 8
         and chart_statistics_complete(chart)
         for chart in spot_reference_history_charts
@@ -4273,6 +4388,7 @@ def write_outputs(
         USD_CNY_MID_SYMBOL,
         CSI300_PE_SYMBOL,
         CN10Y_SYMBOL,
+        CN30Y_SYMBOL,
         US10Y_SYMBOL,
         SP500_PE_SYMBOL,
         NASDAQ_SYMBOL,
@@ -4295,9 +4411,16 @@ def write_outputs(
     hierarchy_sorted = [row["pair"] for row in rows] == [
         row["pair"] for row in sorted(rows, key=dashboard_row_sort_key)
     ]
+    treasury_rows = [row for row in rows if row["pair"] == "TL-T利率差"]
+    treasury_yield_spread_complete = (
+        len(treasury_rows) == 1
+        and treasury_yield_spread_row_complete(treasury_rows[0], data_date)
+        and chart_statistics_complete(treasury_rows[0].get("mainHistoryChart"))
+    )
     integrity_checks = [
         not future_data_detected,
         domestic_freshness_complete,
+        treasury_yield_spread_complete,
         configuration_complete,
         len(rows) == len(PAIRS),
         contract_rows_complete,
@@ -4338,6 +4461,7 @@ def write_outputs(
         "minimumExpectedDomesticDataDate": expected_domestic_date.strftime("%Y-%m-%d"),
         "domesticFreshnessComplete": domestic_freshness_complete,
         "configurationComplete": configuration_complete,
+        "treasuryYieldSpreadComplete": treasury_yield_spread_complete,
         "calendarLagDays": lag_days,
         "pairCount": len(rows),
         "expectedPairCount": len(PAIRS),

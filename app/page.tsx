@@ -151,7 +151,7 @@ type ObservationOption = {
 
 type PairRow = {
   strategyType: StrategyType;
-  marketCategory: "股指" | "农产品" | "工业品";
+  marketCategory: "股指" | "国债" | "农产品" | "工业品";
   pair: string;
   current: string;
   previous: string;
@@ -180,6 +180,9 @@ type PairRow = {
   externalSourceMaxLagDays?: number;
   formulaLabel?: string;
   rollRule?: string;
+  thirtyYearYieldPct?: number;
+  tenYearYieldPct?: number;
+  yieldSpreadBp?: number;
   sourceStatus: SourceStatus;
   leftStructure: TermStructure | null;
   rightStructure: TermStructure | null;
@@ -275,7 +278,7 @@ function numericValue(row: PairRow, key: SortKey) {
 
 const strategyTypeOrder: Record<StrategyType, number> = { 回归: 0, 趋势: 1, 外盘监控: 2 };
 const strategyTypeClass: Record<StrategyType, string> = { 回归: "regression", 趋势: "trend", 外盘监控: "external-monitor" };
-const marketCategoryOrder: Record<PairRow["marketCategory"], number> = { 股指: 0, 农产品: 1, 工业品: 2 };
+const marketCategoryOrder: Record<PairRow["marketCategory"], number> = { 股指: 0, 国债: 1, 农产品: 2, 工业品: 3 };
 const pinnedPairOrder: Record<string, number> = {
   "ERP：沪深300": 0,
   "ERP：标普500": 1,
@@ -299,8 +302,11 @@ function pairCodeFormula(
 }
 
 function pairHoverFormula(
-  row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol" | "thirdSymbol" | "formulaLabel">,
+  row: Pick<PairRow, "pair" | "formulaKind" | "leftSymbol" | "rightSymbol" | "thirdSymbol" | "formulaLabel" | "thirtyYearYieldPct" | "tenYearYieldPct" | "yieldSpreadBp">,
 ) {
+  if (row.pair === "TL-T利率差" && row.thirtyYearYieldPct != null && row.tenYearYieldPct != null && row.yieldSpreadBp != null) {
+    return `${row.formulaLabel}；30年 ${row.thirtyYearYieldPct.toFixed(4)}%，10年 ${row.tenYearYieldPct.toFixed(4)}%，利差 ${row.yieldSpreadBp.toFixed(2)}bp`;
+  }
   if (row.formulaLabel) {
     return row.formulaLabel;
   }

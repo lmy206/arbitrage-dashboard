@@ -190,7 +190,7 @@ test("dashboard rows follow strategy, market and percentile hierarchy", async ()
   const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
   const pinnedOrder = new Map([["ERP：沪深300", 0], ["ERP：标普500", 1], ["美元银行融资压力代理", 2]]);
   const strategyOrder = new Map([["回归", 0], ["趋势", 1], ["外盘监控", 2]]);
-  const marketOrder = new Map([["股指", 0], ["农产品", 1], ["工业品", 2]]);
+  const marketOrder = new Map([["股指", 0], ["国债", 1], ["农产品", 2], ["工业品", 3]]);
   const expected = [...payload.rows].sort((a, b) => (
     (pinnedOrder.has(a.pair) || pinnedOrder.has(b.pair))
       ? (pinnedOrder.get(a.pair) ?? Number.MAX_SAFE_INTEGER) - (pinnedOrder.get(b.pair) ?? Number.MAX_SAFE_INTEGER)
@@ -1201,6 +1201,36 @@ test("approved external risk premiums, dollar funding pressure, and cross-market
 
   const cnyMyr = payload.externalSources.find((source) => source.symbol === "CNYMYR_MID.SAFE");
   assert.equal(cnyMyr, undefined);
+});
+
+test("TL-T spread uses same-day thirty-year minus ten-year government yields in bp", async () => {
+  const payload = JSON.parse(await readFile(new URL("../app/data/arbitrage.json", import.meta.url), "utf8"));
+  const row = payload.rows.find((item) => item.pair === "TL-T利率差");
+  assert.ok(row);
+  assert.equal(row.marketCategory, "国债");
+  assert.equal(row.strategyType, "回归");
+  assert.equal(row.pairType, "现货参考");
+  assert.equal(row.leftSymbol, "CN30Y.CHINABOND");
+  assert.equal(row.rightSymbol, "CN10Y.CHINABOND");
+  assert.ok(Math.abs(row.yieldSpreadBp - (row.thirtyYearYieldPct - row.tenYearYieldPct) * 100) <= 0.000001);
+  assert.equal(row.current, `${row.yieldSpreadBp.toFixed(2)}bp`);
+  assert.deepEqual(row.externalSourceDates, { "CN30Y.CHINABOND": row.externalSourceDate, "CN10Y.CHINABOND": row.externalSourceDate });
+  assert.equal(row.mainHistoryChart.unit, "基点");
+  assert.equal(row.mainHistoryChart.endDate, row.externalSourceDate);
+  assert.equal(row.mainHistoryChart.series[0].points.at(-1).value, row.yieldSpreadBp);
+  assertHybridHistory(row.mainHistoryChart.series[0].points, row.pair);
+  assert.ok(row.mainHistoryChart.statisticsPointCount > row.mainHistoryChart.renderPointCount);
+  assert.deepEqual(row.mainHistoryChart.quantileThresholds.map((item) => item.label), ["3%", "97%"]);
+  assert.equal(row.contracts.length, 0);
+  for (const field of ["lots", "notional", "margin"]) assert.equal(row[field], "—");
+  const source = payload.externalSources.find((item) => item.symbol === "CN30Y.CHINABOND");
+  assert.equal(source.quoteUnit, "%");
+  assert.match(source.path, /chinabond[\\/]CN30Y\.csv$/);
+  const response = await render();
+  const html = await response.text();
+  assert.match(html, /TL-T利率差/);
+  assert.match(html, /展开TL-T利率差现货折线图/);
+  assert.match(html, /30年国债收益率 − 10年国债收益率/);
 });
 
 test("the six selected chart datasets are present in the requested order", async () => {

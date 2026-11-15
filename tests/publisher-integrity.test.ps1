@@ -36,7 +36,7 @@ $report = [pscustomobject]@{
   futureDataDetected=$false;hierarchySorted=$true
 }
 foreach ($flag in @(
-  'configurationComplete', 'indexTermHistoryComplete', 'indexTermThresholdsComplete',
+  'configurationComplete', 'treasuryYieldSpreadComplete', 'indexTermHistoryComplete', 'indexTermThresholdsComplete',
   'displayedTermStructuresComplete', 'relatedObservationsComplete', 'fundingPressureOverlayComplete',
   'riskPremiumOverlaysComplete', 'imIfSpotOverlayComplete', 'imIfSpotThresholdsComplete',
   'imIcSpotOverlayComplete', 'icIfSpotOverlayComplete', 'icIfSpotThresholdsComplete',
@@ -105,7 +105,7 @@ try {
   Assert-Rejected 'stale domestic observation'
   Write-Output 'PASS: source identity and daily coverage stay blocked when invalid'
 
-  foreach ($flag in @('configurationComplete','domesticFreshnessComplete','futureDataDetected')) {
+  foreach ($flag in @('configurationComplete','treasuryYieldSpreadComplete','domesticFreshnessComplete','futureDataDetected')) {
     Reset-Fixtures
     $broken = Read-PublisherState $reportPath
     $broken.$flag = -not $broken.$flag

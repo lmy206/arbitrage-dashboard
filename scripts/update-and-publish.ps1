@@ -273,6 +273,7 @@ function Assert-IntegrityReport {
     ([int]$report.pairCount -eq @($contract.pairs).Count)
     ([int]$report.expectedPairCount -eq @($contract.pairs).Count)
     ($report.configurationComplete -eq $true)
+    ($report.treasuryYieldSpreadComplete -eq $true)
     ($report.indexTermHistoryComplete -eq $true)
     ($report.indexTermThresholdsComplete -eq $true)
     ([int]$report.pairCount -eq [int]$report.expectedPairCount)

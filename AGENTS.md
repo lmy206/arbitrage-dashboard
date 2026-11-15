@@ -20,6 +20,7 @@
 - 用户已批准本项目使用以下外部补充源：新浪 LME 铜/铝/锌三个月电子盘、马来西亚 FCPO、CBOT 美豆油与美豆粕期货，国家外汇管理局美元兑人民币和人民币兑林吉特中间价、BNM 最新人民币兑林吉特校对值、中证指数有限公司沪深300滚动市盈率、中国债券信息网中国10年期国债收益率、东方财富美国10年期国债收益率、新浪纳斯达克综合指数与标普500指数、Multpl 标普500月度市盈率、纽约联储官方日度 OBFR 参考利率，以及美联储理事会官方日度 IOER 与 IORB 管理利率。
 - 外部数据分别保存到共享根目录下的 `market\external\lme_sina`、`safe`、`csindex`、`chinabond`、`eastmoney`、`multpl`、`sina_us_index`、`sina_foreign_futures`、`newyorkfed` 和 `federalreserve`；OBFR 从纽约联储官方 Markets Data API 获取，覆盖 2016-08-25 至当前可得交易日；准备金管理利率从美联储理事会 Data Download Program 获取，2021-07-29 起使用 IORB，此前使用官方前身 IOER，组合序列自 2008-10-09 起，保存到 `market\external\federalreserve\IORB_IOER.csv`。`（OBFR−准备金管理利率）×100` 仅作为银行广义无担保隔夜融资相对准备金管理利率的压力代理，不得冒充完整的离岸美元流动性指数。不得把已批准源静默替换成其他口径，若启用新源必须再次记录来源、覆盖范围、保存路径和校验结果。
 - 外部补充数据写入共享数据目录；不得自行增加或替换为其他网页、AkShare 接口或行情源。
+- 用户于2026-11-15明确批准新增中国债券信息网中债国债收益率曲线30年收益率，覆盖2016-08-25至最新可得日，保存到已解析共享根目录的 `market\external\chinabond\CN30Y.csv`，复用同源10年收益率构建 `TL-T利率差`：`（30年收益率% − 10年收益率%）×100`，单位bp。两腿必须同日，不能分别向前填充凑出利差。xtdata核查未发现本指标对应的固定期限收益率曲线；可取得的T/TL期货价格不等同于该曲线，缺少CTD/DV01依据时不自动生成交易手数、名义金额或保证金。
 - 看板主数据日使用国内 xtdata 最新完整交易日；外盘与外部指标保留各自实际来源日期并只向后匹配已公布值，不得因外盘尚未收盘而回退全部国内行。
 - 所有历史统计与回测必须检查未来数据风险。
 - 组合、国内行情、已批准外部来源和图表的完整名单维护在 `config/dashboard-contract.json`，采集器、发布器和页面测试共同使用；增删配置时同步名单，禁止在其他地方再写固定数量代替身份核验。
@@ -32,6 +33,7 @@
    必须满足 `configurationComplete=true`；完整性报告 `checkedAt` 与快照 `updatedAt` 必须指向同一次生成结果。自动发布在采集前先运行 `test_*.py` 固定输入回归；页面发布验证同时运行 `snapshot-checks.test.mjs`。
    创业板指数叠加线还必须满足 `growthSpotOverlayComplete=true`，否则保持上一个有效快照。
    期限结构必须满足 `displayedTermStructuresComplete=true`：各腿仅使用该套利对实际展示的共同月份；不足两个展示月份不显示期限结构标签。
+   国债利差必须满足 `treasuryYieldSpreadComplete=true`：方向、bp换算、共同数据日、最新图点和计算值一致。
 3. 只有在 `status=ok`、`pairCount=expectedPairCount=配置名单长度`、`configurationComplete=true`、`indexTermHistoryComplete=true`、`indexTermThresholdsComplete=true`、`domesticFreshnessComplete=true`、`externalRowDatesComplete=true`、`futureDataDetected=false`、`hierarchySorted=true`、`relatedObservationsComplete=true`、`fundingPressureOverlayComplete=true`、`riskPremiumOverlaysComplete=true`、`imIfSpotOverlayComplete=true`、`imIfSpotThresholdsComplete=true`、`imIcSpotOverlayComplete=true`、`icIfSpotOverlayComplete=true`、`icIfSpotThresholdsComplete=true`、`aluminumAlloySpreadComplete=true`、`spotCorrelationMetricsComplete=true`、`fullDailyChartStatisticsComplete=true` 且 `externalSourcesComplete=true` 时，才运行：
    - 本地验证：`npm run build` 和 `node --test tests\rendered-html.test.mjs`
    - Cloudflare 静态发布验证：`npm run test:pages`
