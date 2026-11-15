@@ -36,7 +36,7 @@ $report = [pscustomobject]@{
   futureDataDetected=$false;hierarchySorted=$true
 }
 foreach ($flag in @(
-  'configurationComplete', 'treasuryYieldSpreadComplete', 'indexTermHistoryComplete', 'indexTermThresholdsComplete',
+  'configurationComplete', 'treasuryYieldSpreadComplete', 'treasuryFuturesComplete', 'indexTermHistoryComplete', 'indexTermThresholdsComplete',
   'displayedTermStructuresComplete', 'relatedObservationsComplete', 'fundingPressureOverlayComplete',
   'riskPremiumOverlaysComplete', 'imIfSpotOverlayComplete', 'imIfSpotThresholdsComplete',
   'imIcSpotOverlayComplete', 'icIfSpotOverlayComplete', 'icIfSpotThresholdsComplete',

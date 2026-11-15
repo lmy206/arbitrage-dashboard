@@ -1,6 +1,6 @@
 {
   "dataDate": "2026-11-13",
-  "updatedAt": "2026-11-15T20:03:09+08:00",
+  "updatedAt": "2026-11-15T20:36:24+08:00",
   "source": "xtdata（国内）+ 用户批准的中证指数、中国债券信息网、东方财富、新浪、Multpl、外管局、纽约联储与美联储理事会官方数据",
   "sourceValidation": {
     "mode": "xtdata_only",
@@ -8,8 +8,8 @@
     "thresholdPct": null,
     "summary": {
       "status": "通过",
-      "total": 73,
-      "consistent": 73,
+      "total": 75,
+      "consistent": 75,
       "contractMismatch": 0,
       "review": 0,
       "unavailable": 0,
@@ -1353,6 +1353,46 @@
         "xtStartDate": "2023-09-15",
         "xtEndDate": "2026-11-13",
         "xtRows": 763,
+        "akStartDate": null,
+        "akEndDate": null,
+        "akRows": 0
+      },
+      {
+        "name": "TL00.IF主连",
+        "assetType": "期货",
+        "xtSymbol": "TL00.IF",
+        "akSymbol": null,
+        "date": "2026-11-13",
+        "xtClose": 117.45,
+        "akClose": null,
+        "relativeDiffPct": null,
+        "status": "完整",
+        "akMode": "disabled",
+        "matchedContract": null,
+        "matchedContractClose": null,
+        "xtStartDate": "2023-04-21",
+        "xtEndDate": "2026-11-13",
+        "xtRows": 863,
+        "akStartDate": null,
+        "akEndDate": null,
+        "akRows": 0
+      },
+      {
+        "name": "T00.IF主连",
+        "assetType": "期货",
+        "xtSymbol": "T00.IF",
+        "akSymbol": null,
+        "date": "2026-11-13",
+        "xtClose": 110.045,
+        "akClose": null,
+        "relativeDiffPct": null,
+        "status": "完整",
+        "akMode": "disabled",
+        "matchedContract": null,
+        "matchedContractClose": null,
+        "xtStartDate": "2015-03-20",
+        "xtEndDate": "2026-11-13",
+        "xtRows": 2833,
         "akStartDate": null,
         "akEndDate": null,
         "akRows": 0
@@ -46852,7 +46892,7 @@
       "percentile": 70.35,
       "fiveYearRange": "10.19bp ~ 60.32bp",
       "signal": "中性",
-      "lots": "—",
+      "lots": "DV01配平",
       "deviation": "—",
       "notional": "—",
       "margin": "—",
@@ -49045,6 +49085,81 @@
         "TL",
         "T"
       ],
+      "treasuryContracts": [
+        {
+          "expiry": "2612",
+          "leftSymbol": "TL2612.IF",
+          "rightSymbol": "T2612.IF",
+          "formulaLabel": "TL2612.IF / T2612.IF",
+          "source": "xtdata",
+          "current": "1.0673",
+          "previous": "1.0707",
+          "change": "-0.0034",
+          "ratio": 1.06729065,
+          "leftPrice": 117.45,
+          "rightPrice": 110.045,
+          "priceDate": "2026-11-13",
+          "priceStatus": "ok",
+          "leftVolume": 154875,
+          "rightVolume": 163935,
+          "hedge": {
+            "method": "dv01",
+            "status": "xtdata_unavailable",
+            "lots": "待DV01",
+            "dv01DeviationPct": null,
+            "reason": "缺少该季度同日的已核验CTD/DV01"
+          }
+        },
+        {
+          "expiry": "2703",
+          "leftSymbol": "TL2703.IF",
+          "rightSymbol": "T2703.IF",
+          "formulaLabel": "TL2703.IF / T2703.IF",
+          "source": "xtdata",
+          "current": "1.0645",
+          "previous": "1.0684",
+          "change": "-0.0039",
+          "ratio": 1.06447063,
+          "leftPrice": 116.98,
+          "rightPrice": 109.895,
+          "priceDate": "2026-11-13",
+          "priceStatus": "ok",
+          "leftVolume": 69362,
+          "rightVolume": 65176,
+          "hedge": {
+            "method": "dv01",
+            "status": "xtdata_unavailable",
+            "lots": "待DV01",
+            "dv01DeviationPct": null,
+            "reason": "缺少该季度同日的已核验CTD/DV01"
+          }
+        },
+        {
+          "expiry": "2706",
+          "leftSymbol": "TL2706.IF",
+          "rightSymbol": "T2706.IF",
+          "formulaLabel": "TL2706.IF / T2706.IF",
+          "source": "xtdata",
+          "current": "1.0642",
+          "previous": "1.0685",
+          "change": "-0.0043",
+          "ratio": 1.06423358,
+          "leftPrice": 116.64,
+          "rightPrice": 109.6,
+          "priceDate": "2026-11-13",
+          "priceStatus": "ok",
+          "leftVolume": 5078,
+          "rightVolume": 3390,
+          "hedge": {
+            "method": "dv01",
+            "status": "xtdata_unavailable",
+            "lots": "待DV01",
+            "dv01DeviationPct": null,
+            "reason": "缺少该季度同日的已核验CTD/DV01"
+          }
+        }
+      ],
+      "balanceMethod": "dv01",
       "marketCategory": "国债"
     },
     {
@@ -298102,7 +298217,7 @@
   "imTerm": {
     "surface": "dashboard",
     "title": "IM 跨期阈值",
-    "generatedAt": "2026-11-15T20:03:09.517188+08:00",
+    "generatedAt": "2026-11-15T20:36:24.525730+08:00",
     "status": "stale",
     "buildStatus": "complete",
     "filters": [],
@@ -311727,8 +311842,8 @@
           "type": "file",
           "provider": "xtdata",
           "period": "2026-05-13 — 2026-11-13",
-          "freshness": "2026-11-15T20:03:09.517188+08:00",
-          "executedAt": "2026-11-15T20:03:09.517188+08:00",
+          "freshness": "2026-11-15T20:36:24.525730+08:00",
+          "executedAt": "2026-11-15T20:36:24.525730+08:00",
           "files": [
             "000852_SH.csv",
             "IM2611_IF.csv",
@@ -312043,8 +312158,8 @@
           "type": "file",
           "provider": "xtdata",
           "period": "2026-05-13 — 2026-11-13",
-          "freshness": "2026-11-15T20:03:09.517188+08:00",
-          "executedAt": "2026-11-15T20:03:09.517188+08:00",
+          "freshness": "2026-11-15T20:36:24.525730+08:00",
+          "executedAt": "2026-11-15T20:36:24.525730+08:00",
           "files": [
             "000852_SH.csv",
             "IM2611_IF.csv",
@@ -312905,8 +313020,8 @@
           "type": "file",
           "provider": "xtdata",
           "period": "2026-05-13 — 2026-11-13",
-          "freshness": "2026-11-15T20:03:09.517188+08:00",
-          "executedAt": "2026-11-15T20:03:09.517188+08:00",
+          "freshness": "2026-11-15T20:36:24.525730+08:00",
+          "executedAt": "2026-11-15T20:36:24.525730+08:00",
           "files": [
             "000852_SH.csv",
             "IM2611_IF.csv",
@@ -312985,8 +313100,8 @@
           "type": "file",
           "provider": "xtdata",
           "period": "2026-05-13 — 2026-11-13",
-          "freshness": "2026-11-15T20:03:09.517188+08:00",
-          "executedAt": "2026-11-15T20:03:09.517188+08:00",
+          "freshness": "2026-11-15T20:36:24.525730+08:00",
+          "executedAt": "2026-11-15T20:36:24.525730+08:00",
           "files": [
             "000852_SH.csv",
             "IM2611_IF.csv",
@@ -315407,8 +315522,8 @@
           "type": "file",
           "provider": "xtdata",
           "period": "2022-07-22 — 2026-11-13",
-          "executedAt": "2026-11-15T20:03:10.293100+08:00",
-          "freshness": "2026-11-15T20:03:10.293100+08:00",
+          "executedAt": "2026-11-15T20:36:25.206574+08:00",
+          "freshness": "2026-11-15T20:36:25.206574+08:00",
           "files": [
             "000852_SH.csv",
             "IM2208_IF.csv",
@@ -315488,7 +315603,7 @@
             },
             {
               "title": "模型版本",
-              "detail": "3879cf1bb7167ce81e8ef2b40cbd62eab5026ce68831aaa238fb0d6dbe699eae"
+              "detail": "31d37f71adea290b3ac2108cd0d4044f323b4297d6542ad555f6bfab3fb03f5b"
             }
           ],
           "caveats": [
@@ -317880,8 +317995,8 @@
           "type": "file",
           "provider": "xtdata",
           "period": "2022-07-22 — 2026-11-13",
-          "executedAt": "2026-11-15T20:03:10.293100+08:00",
-          "freshness": "2026-11-15T20:03:10.293100+08:00",
+          "executedAt": "2026-11-15T20:36:25.206574+08:00",
+          "freshness": "2026-11-15T20:36:25.206574+08:00",
           "files": [
             "000852_SH.csv",
             "IM2208_IF.csv",
@@ -317961,7 +318076,7 @@
             },
             {
               "title": "模型版本",
-              "detail": "3879cf1bb7167ce81e8ef2b40cbd62eab5026ce68831aaa238fb0d6dbe699eae"
+              "detail": "31d37f71adea290b3ac2108cd0d4044f323b4297d6542ad555f6bfab3fb03f5b"
             }
           ],
           "caveats": [
@@ -318035,8 +318150,8 @@
           "type": "file",
           "provider": "xtdata",
           "period": "2026-11-13",
-          "freshness": "2026-11-15T20:03:09.517188+08:00",
-          "executedAt": "2026-11-15T20:03:09.517188+08:00",
+          "freshness": "2026-11-15T20:36:24.525730+08:00",
+          "executedAt": "2026-11-15T20:36:24.525730+08:00",
           "files": [
             "000852_SH.csv",
             "IM2611_IF.csv",
@@ -318088,7 +318203,7 @@
           "end_date": "2026-11-13",
           "row_count": 5309,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "fc0aec32ddcdb22e02b9aa62f69307e9a498161fedfff06028578d65a5795652"
         },
         {
@@ -318101,7 +318216,7 @@
           "end_date": "2026-11-13",
           "row_count": 34,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "0d7ef313c866a11ab018409a6629382340f0e24a6153fd87272da175b6a78afd"
         },
         {
@@ -318114,7 +318229,7 @@
           "end_date": "2026-11-13",
           "row_count": 140,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "959ff04aa51c42815ebe5f5eefab05b22968c1a4a1c6977c2265e4f4c512bdfd"
         },
         {
@@ -318127,7 +318242,7 @@
           "end_date": "2026-11-13",
           "row_count": 79,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "d3c6442ab03aa376d7da47cb75c3e8bb872f30995d621b6439cffa3a1aa361f7"
         },
         {
@@ -318140,12 +318255,12 @@
           "end_date": "2026-11-13",
           "row_count": 20,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "16bfada5b1e27e4c8384b1da063fe4b5d91a57daa32ba764c33081f508e32506"
         }
       ],
       "calendarCurrent": false,
-      "updatedAt": "2026-11-15T20:03:09.517188+08:00",
+      "updatedAt": "2026-11-15T20:36:24.525730+08:00",
       "sourceOnly": "xtdata",
       "defaultPair": "IM2611.IF-IM2703.IF",
       "schemaVersion": 6,
@@ -318378,7 +318493,7 @@
           "end_date": "2026-11-13",
           "row_count": 5309,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "fc0aec32ddcdb22e02b9aa62f69307e9a498161fedfff06028578d65a5795652"
         },
         {
@@ -319054,7 +319169,7 @@
           "end_date": "2026-11-13",
           "row_count": 34,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "0d7ef313c866a11ab018409a6629382340f0e24a6153fd87272da175b6a78afd"
         },
         {
@@ -319067,7 +319182,7 @@
           "end_date": "2026-11-13",
           "row_count": 140,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "959ff04aa51c42815ebe5f5eefab05b22968c1a4a1c6977c2265e4f4c512bdfd"
         },
         {
@@ -319080,7 +319195,7 @@
           "end_date": "2026-11-13",
           "row_count": 79,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "d3c6442ab03aa376d7da47cb75c3e8bb872f30995d621b6439cffa3a1aa361f7"
         },
         {
@@ -319093,7 +319208,7 @@
           "end_date": "2026-11-13",
           "row_count": 20,
           "status": "ok",
-          "updated_at": "2026-11-15T19:59:26+08:00",
+          "updated_at": "2026-11-15T20:32:57+08:00",
           "sha256": "16bfada5b1e27e4c8384b1da063fe4b5d91a57daa32ba764c33081f508e32506"
         }
       ]

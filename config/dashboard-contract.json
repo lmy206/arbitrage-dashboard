@@ -28,6 +28,7 @@
     "纳斯达克/标普500", "马盘棕榈油/美盘豆油", "美盘油粕比"
   ],
   "domesticSymbols": [
+    "TL00.IF", "T00.IF",
     "IC00.IF", "IM00.IF", "IF00.IF", "a00.DF", "b00.DF", "OI00.ZF", "RM00.ZF",
     "rb00.SF", "hc00.SF", "cu00.SF", "al00.SF", "ad00.SF", "zn00.SF", "p00.DF",
     "SA00.ZF", "FG00.ZF", "j00.DF", "jm00.DF", "m00.DF", "y00.DF", "i00.DF",

@@ -1222,14 +1222,31 @@ test("TL-T spread uses same-day thirty-year minus ten-year government yields in 
   assert.ok(row.mainHistoryChart.statisticsPointCount > row.mainHistoryChart.renderPointCount);
   assert.deepEqual(row.mainHistoryChart.quantileThresholds.map((item) => item.label), ["3%", "97%"]);
   assert.equal(row.contracts.length, 0);
-  for (const field of ["lots", "notional", "margin"]) assert.equal(row[field], "—");
+  assert.equal(row.lots, "DV01配平");
+  for (const field of ["notional", "margin"]) assert.equal(row[field], "—");
+  assert.ok(row.treasuryContracts.length > 0);
+  for (const contract of row.treasuryContracts) {
+    assert.ok(["03", "06", "09", "12"].includes(contract.expiry.slice(-2)));
+    assert.equal(contract.leftSymbol, `TL${contract.expiry}.IF`);
+    assert.equal(contract.rightSymbol, `T${contract.expiry}.IF`);
+    assert.equal(contract.hedge.method, "dv01");
+    if (contract.priceStatus !== "unavailable") {
+      assert.ok(Math.abs(contract.ratio - contract.leftPrice / contract.rightPrice) <= 1e-8);
+      assertDisplayedRatio(contract.current, contract.leftPrice / contract.rightPrice);
+      assert.ok(contract.priceDate <= payload.dataDate);
+    }
+    if (contract.hedge.status === "xtdata_unavailable") {
+      assert.equal(contract.hedge.lots, "待DV01");
+      assert.equal(contract.hedge.dv01DeviationPct, null);
+    }
+  }
   const source = payload.externalSources.find((item) => item.symbol === "CN30Y.CHINABOND");
   assert.equal(source.quoteUnit, "%");
   assert.match(source.path, /chinabond[\\/]CN30Y\.csv$/);
   const response = await render();
   const html = await response.text();
   assert.match(html, /TL-T利率差/);
-  assert.match(html, /展开TL-T利率差现货折线图/);
+  assert.match(html, /展开TL-T利率差利率差走势及季度TL\/T比价/);
   assert.match(html, /30年国债收益率 − 10年国债收益率/);
 });
 

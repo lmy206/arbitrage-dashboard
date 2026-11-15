@@ -1410,3 +1410,13 @@ tbody th {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+/* Treasury yield history and contract price ratios keep separate units. */
+.treasury-contract-panel { margin: 0 12px 14px; padding: 14px; border: 1px solid #dce4ee; border-radius: 8px; background: #fff; }
+.treasury-contract-panel h3 { margin: 0 0 10px; font-size: 12px; }
+.treasury-contract-panel p { margin: 10px 0 0; font-size: 10px; color: #64748b; }
+.treasury-contract-scroll { overflow-x: auto; }
+.treasury-contract-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 11px; }
+.treasury-contract-table th, .treasury-contract-table td { padding: 9px 8px; text-align: right; border-bottom: 1px solid #e8edf4; white-space: nowrap; }
+.treasury-contract-table th:first-child { text-align: left; }
+.treasury-contract-table .treasury-ratio { font-weight: 700; color: #1e40af; }
+.treasury-contract-table small { margin-left: 5px; color: #b45309; font-size: 9px; }

@@ -16,6 +16,10 @@ from zoneinfo import ZoneInfo
 from io import StringIO
 
 import pandas as pd
+if __package__:
+    from .treasury_futures import build_quarter_ratios, load_verified_risk, quarter_ratios_complete
+else:
+    from treasury_futures import build_quarter_ratios, load_verified_risk, quarter_ratios_complete
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -152,7 +156,7 @@ def definition_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
 
 def is_equity_index_definition(definition: dict[str, Any]) -> bool:
     return any(
-        symbol.endswith(".IF") or symbol in INDEXES
+        main_continuous_symbol(symbol) in {"IC00.IF", "IM00.IF", "IF00.IF"} or symbol in INDEXES
         for symbol in definition_symbols(definition)
     )
 
@@ -162,7 +166,11 @@ WEIGHTED_CONTRACTS: dict[str, dict[str, float]] = {
     for symbol, spec in CONTRACTS.items()
     if not symbol.endswith(".IF")
 }
-FUTURES_SERIES: dict[str, dict[str, float]] = {**CONTRACTS, **WEIGHTED_CONTRACTS}
+TREASURY_FUTURES = {
+    "TL00.IF": {"multiplier": 10000.0, "name": "30年期国债期货"},
+    "T00.IF": {"multiplier": 10000.0, "name": "10年期国债期货"},
+}
+FUTURES_SERIES = {**CONTRACTS, **WEIGHTED_CONTRACTS, **TREASURY_FUTURES}
 
 
 INDEXES: dict[str, dict[str, str]] = {
@@ -634,6 +642,8 @@ SPOT_OBSERVATIONS: dict[str, dict[str, Any]] = {
 
 def definition_xt_symbols(definition: dict[str, Any]) -> tuple[str, ...]:
     """Return only the symbols that must be supplied by xtdata."""
+    if definition.get("custom_builder") == "cn_treasury_yield_spread":
+        return tuple(TREASURY_FUTURES)
     if definition.get("custom_builder") == "lme_cross_market":
         return (definition["left"],)
     if definition.get("custom_builder") in {
@@ -909,7 +919,7 @@ def discover_monthly_contracts(xtdata, asof: pd.Timestamp) -> dict[str, dict[str
     sector_cache: dict[str, list[str]] = {}
     current_expiry = asof.strftime("%y%m")
 
-    for continuous_symbol in CONTRACTS:
+    for continuous_symbol in (*CONTRACTS, *TREASURY_FUTURES):
         stem, suffix_code = continuous_symbol.split(".", maxsplit=1)
         suffix = f".{suffix_code}"
         root = stem[:-2]
@@ -1046,7 +1056,7 @@ def fetch_history() -> tuple[
             symbol
             for definition in PAIRS
             if definition.get("tradable", True)
-            or definition.get("custom_builder") == "lme_cross_market"
+            or definition.get("custom_builder") in {"lme_cross_market", "cn_treasury_yield_spread"}
             for continuous_symbol in definition_xt_symbols(definition)
             for symbol in monthly_contracts[main_continuous_symbol(continuous_symbol)].values()
         }
@@ -1971,6 +1981,8 @@ def balance_metrics(
     force_one_to_one: bool = False,
     fixed_lots: tuple[int, int] | None = None,
 ) -> tuple[str, str, str, str]:
+    if main_continuous_symbol(left) in TREASURY_FUTURES or main_continuous_symbol(right) in TREASURY_FUTURES:
+        raise ValueError("T/TL必须按DV01配平，不允许使用市值配平")
     left_contract = CONTRACTS[main_continuous_symbol(left)]
     right_contract = CONTRACTS[main_continuous_symbol(right)]
     if fixed_lots is not None:
@@ -3654,6 +3666,11 @@ def build_rows(
                 external_histories,
                 common_latest_date,
             )
+            if definition.get("custom_builder") == "cn_treasury_yield_spread":
+                row["treasuryContracts"] = build_quarter_ratios(monthly_contracts, monthly_histories, common_latest_date,
+                    load_verified_risk(SHARED_ROOT, common_latest_date.strftime("%Y-%m-%d")))
+                row["balanceMethod"] = "dv01"
+                row["lots"] = "DV01配平"
             rows.append(row)
             continue
 
@@ -3887,7 +3904,8 @@ def treasury_yield_spread_row_complete(row: dict[str, Any], data_date: str) -> b
             and chart["series"][0]["points"][-1]["date"] == date
             and abs(chart["series"][0]["points"][-1]["value"] - spread_bp) <= 0.000001
             and not row["contracts"] and row["leftStructure"] is None and row["rightStructure"] is None
-            and all(row[key] == "—" for key in ("lots", "deviation", "notional", "margin"))
+            and row["lots"] in {"—", "DV01配平"}
+            and all(row[key] == "—" for key in ("deviation", "notional", "margin"))
         )
     except (KeyError, TypeError, ValueError, IndexError):
         return False
@@ -4417,10 +4435,14 @@ def write_outputs(
         and treasury_yield_spread_row_complete(treasury_rows[0], data_date)
         and chart_statistics_complete(treasury_rows[0].get("mainHistoryChart"))
     )
+    treasury_futures_complete = (len(treasury_rows) == 1
+        and treasury_rows[0].get("balanceMethod") == "dv01"
+        and quarter_ratios_complete(treasury_rows[0].get("treasuryContracts", []), data_date))
     integrity_checks = [
         not future_data_detected,
         domestic_freshness_complete,
         treasury_yield_spread_complete,
+        treasury_futures_complete,
         configuration_complete,
         len(rows) == len(PAIRS),
         contract_rows_complete,
@@ -4462,6 +4484,11 @@ def write_outputs(
         "domesticFreshnessComplete": domestic_freshness_complete,
         "configurationComplete": configuration_complete,
         "treasuryYieldSpreadComplete": treasury_yield_spread_complete,
+        "treasuryFuturesComplete": treasury_futures_complete,
+        "treasuryDv01Available": bool(treasury_rows and all(
+            r["hedge"]["status"] == "verified" for r in treasury_rows[0].get("treasuryContracts", []))),
+        "treasuryDv01MissingContracts": [r["expiry"] for r in (treasury_rows[0].get("treasuryContracts", []) if treasury_rows else [])
+            if r["hedge"]["status"] != "verified"],
         "calendarLagDays": lag_days,
         "pairCount": len(rows),
         "expectedPairCount": len(PAIRS),
