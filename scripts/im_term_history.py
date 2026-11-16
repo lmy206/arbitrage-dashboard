@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import re
 import sqlite3
+import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -16,8 +17,12 @@ def build_history_queries(*, dataset_reader, root, index_record, index_rows, met
                           cutoff, lower_pct=9, upper_pct=12):
     project = Path(__file__).resolve().parents[1]
     script = project / "scripts/update_xtdata.py"
-    spec = importlib.util.spec_from_file_location("im_original_term_model", script)
+    # The collector has sibling imports; bind them to this exact scripts directory
+    # when this reader is called from the separate local IM application.
+    spec = importlib.util.spec_from_file_location("im_original_term_model", script,
+                                                submodule_search_locations=[str(script.parent)])
     original = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = original
     spec.loader.exec_module(original)
     spot = pd.Series({pd.Timestamp(r["date"]): float(r["close"]) for r in index_rows
                       if r["date"] <= cutoff}, name="000852.SH").sort_index()
