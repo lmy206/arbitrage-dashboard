@@ -93,7 +93,7 @@ test("server-renders the arbitrage dashboard", async () => {
   assert.match(html, /焦炭\/焦煤比价/);
   assert.match(html, /棕榈油\/菜油比价/);
   assert.match(html, /菜油\/豆油比价/);
-  assert.match(html, /豆一\/豆二比价/);
+  assert.doesNotMatch(html, /豆一\/豆二比价/);
   assert.match(html, /燃料油\/沥青比价/);
   assert.match(html, /燃料油\/原油比价/);
   assert.match(html, /金\/油比价/);
@@ -238,7 +238,7 @@ test("expanded contract lists omit the extra main-continuous observation", async
   assert.match(pageSource, /"焦炭\/焦煤比价": \["焦炭\/焦煤比", "焦炭焦煤比"\]/);
   assert.match(pageSource, /"棕榈油\/菜油比价": \["棕榈油菜油比"\]/);
   assert.match(pageSource, /"菜油\/豆油比价": \["豆油菜油比"\]/);
-  assert.match(pageSource, /"豆一\/豆二比价": \["豆一豆二比"\]/);
+  assert.doesNotMatch(pageSource, /豆一\/豆二比价|豆一豆二比/);
   assert.doesNotMatch(pageSource, /"塑料-聚丙烯价差"/);
   assert.match(pageSource, /"玻璃\/纯碱比价": \["玻璃\/纯碱比", "玻璃纯碱比", "纯碱玻璃比", "玻璃生产利润"\]/);
   assert.match(pageSource, /"焦炭\/焦煤比价": \["焦炭\/焦煤比", "焦炭焦煤比", "焦化利润"\]/);
@@ -325,7 +325,6 @@ test("monthly contract details contain only current values and liquidity", async
   };
 
   const oilseedMonthPairs = new Set([
-    "豆一/豆二比价",
     "棕榈油/菜油比价",
     "豆棕价差",
     "油/粕比价",
@@ -557,7 +556,6 @@ test("monthly contract details contain only current values and liquidity", async
   const addedRatios = new Map([
     ["棕榈油/菜油比价", ["pJQ00.DF", "OIJQ00.ZF"]],
     ["菜油/豆油比价", ["OIJQ00.ZF", "yJQ00.DF"]],
-    ["豆一/豆二比价", ["aJQ00.DF", "bJQ00.DF"]],
     ["燃料油/沥青比价", ["fuJQ00.SF", "buJQ00.SF"]],
     ["燃料油/原油比价", ["fuJQ00.SF", "scJQ00.INE"]],
     ["20号胶/BR橡胶比价", ["nrJQ00.INE", "brJQ00.SF"]],
